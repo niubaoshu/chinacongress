@@ -332,8 +332,19 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 首页推荐内容 (Section Features)：精美带图海报卡片布局
+ * 首页推荐内容 (Section Features)：强行 100% 等高对齐海报卡片布局
  * ============================================================================== */
+
+.home-features .features-area {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+}
+
+.home-features .features-area > [class*="av-column-"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
 
 .home-features .feature-card-item {
     background: #ffffff !important;
@@ -342,6 +353,7 @@ i.fa-usd:before {
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
     transition: transform 0.3s ease, box-shadow 0.3s ease !important;
     height: 100% !important;
+    width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
 }
@@ -353,7 +365,9 @@ i.fa-usd:before {
 
 .home-features .feature-card-thumb {
     width: 100% !important;
-    height: 200px !important;
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
     overflow: hidden !important;
     position: relative !important;
     background: #f4f8fb !important;
@@ -389,6 +403,11 @@ i.fa-usd:before {
     font-weight: 700 !important;
     line-height: 1.4 !important;
     margin-bottom: 10px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    height: 50px !important;
 }
 
 .home-features .feature-card-title a {
@@ -406,4 +425,13 @@ i.fa-usd:before {
     color: #495057 !important;
     line-height: 1.6 !important;
     margin-bottom: 15px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    height: 67px !important;
+}
+
+.home-features .feature-card-content .category-read-more-btn {
+    margin-top: auto !important;
 }
