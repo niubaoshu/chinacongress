@@ -243,3 +243,20 @@ function chinacongress_add_social_og_tags() {
     }
 }
 add_action( 'wp_head', 'chinacongress_add_social_og_tags', 5 );
+
+// 过滤清理分类与归档标题，移除系统多余的前缀（如“分类：”、“Category Archives:”）
+add_filter( 'get_the_archive_title', function ( $title ) {
+    if ( is_category() ) {
+        $title = single_cat_title( '', false );
+    } elseif ( is_tag() ) {
+        $title = single_tag_title( '', false );
+    } elseif ( is_author() ) {
+        $title = get_the_author();
+    } elseif ( is_post_type_archive() ) {
+        $title = post_type_archive_title( '', false );
+    } elseif ( is_tax() ) {
+        $title = single_term_title( '', false );
+    }
+    return $title;
+} );
+
