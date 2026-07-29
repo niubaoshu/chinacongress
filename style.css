@@ -330,3 +330,80 @@ i.fa-usd:before {
     margin-bottom: 15px !important;
     flex-grow: 1 !important;
 }
+
+/* ==============================================================================
+ * 首页推荐内容 (Section Features)：精美带图海报卡片布局
+ * ============================================================================== */
+
+.home-features .feature-card-item {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.home-features .feature-card-item:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+.home-features .feature-card-thumb {
+    width: 100% !important;
+    height: 200px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #f4f8fb !important;
+}
+
+.home-features .feature-card-thumb a {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.home-features .feature-card-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.4s ease !important;
+}
+
+.home-features .feature-card-item:hover .feature-card-img {
+    transform: scale(1.06) !important;
+}
+
+.home-features .feature-card-content {
+    padding: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
+    justify-content: space-between !important;
+}
+
+.home-features .feature-card-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    margin-bottom: 10px !important;
+}
+
+.home-features .feature-card-title a {
+    color: #1d2327 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.home-features .feature-card-title a:hover {
+    color: #3a75a1 !important;
+}
+
+.home-features .feature-card-text {
+    font-size: 14px !important;
+    color: #495057 !important;
+    line-height: 1.6 !important;
+    margin-bottom: 15px !important;
+}

@@ -7,8 +7,9 @@ function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
 
-// Load Child Theme Section Blog Override so parent function is safely overridden
+// Load Child Theme Section Blog & Features Override so parent function is safely overridden
 require_once get_stylesheet_directory() . '/template-parts/sections/section-blog.php';
+require_once get_stylesheet_directory() . '/template-parts/sections/section-features.php';
 
 // Search Sort by Date DESC
 function chinacongress_sort_search_by_date( $query ) {
