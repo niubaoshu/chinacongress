@@ -542,3 +542,28 @@ i.fa-usd:before {
     font-weight: 700 !important;
     line-height: 1.4 !important;
 }
+
+/* 轮播图底部指示小圆点 (Owl Carousel Native Dots) */
+.main-slider .owl-dots {
+    position: absolute !important;
+    bottom: 20px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10 !important;
+    text-align: center !important;
+}
+
+.main-slider .owl-dots .owl-dot span {
+    width: 12px !important;
+    height: 12px !important;
+    margin: 0 4px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    display: inline-block !important;
+    border-radius: 50% !important;
+    transition: background 0.3s ease, transform 0.3s ease !important;
+}
+
+.main-slider .owl-dots .owl-dot.active span {
+    background: #3a75a1 !important;
+    transform: scale(1.2) !important;
+}
