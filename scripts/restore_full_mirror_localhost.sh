@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 纯洁全新安装与全自动一键复原脚本 (Fresh Install Restorer)
-# 说明：
-#   1. WordPress 核心、Avril 父主题及第三方插件全由官方源全新一键下载安装；
-#   2. 绝不从服务器抓取任何第三方代码；
-#   3. 仅从线上拉取纯用户数据 (数据库 SQL + wp-content/uploads/ 媒体包)；
-#   4. 二次开发代码纯粹由本地 Git 仓库部署。
+# 纯洁全新安装与全自动一键复原脚本 (Fresh Install & Data Restorer)
+#
+# 用法：
+#   1. 指定备份文件恢复:
+#      ./restore_full_mirror_localhost.sh <uploads_file.tar.gz> <db_dump.sql.gz|db_dump.sql>
+#   2. 未输入参数时，自动读取本地最新备份目录恢复:
+#      ./restore_full_mirror_localhost.sh
+#
+# 恢复标准流程：
+#   1. 官方源全新下载安装 WordPress 核心、Avril 父主题、Clever Fox 插件；
+#   2. 修正 Clever Fox 插件对 Avril 子主题的兼容判断；
+#   3. 解压指定/最新媒体上传包至 wp-content/uploads/；
+#   4. 导入指定/最新数据库 SQL 备份并修正域名为 http://localhost；
+#   5. 部署二次开发 Git 仓库代码 (avril-child)；
+#   6. 自动修正数据库 Customizer 配置。
 # ==============================================================================
 
 set -euo pipefail
@@ -13,11 +22,49 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHILD_THEME_SRC="$(cd "${SCRIPT_DIR}/.." && pwd)"
 LOCAL_WEB_ROOT="/srv/http/my_site_name"
-TEMP_DIR="/tmp/wp_fresh_install"
+BACKUP_BASE_DIR="/home/niubaoshu/work/chinacongress/chinacongress_data_backups"
+TEMP_DIR="/tmp/wp_fresh_restore"
+
+UPLOADS_FILE="${1:-}"
+DB_FILE="${2:-}"
 
 echo "=========================================="
-echo "🚀 开始执行【纯洁全新安装 + 纯数据复原】流程..."
+echo "🚀 开始执行【纯洁全新安装 + 指定/最新数据复原】流程..."
 echo "=========================================="
+
+# 0. 参数判定与本地最新备份自动寻找逻辑
+if [ -z "${UPLOADS_FILE}" ] || [ -z "${DB_FILE}" ]; then
+    echo "ℹ️ 未指定备份文件，正在寻找本地最新备份目录 (${BACKUP_BASE_DIR}) ..."
+    
+    LATEST_BACKUP_DIR="$(find "${BACKUP_BASE_DIR}" -mindepth 1 -maxdepth 1 -type d | sort -r | head -n 1)"
+    
+    if [ -z "${LATEST_BACKUP_DIR}" ] || [ ! -d "${LATEST_BACKUP_DIR}" ]; then
+        echo "⚠️ 本地未找到备份目录，正在从线上拉取最新数据..."
+        bash "${SCRIPT_DIR}/sync_user_data_from_remote.sh"
+        SKIP_LOCAL_RESTORE=true
+    else
+        echo "📂 找到最新本地备份目录: ${LATEST_BACKUP_DIR}"
+        UPLOADS_FILE="$(find "${LATEST_BACKUP_DIR}" -name "uploads_*.tar.gz" -o -name "uploads*.tar.gz" | head -n 1)"
+        DB_FILE="$(find "${LATEST_BACKUP_DIR}" -name "*.sql.gz" -o -name "*.sql" | head -n 1)"
+        SKIP_LOCAL_RESTORE=false
+    fi
+else
+    SKIP_LOCAL_RESTORE=false
+fi
+
+if [ "${SKIP_LOCAL_RESTORE:-false}" = "false" ]; then
+    if [ ! -f "${UPLOADS_FILE}" ]; then
+        echo "❌ 媒体上传包文件不存在: ${UPLOADS_FILE}"
+        exit 1
+    fi
+
+    if [ ! -f "${DB_FILE}" ]; then
+        echo "❌ 数据库 SQL 备份文件不存在: ${DB_FILE}"
+        exit 1
+    fi
+    echo "📦 媒体上传包: ${UPLOADS_FILE}"
+    echo "🗄️ 数据库 SQL 文件: ${DB_FILE}"
+fi
 
 mkdir -p "${LOCAL_WEB_ROOT}" "${TEMP_DIR}"
 
@@ -39,7 +86,6 @@ mkdir -p "${LOCAL_WEB_ROOT}/wp-content/plugins"
 curl -sL "https://downloads.wordpress.org/plugin/clever-fox.zip" -o "${TEMP_DIR}/clever-fox.zip"
 unzip -q -o "${TEMP_DIR}/clever-fox.zip" -d "${LOCAL_WEB_ROOT}/wp-content/plugins/"
 
-# 修复 Clever Fox 插件对 Avril 子主题的兼容判断
 if [ -f "${LOCAL_WEB_ROOT}/wp-content/plugins/clever-fox/clever-fox.php" ]; then
     sed -i "s/'Avril' == \$cleverfox_theme->name/'Avril' == \$cleverfox_theme->name || 'Avril' == \$cleverfox_theme->template || 'avril' == \$cleverfox_theme->template/g" "${LOCAL_WEB_ROOT}/wp-content/plugins/clever-fox/clever-fox.php"
 fi
@@ -75,9 +121,68 @@ require_once ABSPATH . 'wp-settings.php';
 EOF
 echo "✅ wp-config.php 配置生成完成。"
 
-# 5. 从线上同步纯用户数据与媒体包
-echo "5. 正在导入线上纯用户数据与 wp-content/uploads/ 媒体库..."
-bash "${SCRIPT_DIR}/sync_user_data_from_remote.sh"
+# 5. 恢复媒体文件与数据库文件
+if [ "${SKIP_LOCAL_RESTORE:-false}" = "false" ]; then
+    echo "5.1 正在解压导入媒体上传库 wp-content/uploads/ ..."
+    mkdir -p "${LOCAL_WEB_ROOT}/wp-content/uploads"
+    tar -xzf "${UPLOADS_FILE}" -C "${LOCAL_WEB_ROOT}/wp-content/uploads/" --strip-components=1 || tar -xzf "${UPLOADS_FILE}" -C "${LOCAL_WEB_ROOT}/wp-content/"
+    echo "✅ 媒体文件解压导入完成。"
+
+    echo "5.2 正在准备数据库 SQL 文件并解压处理..."
+    if [[ "${DB_FILE}" == *.gz ]]; then
+        gunzip -c "${DB_FILE}" > "${LOCAL_WEB_ROOT}/dump.sql"
+    else
+        cp "${DB_FILE}" "${LOCAL_WEB_ROOT}/dump.sql"
+    fi
+    chmod 666 "${LOCAL_WEB_ROOT}/dump.sql"
+
+    # 生成免密 Web 导入管道脚本
+    cat << 'EOF' > "${LOCAL_WEB_ROOT}/import_data.php"
+<?php
+$dump_file = __DIR__ . '/dump.sql';
+if ( ! file_exists( $dump_file ) || filesize( $dump_file ) === 0 ) {
+    die( "❌ 待导入的 SQL 文件不存在或为空！\n" );
+}
+
+$mysqli = new mysqli( 'localhost', 'chinacongress', '', 'chinacongress' );
+if ( $mysqli->connect_error ) {
+    $mysqli = new mysqli( 'localhost', 'root', '', 'chinacongress' );
+}
+
+if ( $mysqli->connect_error ) {
+    die( "❌ 数据库连接失败: " . $mysqli->connect_error . "\n" );
+}
+
+$mysqli->set_charset( 'utf8mb4' );
+$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 0' );
+
+$sql_content = file_get_contents( $dump_file );
+$queries = explode( ";\n", $sql_content );
+$count = 0;
+foreach ( $queries as $query ) {
+    $q = trim( $query );
+    if ( ! empty( $q ) ) {
+        if ( $mysqli->query( $q ) ) {
+            $count++;
+        }
+    }
+}
+
+// 自动修正本地域名 URL
+$mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
+$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
+
+@unlink( $dump_file );
+@unlink( __FILE__ );
+
+echo "SUCCESS_IMPORTED_" . $count . "_QUERIES";
+EOF
+
+    echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
+    curl -s "http://localhost/import_data.php"
+    echo ""
+    echo "✅ 本地数据库导入及本地域名修正完成。"
+fi
 
 # 6. 从本地 Git 仓库部署二次开发代码 (avril-child)
 echo "6. 正在部署二次开发 Git 仓库代码 (avril-child)..."
@@ -101,10 +206,10 @@ if (!empty(\$r['option_value'])) {
 }
 "
 
-# 清理临时下载包
+# 清理临时目录
 rm -rf "${TEMP_DIR}"
 
 echo "------------------------------------------"
-echo "🎉 【全新官方框架 + 纯数据复原】100% 成功完成！"
+echo "🎉 【全新官方框架 + 数据复原】100% 成功完成！"
 echo "🌐 请直接在浏览器中访问: http://localhost/"
 echo "=========================================="
