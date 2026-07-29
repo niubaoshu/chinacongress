@@ -4,17 +4,9 @@
 #
 # 用法：
 #   1. 指定备份文件恢复:
-#      ./restore_full_mirror_localhost.sh <uploads_file.tar.gz> <db_dump.sql.gz|db_dump.sql>
+#      ./restore_full_mirror_localhost.sh <uploads上传包.tar.gz> <数据库备份.sql.gz|db_dump.sql>
 #   2. 未输入参数时，自动读取本地最新备份目录恢复:
 #      ./restore_full_mirror_localhost.sh
-#
-# 恢复标准流程：
-#   1. 官方源全新下载安装 WordPress 核心、Avril 父主题、Clever Fox 插件；
-#   2. 修正 Clever Fox 插件对 Avril 子主题的兼容判断；
-#   3. 解压指定/最新媒体上传包至 wp-content/uploads/；
-#   4. 导入指定/最新数据库 SQL 备份并修正域名为 http://localhost；
-#   5. 部署二次开发 Git 仓库代码 (avril-child)；
-#   6. 自动修正数据库 Customizer 配置。
 # ==============================================================================
 
 set -euo pipefail
@@ -136,7 +128,7 @@ if [ "${SKIP_LOCAL_RESTORE:-false}" = "false" ]; then
     fi
     chmod 666 "${LOCAL_WEB_ROOT}/dump.sql"
 
-    # 生成免密 Web 导入管道脚本
+    # 生成全量域名修正免密 Web 导入管道脚本
     cat << 'EOF' > "${LOCAL_WEB_ROOT}/import_data.php"
 <?php
 $dump_file = __DIR__ . '/dump.sql';
@@ -168,7 +160,29 @@ foreach ( $queries as $query ) {
     }
 }
 
-// 自动修正本地域名 URL
+// 自动全量修正本地域名与协议 URL (处理普通 URL 及 JSON/Serialized 转义 URL)
+$domains = array(
+    'https://chinacongress.net',
+    'http://chinacongress.net',
+    'https://www.chinacongress.net',
+    'http://www.chinacongress.net',
+    'https:\/\/chinacongress.net',
+    'http:\/\/chinacongress.net',
+    'https:\/\/www.chinacongress.net',
+    'http:\/\/www.chinacongress.net'
+);
+
+foreach ( $domains as $domain ) {
+    $target = ( strpos( $domain, '\\' ) !== false ) ? 'http:\/\/localhost' : 'http://localhost';
+    $d_esc = $mysqli->real_escape_string( $domain );
+    $t_esc = $mysqli->real_escape_string( $target );
+
+    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_esc}', '{$t_esc}')" );
+    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '{$t_esc}')" );
+    $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '{$t_esc}')" );
+    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '{$t_esc}')" );
+}
+
 $mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
 $mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
 
@@ -181,7 +195,7 @@ EOF
     echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
     curl -s "http://localhost/import_data.php"
     echo ""
-    echo "✅ 本地数据库导入及本地域名修正完成。"
+    echo "✅ 本地数据库导入及本地域名全量修正完成。"
 fi
 
 # 6. 从本地 Git 仓库部署二次开发代码 (avril-child)

@@ -31,7 +31,7 @@ ssh "${REMOTE_HOST}" "mysqldump -uchinacongress -p*** chinacongress" > "${LOCAL_
 if [ -s "${LOCAL_WEB_PATH}/dump.sql" ]; then
     chmod 666 "${LOCAL_WEB_PATH}/dump.sql"
     
-    # 写入免密 Web 导入中转脚本
+    # 写入全量域名修正 Web 导入中转脚本
     cat << 'EOF' > "${LOCAL_WEB_PATH}/import_data.php"
 <?php
 $dump_file = __DIR__ . '/dump.sql';
@@ -63,7 +63,29 @@ foreach ( $queries as $query ) {
     }
 }
 
-// 自动修正本地域名 URL
+// 自动全量修正本地域名与协议 URL (处理普通 URL 及 JSON/Serialized 转义 URL)
+$domains = array(
+    'https://chinacongress.net',
+    'http://chinacongress.net',
+    'https://www.chinacongress.net',
+    'http://www.chinacongress.net',
+    'https:\/\/chinacongress.net',
+    'http:\/\/chinacongress.net',
+    'https:\/\/www.chinacongress.net',
+    'http:\/\/www.chinacongress.net'
+);
+
+foreach ( $domains as $domain ) {
+    $target = ( strpos( $domain, '\\' ) !== false ) ? 'http:\/\/localhost' : 'http://localhost';
+    $d_esc = $mysqli->real_escape_string( $domain );
+    $t_esc = $mysqli->real_escape_string( $target );
+
+    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_esc}', '{$t_esc}')" );
+    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '{$t_esc}')" );
+    $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '{$t_esc}')" );
+    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '{$t_esc}')" );
+}
+
 $mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
 $mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
 
@@ -76,7 +98,7 @@ EOF
     echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
     curl -s "http://localhost/import_data.php"
     echo ""
-    echo "✅ 线上数据库导入及本地 localhost 域名修正完成。"
+    echo "✅ 线上数据库导入及本地 localhost 全量域名修正完成。"
 else
     echo "❌ 线上数据库导出失败，请检查连接。"
     exit 1
