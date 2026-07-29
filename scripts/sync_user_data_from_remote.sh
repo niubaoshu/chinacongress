@@ -7,6 +7,7 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_HOST="Chinacongress"
 REMOTE_PATH="/var/www/chinacongress"
 LOCAL_WEB_PATH="/srv/http/my_site_name"
@@ -23,19 +24,58 @@ rsync -avz --no-o --no-g \
   "${LOCAL_WEB_PATH}/wp-content/uploads/"
 echo "✅ 媒体文件增量同步完成。"
 
-# 2. 导出线上 MySQL 数据库并导入本地 DB
-TEMP_DUMP="/tmp/remote_db_dump.sql"
-echo "2. 正在通过 SSH 导出线上数据库并导入本地 localhost 数据库..."
-ssh "${REMOTE_HOST}" "mysqldump -uchinacongress -p*** chinacongress" > "${TEMP_DUMP}"
+# 2. 导出线上 MySQL 数据库并通过 Web 管道免密导入本地 DB
+echo "2. 正在通过 SSH 导出线上数据库并一键导入本地 localhost 数据库..."
+ssh "${REMOTE_HOST}" "mysqldump -uchinacongress -p*** chinacongress" > "${LOCAL_WEB_PATH}/dump.sql"
 
-if [ -s "${TEMP_DUMP}" ]; then
-    echo "正在将数据库导入本地 MySQL (chinacongress) ..."
-    mariadb -u chinacongress chinacongress < "${TEMP_DUMP}" 2>/dev/null || mysql -u chinacongress chinacongress < "${TEMP_DUMP}"
+if [ -s "${LOCAL_WEB_PATH}/dump.sql" ]; then
+    chmod 666 "${LOCAL_WEB_PATH}/dump.sql"
     
-    # 替换本地域名 URL (将 https://chinacongress.net 替换为 http://localhost)
-    mariadb -u chinacongress chinacongress -e "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home');" 2>/dev/null || true
-    
-    rm -f "${TEMP_DUMP}"
+    # 写入免密 Web 导入中转脚本
+    cat << 'EOF' > "${LOCAL_WEB_PATH}/import_data.php"
+<?php
+$dump_file = __DIR__ . '/dump.sql';
+if ( ! file_exists( $dump_file ) || filesize( $dump_file ) === 0 ) {
+    die( "❌ 待导入的 SQL 文件不存在或为空！\n" );
+}
+
+$mysqli = new mysqli( 'localhost', 'chinacongress', '', 'chinacongress' );
+if ( $mysqli->connect_error ) {
+    $mysqli = new mysqli( 'localhost', 'root', '', 'chinacongress' );
+}
+
+if ( $mysqli->connect_error ) {
+    die( "❌ 数据库连接失败: " . $mysqli->connect_error . "\n" );
+}
+
+$mysqli->set_charset( 'utf8mb4' );
+$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 0' );
+
+$sql_content = file_get_contents( $dump_file );
+$queries = explode( ";\n", $sql_content );
+$count = 0;
+foreach ( $queries as $query ) {
+    $q = trim( $query );
+    if ( ! empty( $q ) ) {
+        if ( $mysqli->query( $q ) ) {
+            $count++;
+        }
+    }
+}
+
+// 自动修正本地域名 URL
+$mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
+$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
+
+@unlink( $dump_file );
+@unlink( __FILE__ );
+
+echo "SUCCESS_IMPORTED_" . $count . "_QUERIES";
+EOF
+
+    echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
+    curl -s "http://localhost/import_data.php"
+    echo ""
     echo "✅ 线上数据库导入及本地 localhost 域名修正完成。"
 else
     echo "❌ 线上数据库导出失败，请检查连接。"
