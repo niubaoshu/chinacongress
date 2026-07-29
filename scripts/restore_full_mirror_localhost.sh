@@ -149,15 +149,12 @@ $mysqli->set_charset( 'utf8mb4' );
 $mysqli->query( 'SET FOREIGN_KEY_CHECKS = 0' );
 
 $sql_content = file_get_contents( $dump_file );
-$queries = explode( ";\n", $sql_content );
-$count = 0;
-foreach ( $queries as $query ) {
-    $q = trim( $query );
-    if ( ! empty( $q ) ) {
-        if ( $mysqli->query( $q ) ) {
-            $count++;
+if ( $mysqli->multi_query( $sql_content ) ) {
+    do {
+        if ( $result = $mysqli->store_result() ) {
+            $result->free();
         }
-    }
+    } while ( $mysqli->more_results() && $mysqli->next_result() );
 }
 
 // 自动全量将本站点绝对 URL 转换为无协议/无域名的纯相对路径 (保留二级域名如 reg.chinacongress.net)
@@ -172,18 +169,50 @@ $domains = array(
 foreach ( $domains as $domain ) {
     $d_esc = $mysqli->real_escape_string( $domain );
     
-    // 普通路径剥离域名
-    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_esc}', '')" );
+    // 普通路径剥离域名 (只针对 wp_posts 和 wp_postmeta，严禁对 wp_options 直接运行 SQL REPLACE 以防序列化长度被破坏)
     $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '')" );
     $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '')" );
     $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '')" );
 
-    // JSON / Serialized 字符串剥离域名
+    // JSON / Escaped 字符串剥离域名
     $d_slash = str_replace( '/', '\\/', $domain );
     $d_slash_esc = $mysqli->real_escape_string( $d_slash );
-    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_slash_esc}', '')" );
     $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_slash_esc}', '')" );
     $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_slash_esc}', '')" );
+}
+
+// 安全处理 wp_options 中的 theme_mods（包含首页推荐内容、轮播图与数据指标）
+$res_m = $mysqli->query( "SELECT option_name, option_value FROM wp_options WHERE option_name IN ('theme_mods_avril', 'theme_mods_avril-child') ORDER BY LENGTH(option_value) DESC" );
+$best_arr = null;
+if ( $res_m ) {
+    while ( $r_m = $res_m->fetch_assoc() ) {
+        $arr = @unserialize( $r_m['option_value'] );
+        if ( is_array( $arr ) && count( $arr ) > 10 ) {
+            $best_arr = $arr;
+            break;
+        }
+    }
+}
+
+if ( is_array( $best_arr ) ) {
+    $cleaner = function( &$item ) use ( &$cleaner ) {
+        if ( is_string( $item ) ) {
+            $item = str_replace(
+                array( 'https://chinacongress.net', 'http://chinacongress.net', 'https://www.chinacongress.net', 'http://www.chinacongress.net' ),
+                '',
+                $item
+            );
+        } elseif ( is_array( $item ) ) {
+            foreach ( $item as &$v ) {
+                $cleaner( $v );
+            }
+        }
+    };
+    $cleaner( $best_arr );
+    
+    $ser_val = $mysqli->real_escape_string( serialize( $best_arr ) );
+    $mysqli->query( "UPDATE wp_options SET option_value='{$ser_val}' WHERE option_name='theme_mods_avril'" );
+    $mysqli->query( "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('theme_mods_avril-child', '{$ser_val}', 'yes') ON DUPLICATE KEY UPDATE option_value='{$ser_val}'" );
 }
 
 $mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
@@ -192,7 +221,7 @@ $mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
 @unlink( $dump_file );
 @unlink( __FILE__ );
 
-echo "SUCCESS_IMPORTED_" . $count . "_QUERIES";
+echo "SUCCESS_IMPORTED_FULL_DATABASE";
 EOF
 
     echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
