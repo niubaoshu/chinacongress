@@ -1,0 +1,92 @@
+/*
+Theme Name: Avril Child
+Theme URI: https://chinacongress.net/
+Description: Avril Child Theme for China Congress
+Author: China Congress
+Author URI: https://chinacongress.net/
+Template: avril
+Version: 1.0.0
+*/
+
+/* 锁定全站统一强调色为中国议会标准蓝 (#3a75a1)，杜绝父主题更新恢复红色 */
+:root {
+    --sp-primary: #3a75a1 !important;
+    --sp-primary-dark: #2b5a7e !important;
+    --sp-primary-light: #f4f8fb !important;
+    --sp-gradient-focus: linear-gradient(#3a75a1, #3a75a1) !important;
+}
+
+/* 强行推开并覆盖全局按钮与强调元素为标准蓝色 */
+.wp-block-search .wp-block-search__button,
+.av-btn-primary,
+.av-btn-primary:hover,
+.av-btn-primary:focus {
+    background-color: #3a75a1 !important;
+    border-color: #3a75a1 !important;
+}
+
+span.primary-color,
+.primary-color {
+    color: #3a75a1 !important;
+}
+
+/* 全局 body 字体大小设置为 18px */
+body {
+    font-size: 18px !important;
+}
+
+/* 文章正文标题 (h5.post-title) 底部与下方首个元素的间距 */
+.single .post-content h5.post-title,
+.single-post h5.post-title,
+.post-content h5.post-title {
+    display: block !important;
+    margin-bottom: 25px !important;
+    padding-bottom: 5px !important;
+}
+
+/* 强行推开标题紧接着的图片/段落/元素 */
+.single .post-content h5.post-title + *,
+.post-content h5.post-title + figure,
+.post-content h5.post-title + p {
+    margin-top: 20px !important;
+}
+
+/* 修复顶部社交图标在 FontAwesome 5 框架下的显示问题 */
+.widget_social_widget li a i.fa,
+.widget_social_widget li a i {
+    font-family: "Font Awesome 5 Brands", "FontAwesome" !important;
+    font-weight: 400 !important;
+    display: inline-block !important;
+}
+.widget_social_widget li a i.fa-twitter:before {
+    content: "\f099" !important;
+}
+.widget_social_widget li a i.fa-youtube-play:before {
+    content: "\f167" !important;
+}
+.widget_social_widget li a i.fa-facebook:before {
+    content: "\f09a" !important;
+}
+.widget_social_widget li a i.fa-google-plus:before {
+    content: "\f0d5" !important;
+}
+
+/* 修复顶部 Contact Widget 图标（Email Us / Clock / USD）在 FontAwesome 5 框架下的显示问题 */
+.widget-contact i.fa-envelope-o:before,
+i.fa-envelope-o:before {
+    content: "\f0e0" !important;
+    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+    font-weight: 900 !important;
+}
+.widget-contact i.fa-clock-o:before,
+i.fa-clock-o:before {
+    content: "\f017" !important;
+    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+    font-weight: 900 !important;
+}
+.widget-contact i.fa-usd:before,
+i.fa-usd:before {
+    content: "\f155" !important;
+    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+    font-weight: 900 !important;
+}
