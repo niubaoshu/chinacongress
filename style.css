@@ -435,3 +435,77 @@ i.fa-usd:before {
 .home-features .feature-card-content .category-read-more-btn {
     margin-top: auto !important;
 }
+
+/* ==============================================================================
+ * 文章落款与社交图标区域 (Clean Class-Based Layout)
+ * ============================================================================== */
+
+.article-annotation {
+    padding-top: 20px !important;
+    margin-top: 80px !important;
+    margin-bottom: 50px !important;
+    border-top: 1px solid #999999 !important;
+    font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif !important;
+    font-style: italic !important;
+    font-size: 15px !important;
+}
+
+.article-annotation .social-icons {
+    display: flex !important;
+    align-items: center !important;
+    gap: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+.article-annotation .social-icons a span {
+    display: inline-block !important;
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    border: 1px solid #e6e6e6 !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    transition: transform 0.2s ease !important;
+}
+
+.article-annotation .social-icons a:hover span {
+    transform: scale(1.08) !important;
+}
+
+.article-annotation .social-icons .icon-telegram {
+    background-image: url("https://chinacongress.net/wp-content/uploads/2026/07/图片-13.png") !important;
+}
+
+.article-annotation .social-icons .icon-x {
+    background-image: url("https://chinacongress.net/wp-content/uploads/2026/07/x_logo.jpg") !important;
+}
+
+.article-annotation .social-icons .icon-tiktok {
+    background-image: url("https://chinacongress.net/wp-content/uploads/2026/07/tiktok_logo.jpeg") !important;
+}
+
+.article-annotation .social-icons .icon-youtube {
+    background-image: url("https://chinacongress.net/wp-content/uploads/2026/07/Youtube_logo.png") !important;
+}
+
+.article-annotation .credit-row {
+    margin-bottom: 6px !important;
+}
+
+.article-annotation .credit-row .label {
+    display: inline-block !important;
+    width: 60px !important;
+    text-align: right !important;
+    margin-right: 8px !important;
+}
+
+.article-annotation .credit-row a {
+    color: #3a75a1 !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+.article-annotation .credit-row a:hover {
+    text-decoration: underline !important;
+}
