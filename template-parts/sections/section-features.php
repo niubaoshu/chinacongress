@@ -51,7 +51,7 @@ if ( $avril_hs_feature == '1' ) {
 						}
 
 						if ( empty( $img_url ) ) {
-							$img_url = 'https://chinacongress.net/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
+							$img_url = '/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
 						}
 				?>
 					<div class="av-column-4 av-md-column-6 mb-6">

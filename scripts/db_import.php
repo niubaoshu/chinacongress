@@ -1,5 +1,5 @@
 <?php
-// PHP CLI 数据库一键导入与域名全量修正脚本
+// PHP CLI 数据库一键导入与相对 URL 全量转换脚本
 $wp_config = '/srv/http/my_site_name/wp-config.php';
 if ( ! file_exists( $wp_config ) ) {
     $wp_config = '/home/niubaoshu/work/chinacongress/chinacongress.net/public_html/wp-config.php';
@@ -30,30 +30,33 @@ foreach ( $queries as $query ) {
     }
 }
 
-// 自动全量修正本地域名与协议 URL (处理普通 URL 及 JSON/Serialized 转义 URL)
+// 自动全量将本站点绝对 URL 转换为无协议/无域名的纯相对路径 (保留二级域名如 reg.chinacongress.net)
 $domains = array(
     'https://chinacongress.net',
     'http://chinacongress.net',
     'https://www.chinacongress.net',
     'http://www.chinacongress.net',
-    'https:\/\/chinacongress.net',
-    'http:\/\/chinacongress.net',
-    'https:\/\/www.chinacongress.net',
-    'http:\/\/www.chinacongress.net'
+    'http://localhost'
 );
 
 foreach ( $domains as $domain ) {
-    $target = ( strpos( $domain, '\\' ) !== false ) ? 'http:\/\/localhost' : 'http://localhost';
     $d_esc = $mysqli->real_escape_string( $domain );
-    $t_esc = $mysqli->real_escape_string( $target );
+    
+    // 普通路径剥离域名
+    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_esc}', '')" );
+    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '')" );
+    $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '')" );
+    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '')" );
 
-    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_esc}', '{$t_esc}')" );
-    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '{$t_esc}')" );
-    $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '{$t_esc}')" );
-    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '{$t_esc}')" );
+    // JSON / Serialized 字符串剥离域名
+    $d_slash = str_replace( '/', '\\/', $domain );
+    $d_slash_esc = $mysqli->real_escape_string( $d_slash );
+    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_slash_esc}', '')" );
+    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_slash_esc}', '')" );
+    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_slash_esc}', '')" );
 }
 
 $mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
 $mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
 
-echo "✅ 数据库全量数据及本地域名修正导入成功！\n";
+echo "✅ 数据库全量导入及相对 URL 转换完成！\n";
