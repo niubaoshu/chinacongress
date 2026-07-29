@@ -440,6 +440,7 @@ i.fa-usd:before {
  * 文章落款与社交图标区域 (Clean Class-Based Layout)
  * ============================================================================== */
 
+#annotation,
 .article-annotation {
     padding-top: 20px !important;
     margin-top: 80px !important;
@@ -450,6 +451,15 @@ i.fa-usd:before {
     font-size: 15px !important;
 }
 
+#annotation a,
+#annotation a span,
+.article-annotation a,
+.article-annotation a span,
+.post-share-bar a,
+.post-share-bar a span {
+    cursor: pointer !important;
+}
+
 .article-annotation .social-icons {
     display: flex !important;
     align-items: center !important;
@@ -457,6 +467,7 @@ i.fa-usd:before {
     margin-bottom: 20px !important;
 }
 
+#annotation a span,
 .article-annotation .social-icons a span {
     display: inline-block !important;
     width: 60px !important;
@@ -466,11 +477,14 @@ i.fa-usd:before {
     background-size: cover !important;
     background-position: center !important;
     background-repeat: no-repeat !important;
-    transition: transform 0.2s ease !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    cursor: pointer !important;
 }
 
+#annotation a:hover span,
 .article-annotation .social-icons a:hover span {
     transform: scale(1.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .article-annotation .social-icons .icon-telegram {
@@ -489,10 +503,12 @@ i.fa-usd:before {
     background-image: url("/wp-content/uploads/2026/07/Youtube_logo.png") !important;
 }
 
+#annotation .credit-row,
 .article-annotation .credit-row {
     margin-bottom: 6px !important;
 }
 
+#annotation .credit-row .label,
 .article-annotation .credit-row .label {
     display: inline-block !important;
     width: 60px !important;
@@ -500,12 +516,15 @@ i.fa-usd:before {
     margin-right: 8px !important;
 }
 
+#annotation a,
 .article-annotation .credit-row a {
     color: #3a75a1 !important;
     font-weight: 600 !important;
     text-decoration: none !important;
+    cursor: pointer !important;
 }
 
+#annotation a:hover,
 .article-annotation .credit-row a:hover {
     text-decoration: underline !important;
 }
