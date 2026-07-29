@@ -1,8 +1,9 @@
 <?php
-// Enqueue Parent Theme Style & Permanent FontAwesome Backup
-add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 1 );
+// Enqueue Parent Theme Style, Child Theme Style & Permanent FontAwesome Backup
+add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
 function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-parent-style', get_template_directory_uri() . '/style.css' );
+    wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), time() );
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
 

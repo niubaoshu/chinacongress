@@ -3,15 +3,19 @@
  * Template part for displaying page content in Child Theme.
  */
 
+if ( ! is_single() && ! is_page() ) {
+    get_template_part( 'template-parts/content/content', 'search' );
+    return;
+}
 ?>
 <article id="post-<?php the_ID(); ?>" <?php post_class('post-items mb-6'); ?>>
 	<figure class="post-image">
-	   <a href="<?php esc_url(get_permalink()); ?>" class="post-hover">
+	   <a href="<?php echo esc_url(get_permalink()); ?>" class="post-hover">
 			<?php if ( has_post_thumbnail() ) { the_post_thumbnail(); } ?>
 		</a>
 		<div class="post-meta imu">
 			<span class="post-list">
-			   <ul class="post-categories"><li><a href="<?php esc_url(get_permalink()); ?>"><?php the_category(' '); ?></a></li></ul>
+			   <ul class="post-categories"><li><a href="<?php echo esc_url(get_permalink()); ?>"><?php the_category(' '); ?></a></li></ul>
 			</span>
 		</div>
 	</figure>
@@ -22,7 +26,7 @@
 			</span>
 		</div>
 	   <?php     
-			if ( is_single() ) :
+			if ( is_single() || is_page() ) :
 			
 			the_title('<h5 class="post-title">', '</h5>' );
 			
@@ -99,10 +103,6 @@
 			}
 			</script>
 			<?php
-			else:
-			 
-			the_title( sprintf( '<h5 class="post-title"><a href="%s" rel="bookmark">', esc_url( get_permalink() ) ), '</a></h5>' );
-			 
 			endif; 
 		?> 
 	</div>
