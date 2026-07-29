@@ -198,7 +198,7 @@ function chinacongress_get_first_image_url( $post_id = null ) {
     }
 
     // 5. 兜底保护：若正文无图无视频，自动返回中国议会官方 Banner Logo
-    return 'https://chinacongress.net/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
+    return '/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
 }
 
 // 过滤 post_thumbnail_html，使前台列表无特色图片时自动展示正文第一张图/视频封面
