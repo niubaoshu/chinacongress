@@ -528,3 +528,108 @@ i.fa-usd:before {
 .article-annotation .credit-row a:hover {
     text-decoration: underline !important;
 }
+
+/* ==============================================================================
+ * 1 & 2. 轮播图底部小圆点与左右切换箭头 (Owl Carousel Dots & Nav Arrows)
+ * ============================================================================== */
+
+.header-slider .owl-dots,
+#carousel-custom-indicator {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 10px !important;
+    position: absolute !important;
+    bottom: 25px !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10 !important;
+    margin: 0 auto !important;
+}
+
+.header-slider .owl-dots .owl-dot,
+#carousel-custom-indicator .owl-dot,
+#carousel-custom-indicator span {
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 2px solid #ffffff !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    display: inline-block !important;
+}
+
+.header-slider .owl-dots .owl-dot.active,
+#carousel-custom-indicator .owl-dot.active,
+#carousel-custom-indicator span.active {
+    background: #3a75a1 !important;
+    width: 28px !important;
+    border-radius: 10px !important;
+}
+
+.header-slider .owl-nav {
+    display: block !important;
+}
+
+.header-slider .owl-nav button.owl-prev,
+.header-slider .owl-nav button.owl-next {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 44px !important;
+    height: 44px !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+    border-radius: 50% !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background 0.3s ease, transform 0.3s ease !important;
+    z-index: 10 !important;
+    cursor: pointer !important;
+    outline: none !important;
+}
+
+.header-slider .owl-nav button.owl-prev:hover,
+.header-slider .owl-nav button.owl-next:hover {
+    background: #3a75a1 !important;
+    transform: translateY(-50%) scale(1.1) !important;
+}
+
+.header-slider .owl-nav button.owl-prev {
+    left: 20px !important;
+}
+
+.header-slider .owl-nav button.owl-next {
+    right: 20px !important;
+}
+
+.header-slider .owl-nav button.owl-prev::before {
+    content: "\f104" !important;
+    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+    font-weight: 900 !important;
+    font-size: 20px !important;
+}
+
+.header-slider .owl-nav button.owl-next::before {
+    content: "\f105" !important;
+    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
+    font-weight: 900 !important;
+    font-size: 20px !important;
+}
+
+/* ==============================================================================
+ * 3. 统一“选民注册”、“推荐内容”与“最新发布”标题字号大小一致
+ * ============================================================================== */
+
+#service-section .heading-default h3,
+#features-section .heading-default h3,
+.home-service .heading-default h3,
+.home-features .heading-default h3,
+.heading-default h3 {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+}
