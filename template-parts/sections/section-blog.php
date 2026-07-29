@@ -5,7 +5,7 @@ if ( ! function_exists( 'avril_home_blog' ) ) :
 	$avril_blog_title			= get_theme_mod('blog_title', __('最新发布', 'avril-child'));
 	$blog_subtitle				= get_theme_mod('blog_subtitle');
 	$blog_description			= get_theme_mod('blog_description');
-	$blog_display_num			= get_theme_mod('blog_display_num','6');
+	$blog_display_num			= get_theme_mod('blog_display_num','2');
 if($hs_blog == '1') {	
 ?>
  <section id="post-section" class="post-section post-shadow av-py-default home-blog">
@@ -27,7 +27,7 @@ if($hs_blog == '1') {
             </div>
             <div class="av-columns-area wow fadeInUp">
 				<?php 	
-				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => $blog_display_num, 'post__not_in' => get_option("sticky_posts") ); 	
+				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => 2, 'post__not_in' => get_option("sticky_posts") ); 	
 				$avril_wp_query = new WP_Query($avril_blog_args);
 				if($avril_wp_query && $avril_wp_query->have_posts()) :
 					while($avril_wp_query->have_posts()): $avril_wp_query->the_post(); 
