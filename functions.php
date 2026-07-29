@@ -276,6 +276,7 @@ function chinacongress_slider_speed_boost() {
                         items: 1,
                         loop: true,
                         dots: true,
+                        nav: true,
                         navText: ['<i class="fa fa-arrow-left"></i>', '<i class="fa fa-arrow-right"></i>'],
                         autoHeight: $("body").hasClass("aera-theme") || $("body").hasClass("avail-theme")|| $("body").hasClass("evion-theme") ? true : false,
                         autoplay: true,
