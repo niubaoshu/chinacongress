@@ -2,10 +2,10 @@
 if ( ! function_exists( 'avril_home_blog' ) ) :
 	function avril_home_blog() {
 	$hs_blog					= get_theme_mod('hs_blog','1');
-	$avril_blog_title			= get_theme_mod('blog_title');
+	$avril_blog_title			= get_theme_mod('blog_title', __('最新发布', 'avril-child'));
 	$blog_subtitle				= get_theme_mod('blog_subtitle');
 	$blog_description			= get_theme_mod('blog_description');
-	$blog_display_num			= get_theme_mod('blog_display_num','3');
+	$blog_display_num			= get_theme_mod('blog_display_num','6');
 if($hs_blog == '1') {	
 ?>
  <section id="post-section" class="post-section post-shadow av-py-default home-blog">
@@ -20,59 +20,57 @@ if($hs_blog == '1') {
 							<h3><?php echo wp_kses_post($blog_subtitle); ?></h3>    
 						<?php endif; ?>	                   
 						<?php if ( ! empty( $blog_description ) ) : ?>		
-							<p><?php echo esc_html($blog_description); ?></p>    
+							<p><?php echo esc_html($blog_description); ?></p>
 						<?php endif; ?>
                     </div>
                 </div>
             </div>
             <div class="av-columns-area wow fadeInUp">
 				<?php 	
-				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => $blog_display_num,'post__not_in'=>get_option("sticky_posts")) ; 	
-					$avril_wp_query = new WP_Query($avril_blog_args);
-					if($avril_wp_query)
-					{	
-					while($avril_wp_query->have_posts()):$avril_wp_query->the_post(); ?>
-					<div class="av-column-4 av-md-column-6 mb-4 mb-av-0">
-						<article class="post-items">
-							<figure class="post-image">
-								<a href="<?php esc_url(get_permalink()); ?>" class="post-hover">
-									<?php if ( has_post_thumbnail() ) { the_post_thumbnail(); } ?>
+				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => $blog_display_num, 'post__not_in' => get_option("sticky_posts") ); 	
+				$avril_wp_query = new WP_Query($avril_blog_args);
+				if($avril_wp_query && $avril_wp_query->have_posts()) :
+					while($avril_wp_query->have_posts()): $avril_wp_query->the_post(); 
+						$categories = get_the_category();
+					?>
+					<div class="av-column-6 av-md-column-6 mb-4">
+						<article class="home-blog-card">
+							<div class="home-blog-thumb-wrap">
+								<?php if ( ! empty( $categories[0] ) ) : ?>
+									<span class="category-badge"><?php echo esc_html( $categories[0]->name ); ?></span>
+								<?php endif; ?>
+								<a href="<?php echo esc_url( get_permalink() ); ?>" class="home-blog-thumb-link">
+									<img src="<?php echo esc_url( chinacongress_get_first_image_url( get_the_ID() ) ); ?>" alt="<?php echo esc_attr( get_the_title() ); ?>" class="home-blog-thumb-img" />
 								</a>
-								<div class="post-meta imu">
-									<span class="post-list">
-										<ul class="post-categories"><li><a href="<?php esc_url(get_permalink()); ?>"><?php the_category(' '); ?></a></li></ul>
-									</span>
+							</div>
+							<div class="home-blog-content">
+								<div>
+									<div class="home-blog-meta">
+										<span><i class="fa fa-calendar"></i> <?php echo esc_html( get_the_date() ); ?></span>
+									</div>
+									<h4 class="home-blog-title">
+										<a href="<?php echo esc_url( get_permalink() ); ?>" rel="bookmark"><?php echo esc_html( get_the_title() ); ?></a>
+									</h4>
+									<p class="home-blog-excerpt">
+										<?php
+										$raw_content = wp_strip_all_tags( get_the_content() );
+										$clean_text  = preg_replace( '/\s+/', ' ', $raw_content );
+										echo esc_html( mb_strimwidth( trim( $clean_text ), 0, 110, '...' ) );
+										?>
+									</p>
 								</div>
-							</figure>
-							<div class="post-content">
-								<div class="post-meta up">
-									<span class="posted-on">
-										<a href="<?php echo esc_url(get_month_link(get_post_time('Y'),get_post_time('m'))); ?>"><?php echo esc_html(get_the_date()); ?></a>
-									</span>
+								<div>
+									<a href="<?php echo esc_url( get_permalink() ); ?>" class="category-read-more-btn mt-2">
+										阅读全文 <i class="fa fa-angle-right"></i>
+									</a>
 								</div>
-								<?php     
-									if ( is_single() ) :
-									
-									the_title('<h5 class="post-title">', '</h5>' );
-									
-									else:
-									
-									the_title( sprintf( '<h5 class="post-title"><a href="%s" rel="bookmark">', esc_url( get_permalink() ) ), '</a></h5>' );
-									
-									endif; 
-									
-									?>
-									
-									<?php
-								?> 
-								
 							</div>
 						</article>
 					</div>
 				<?php 
 					endwhile; 
-					}
-					wp_reset_postdata();
+				endif;
+				wp_reset_postdata();
 				?>
             </div>
         </div>
