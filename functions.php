@@ -261,3 +261,35 @@ add_filter( 'get_the_archive_title', function ( $title ) {
     return $title;
 } );
 
+// 提升首页轮播图播放速度 50% (播放间隔从 9 秒缩短至 4.5 秒，平滑过渡缩短至 0.5 秒)
+function chinacongress_slider_speed_boost() {
+    if ( is_front_page() || is_home() ) {
+        ?>
+        <script id="chinacongress-slider-speed">
+        jQuery(document).ready(function($) {
+            setTimeout(function() {
+                var $slider = $('.main-slider');
+                if ($slider.length && typeof $slider.owlCarousel === 'function') {
+                    $slider.trigger('destroy.owl.carousel');
+                    $slider.owlCarousel({
+                        rtl: $("html").attr("dir") == 'rtl' ? true : false,
+                        items: 1,
+                        loop: true,
+                        dots: true,
+                        navText: ['<i class="fa fa-arrow-left"></i>', '<i class="fa fa-arrow-right"></i>'],
+                        autoHeight: $("body").hasClass("aera-theme") || $("body").hasClass("avail-theme")|| $("body").hasClass("evion-theme") ? true : false,
+                        autoplay: true,
+                        autoplayTimeout: 4500,
+                        animateIn: $("body").hasClass("aera-theme") ? false : 'pulse',
+                        animateOut: $("body").hasClass("aera-theme") ? false : 'fadeOut',
+                        smartSpeed: 500
+                    });
+                }
+            }, 300);
+        });
+        </script>
+        <?php
+    }
+}
+add_action( 'wp_footer', 'chinacongress_slider_speed_boost', 99 );
+
