@@ -90,3 +90,151 @@ i.fa-usd:before {
     font-family: "Font Awesome 5 Free", "FontAwesome" !important;
     font-weight: 900 !important;
 }
+
+/* ==============================================================================
+ * 分类列表 / 归档页面：左侧精美封面海报图片 + 右侧文章标题与摘要 (高颜值双栏布局)
+ * ============================================================================== */
+
+.category-post-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 24px !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    margin-bottom: 25px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #eef2f6 !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.category-post-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 25px rgba(58, 117, 161, 0.12) !important;
+    border-color: rgba(58, 117, 161, 0.3) !important;
+}
+
+/* 左侧图片海报区域 */
+.category-post-card .category-post-thumb-wrap {
+    flex: 0 0 38% !important;
+    max-width: 38% !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 8px !important;
+    min-height: 180px !important;
+    background: #f4f8fb !important;
+}
+
+.category-post-card .category-post-thumb-link {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.category-post-card .category-post-thumb-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.4s ease !important;
+}
+
+.category-post-card:hover .category-post-thumb-img {
+    transform: scale(1.06) !important;
+}
+
+/* 分类胶囊标签 (图片左上角) */
+.category-post-card .category-badge {
+    position: absolute !important;
+    top: 12px !important;
+    left: 12px !important;
+    background: rgba(58, 117, 161, 0.9) !important;
+    color: #ffffff !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    z-index: 2 !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+/* 右侧文本内容区域 */
+.category-post-card .category-post-content-wrap {
+    flex: 1 1 62% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.category-post-card .category-post-meta {
+    font-size: 13px !important;
+    color: #6c757d !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.category-post-card .category-post-meta i {
+    color: #3a75a1 !important;
+    margin-right: 4px !important;
+}
+
+.category-post-card .category-post-title {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    margin-bottom: 12px !important;
+}
+
+.category-post-card .category-post-title a {
+    color: #1d2327 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.category-post-card .category-post-title a:hover {
+    color: #3a75a1 !important;
+}
+
+.category-post-card .category-post-excerpt {
+    font-size: 15px !important;
+    color: #495057 !important;
+    line-height: 1.6 !important;
+    margin-bottom: 15px !important;
+    flex-grow: 1 !important;
+}
+
+.category-post-card .category-read-more-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: #3a75a1 !important;
+    color: #ffffff !important;
+    padding: 8px 18px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: background-color 0.2s ease, transform 0.2s ease !important;
+    align-self: flex-start !important;
+}
+
+.category-post-card .category-read-more-btn:hover {
+    background-color: #2b5a7e !important;
+    color: #ffffff !important;
+    transform: translateX(3px) !important;
+}
+
+/* 手机端响应式布局适配 */
+@media (max-width: 768px) {
+    .category-post-card {
+        flex-direction: column !important;
+        padding: 15px !important;
+    }
+    .category-post-card .category-post-thumb-wrap {
+        max-width: 100% !important;
+        height: 200px !important;
+    }
+}

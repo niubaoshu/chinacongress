@@ -1,42 +1,54 @@
 <?php
 /**
- * Template part for displaying results in search pages in Child Theme.
+ * Template part for Category & Archive & Search pages in Child Theme.
+ * Left: Smart Auto Extracted Image / Video Poster
+ * Right: Title, Meta, Excerpt, Read More Button
  */
 
+$post_id       = get_the_ID();
+$permalink     = esc_url( get_permalink() );
+$thumb_url     = esc_url( chinacongress_get_first_image_url( $post_id ) );
+$title         = get_the_title();
+$date_str      = esc_html( get_the_date() );
+$categories    = get_the_category();
+$category_name = ! empty( $categories[0] ) ? esc_html( $categories[0]->name ) : '';
+
+$raw_content   = wp_strip_all_tags( get_the_content() );
+$clean_text    = preg_replace( '/\s+/', ' ', $raw_content );
+$excerpt       = mb_strimwidth( trim( $clean_text ), 0, 140, '...' );
 ?>
-<article id="post-<?php the_ID(); ?>" <?php post_class('post-items mb-6'); ?>>
-	<figure class="post-image">
-	   <a href="<?php esc_url(get_permalink()); ?>" class="post-hover">
-			<?php if ( has_post_thumbnail() ) { the_post_thumbnail(); } ?>
+
+<article id="post-<?php the_ID(); ?>" <?php post_class('category-post-card'); ?>>
+	<!-- 左侧：自动抓取的智能封面图片/视频海报 -->
+	<div class="category-post-thumb-wrap">
+		<?php if ( ! empty( $category_name ) ) : ?>
+			<span class="category-badge"><?php echo $category_name; ?></span>
+		<?php endif; ?>
+		<a href="<?php echo $permalink; ?>" class="category-post-thumb-link">
+			<img src="<?php echo $thumb_url; ?>" alt="<?php echo esc_attr( $title ); ?>" class="category-post-thumb-img" />
 		</a>
-		<div class="post-meta imu">
-			<span class="post-list">
-			   <ul class="post-categories"><li><a href="<?php esc_url(get_permalink()); ?>"><?php the_category(' '); ?></a></li></ul>
-			</span>
+	</div>
+
+	<!-- 右侧：标题、发布时间、摘要及阅读全文按钮 -->
+	<div class="category-post-content-wrap">
+		<div>
+			<div class="category-post-meta">
+				<span><i class="fa fa-calendar"></i> <?php echo $date_str; ?></span>
+			</div>
+			
+			<h5 class="category-post-title">
+				<a href="<?php echo $permalink; ?>" rel="bookmark"><?php echo esc_html( $title ); ?></a>
+			</h5>
+			
+			<div class="category-post-excerpt">
+				<?php echo esc_html( $excerpt ); ?>
+			</div>
 		</div>
-	</figure>
-	<div class="post-content">
-		<div class="post-meta up">
-			<span class="posted-on">
-			   <a href="<?php echo esc_url(get_month_link(get_post_time('Y'),get_post_time('m'))); ?>"><?php echo esc_html(get_the_date()); ?></a>
-			</span>
+
+		<div>
+			<a href="<?php echo $permalink; ?>" class="category-read-more-btn">
+				<?php esc_html_e( '阅读全文', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
+			</a>
 		</div>
-	   <?php     
-			if ( is_single() ) :
-			
-			the_title('<h5 class="post-title">', '</h5>' );
-			
-			else:
-			
-			the_title( sprintf( '<h5 class="post-title"><a href="%s" rel="bookmark">', esc_url( get_permalink() ) ), '</a></h5>' );
-			
-			endif; 
-			
-			$raw_content = wp_strip_all_tags( get_the_content() );
-			$clean_text = preg_replace( '/\s+/', ' ', $raw_content );
-			$excerpt = mb_strimwidth( trim( $clean_text ), 0, 120, '...' );
-			echo '<p>' . esc_html( $excerpt ) . '</p>';
-			echo '<div class="read-more mt-3"><a href="' . esc_url( get_permalink() ) . '" class="btn-theme">' . esc_html__( 'Read More', 'avril' ) . '</a></div>';
-		?> 
 	</div>
 </article>
