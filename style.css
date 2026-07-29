@@ -543,6 +543,15 @@ i.fa-usd:before {
     line-height: 1.4 !important;
 }
 
+#service-section .heading-default h3:before,
+#features-section .heading-default h3:before,
+.home-service .heading-default h3:before,
+.home-features .heading-default h3:before,
+.heading-default h3:before {
+    width: 30px !important;
+    left: -30px !important;
+}
+
 /* ==============================================================================
  * 轮播图 (Main Slider)：小圆点指示器 & 左右切换按钮图标 100% 居中
  * ============================================================================== */
