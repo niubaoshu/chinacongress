@@ -567,10 +567,10 @@ i.fa-usd:before {
 /* 2. 轮播图底部小圆点指示器 (Dots) */
 .main-slider .owl-dots {
     position: absolute !important;
-    bottom: 25px !important;
+    bottom: 140px !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 10 !important;
+    z-index: 20 !important;
     text-align: center !important;
     margin: 0 auto !important;
 }
