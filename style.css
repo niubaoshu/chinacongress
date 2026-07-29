@@ -543,27 +543,59 @@ i.fa-usd:before {
     line-height: 1.4 !important;
 }
 
-/* 轮播图底部指示小圆点 (Owl Carousel Native Dots) */
+/* ==============================================================================
+ * 轮播图 (Main Slider)：小圆点指示器 & 左右切换按钮图标 100% 居中
+ * ============================================================================== */
+
+/* 1. 左右切换按钮图标绝对居中 */
+.main-slider .owl-nav [class*="owl-"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+}
+
+.main-slider .owl-nav .owl-prev i,
+.main-slider .owl-nav .owl-next i {
+    margin: 0 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    display: block !important;
+}
+
+/* 2. 轮播图底部小圆点指示器 (Dots) */
 .main-slider .owl-dots {
     position: absolute !important;
-    bottom: 20px !important;
+    bottom: 25px !important;
     left: 0 !important;
     right: 0 !important;
     z-index: 10 !important;
     text-align: center !important;
+    margin: 0 auto !important;
+}
+
+.main-slider .owl-dots .owl-dot {
+    display: inline-block !important;
+    outline: none !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
 }
 
 .main-slider .owl-dots .owl-dot span {
-    width: 12px !important;
-    height: 12px !important;
-    margin: 0 4px !important;
+    width: 10px !important;
+    height: 10px !important;
+    margin: 0 5px !important;
     background: rgba(255, 255, 255, 0.5) !important;
     display: inline-block !important;
     border-radius: 50% !important;
-    transition: background 0.3s ease, transform 0.3s ease !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
 }
 
 .main-slider .owl-dots .owl-dot.active span {
     background: #3a75a1 !important;
-    transform: scale(1.2) !important;
+    border-color: #3a75a1 !important;
+    transform: scale(1.25) !important;
 }
