@@ -1,6 +1,6 @@
-# 中国议会（China Congress）官方网站 - 开发者与运维指南
+# 官方网站 - 开发者与运维指南
 
-本项目为 **中国议会（China Congress）官方网站** 的前端二次开发子主题代码仓库与全套 DevOps 自动化运维脚本集合。
+本项目为前端二次开发子主题代码仓库与全套 DevOps 自动化运维脚本集合。
 
 ---
 
@@ -31,8 +31,6 @@ public_html/ (Git 仓库根目录)
                 ├── sync_custom_code.sh               # 一键同步/部署子主题代码至本地或生产服务器
                 ├── clean_localhost.sh                # 一键清空本地开发环境
                 ├── convert_features_to_relative.php  # 数据库 Serialized 配置相对化工具
-                ├── db_export.php                     # PHP CLI 数据库导出辅助工具
-                └── db_import.php                     # PHP CLI 数据库导入辅助工具
 ```
 
 ---
@@ -46,7 +44,7 @@ public_html/ (Git 仓库根目录)
 - **流程**：
   1. 自动从 WordPress.org 官方下载最新版 WordPress 核心、Avril 父主题及 Clever Fox 插件。
   2. 自动定位最新的本地数据备份包，解压 `uploads/` 媒体库与 `sql` 数据库。
-  3. 自动创建本地数据库 `chinacongress` 与用户，一键导入并修正 `siteurl` / `home` 域名。
+  3. 自动创建本地数据库与用户，一键导入并修正 `siteurl` / `home` 域名。
   4. 自动部署子主题 `avril-child` 代码并绑定 WordPress 主题激活状态。
 - **用法**：
   ```bash
@@ -63,12 +61,12 @@ public_html/ (Git 仓库根目录)
   # 同步至本地 localhost 运行目录 (/srv/http/my_site_name/...)
   bash wp-content/themes/avril-child/scripts/sync_custom_code.sh localhost
 
-  # 部署至线上生产服务器 (Chinacongress)
+  # 部署至线上生产服务器
   bash wp-content/themes/avril-child/scripts/sync_custom_code.sh production
   ```
 
 ### 5. `clean_localhost.sh`（一键清空本地环境）
-- **功能**：一键清理本地开发测试目录（`/srv/http/my_site_name`）并删除本地 MariaDB 中的 `chinacongress` 数据库与用户，还原干净系统。
+- **功能**：一键清理本地开发测试目录（`/srv/http/my_site_name`）并删除本地 MariaDB 中的数据库与用户，还原干净系统。
 - **用法**：
   ```bash
   bash wp-content/themes/avril-child/scripts/clean_localhost.sh
@@ -82,25 +80,25 @@ public_html/ (Git 仓库根目录)
 ### 线上生产环境凭据变量
 | 环境变量名 | 含义 | 默认缺省值 |
 | :--- | :--- | :--- |
-| `REMOTE_HOST` | 线上 SSH 主机别名 | `Chinacongress` |
-| `REMOTE_DB_USER` | 线上数据库用户名 | `chinacongress` |
+| `REMOTE_HOST` | 线上 SSH 主机别名 | `production` |
+| `REMOTE_DB_USER` | 线上数据库用户名 | `db_user` |
 | `REMOTE_DB_PASS` | **线上数据库密码** | 空（未配置时不传递 `-p` 选项） |
-| `REMOTE_DB_NAME` | 线上数据库名称 | `chinacongress` |
+| `REMOTE_DB_NAME` | 线上数据库名称 | `db_name` |
 
 ### 本地开发环境凭据变量
 | 环境变量名 | 含义 | 默认缺省值 |
 | :--- | :--- | :--- |
-| `LOCAL_DB_USER` | 本地数据库用户名 | `chinacongress` |
+| `LOCAL_DB_USER` | 本地数据库用户名 | `db_user` |
 | `LOCAL_DB_PASS` | **本地数据库密码** | 空（适合 Linux Socket/免密环境） |
-| `LOCAL_DB_NAME` | 本地数据库名称 | `chinacongress` |
+| `LOCAL_DB_NAME` | 本地数据库名称 | `db_name` |
 
 ### 配置示例
 在您本地电脑的 `~/.bashrc` 或 `~/.zshrc` 中增加以下配置即可：
 ```bash
-# China Congress 运维脚本环境变量配置
-export REMOTE_DB_USER="chinacongress"
+# 运维脚本环境变量配置
+export REMOTE_DB_USER="your_db_user"
 export REMOTE_DB_PASS="您的线上数据库真实密码"
-export REMOTE_DB_NAME="chinacongress"
+export REMOTE_DB_NAME="your_db_name"
 
 # 如果您的本地 MariaDB 强制设置了密码，可以配置以下变量：
 # export LOCAL_DB_PASS="您的本地数据库密码"
