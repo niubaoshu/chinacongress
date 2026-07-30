@@ -10,7 +10,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_HOST="Chinacongress"
 REMOTE_PATH="/var/www/chinacongress"
-LOCAL_WEB_PATH="/srv/http/my_site_name"
+LOCAL_WEB_PATH="${LOCAL_WEB_PATH:-/srv/http/my_site_name}"
+if [ ! -d "${LOCAL_WEB_PATH}" ] && [ -d "$(cd "${SCRIPT_DIR}/../.." && pwd)" ]; then
+    LOCAL_WEB_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+fi
 
 echo "=========================================="
 echo "🔄 开始从线上拉取【纯用户数据】同步到 localhost..."
@@ -24,86 +27,68 @@ rsync -avz --no-o --no-g \
   "${LOCAL_WEB_PATH}/wp-content/uploads/"
 echo "✅ 媒体文件增量同步完成。"
 
-# 2. 导出线上 MySQL 数据库并通过 Web 管道免密导入本地 DB
+# 2. 导出线上 MySQL 数据库并一键导入本地 DB
+REMOTE_DB_USER="${REMOTE_DB_USER:-chinacongress}"
+REMOTE_DB_PASS="${REMOTE_DB_PASS:-}"
+REMOTE_DB_NAME="${REMOTE_DB_NAME:-chinacongress}"
+
+DB_PASS_ARG=""
+if [ -n "${REMOTE_DB_PASS}" ]; then
+    DB_PASS_ARG="-p${REMOTE_DB_PASS}"
+fi
+
 echo "2. 正在通过 SSH 导出线上数据库并一键导入本地 localhost 数据库..."
-ssh "${REMOTE_HOST}" "mysqldump -uchinacongress -p*** chinacongress" > "${LOCAL_WEB_PATH}/dump.sql"
+TEMP_DUMP="/tmp/remote_dump_$$.sql"
+trap 'rm -f "${TEMP_DUMP}"' EXIT
 
-if [ -s "${LOCAL_WEB_PATH}/dump.sql" ]; then
-    chmod 666 "${LOCAL_WEB_PATH}/dump.sql"
-    
-    # 写入全量相对 URL 修正 Web 导入中转脚本
-    cat << 'EOF' > "${LOCAL_WEB_PATH}/import_data.php"
-<?php
-$dump_file = __DIR__ . '/dump.sql';
-if ( ! file_exists( $dump_file ) || filesize( $dump_file ) === 0 ) {
-    die( "❌ 待导入的 SQL 文件不存在或为空！\n" );
-}
+ssh "${REMOTE_HOST}" "mysqldump -u${REMOTE_DB_USER} ${DB_PASS_ARG} ${REMOTE_DB_NAME}" > "${TEMP_DUMP}"
 
-$mysqli = new mysqli( 'localhost', 'chinacongress', '', 'chinacongress' );
-if ( $mysqli->connect_error ) {
-    $mysqli = new mysqli( 'localhost', 'root', '', 'chinacongress' );
-}
+if [ -s "${TEMP_DUMP}" ]; then
+    LOCAL_DB_NAME="${LOCAL_DB_NAME:-chinacongress}"
+    LOCAL_DB_USER="${LOCAL_DB_USER:-chinacongress}"
+    LOCAL_DB_PASS="${LOCAL_DB_PASS:-}"
 
-if ( $mysqli->connect_error ) {
-    die( "❌ 数据库连接失败: " . $mysqli->connect_error . "\n" );
-}
-
-$mysqli->set_charset( 'utf8mb4' );
-$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 0' );
-
-$sql_content = file_get_contents( $dump_file );
-$queries = explode( ";\n", $sql_content );
-$count = 0;
-foreach ( $queries as $query ) {
-    $q = trim( $query );
-    if ( ! empty( $q ) ) {
-        if ( $mysqli->query( $q ) ) {
-            $count++;
-        }
+    # 自动创建本地数据库与用户授权
+    run_db_setup() {
+        mariadb -u root -e "CREATE DATABASE IF NOT EXISTS \`${LOCAL_DB_NAME}\` DEFAULT CHARACTER SET utf8mb4; CREATE USER IF NOT EXISTS '${LOCAL_DB_USER}'@'localhost' IDENTIFIED BY '${LOCAL_DB_PASS}'; GRANT ALL PRIVILEGES ON \`${LOCAL_DB_NAME}\`.* TO '${LOCAL_DB_USER}'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null \
+            || sudo mariadb -e "CREATE DATABASE IF NOT EXISTS \`${LOCAL_DB_NAME}\` DEFAULT CHARACTER SET utf8mb4; CREATE USER IF NOT EXISTS '${LOCAL_DB_USER}'@'localhost' IDENTIFIED BY '${LOCAL_DB_PASS}'; GRANT ALL PRIVILEGES ON \`${LOCAL_DB_NAME}\`.* TO '${LOCAL_DB_USER}'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null \
+            || true
     }
-}
+    run_db_setup
 
-// 自动全量将本站点绝对 URL 转换为无协议/无域名的纯相对路径 (保留二级域名如 reg.chinacongress.net)
-$domains = array(
-    'https://chinacongress.net',
-    'http://chinacongress.net',
-    'https://www.chinacongress.net',
-    'http://www.chinacongress.net',
-    'http://localhost'
-);
+    LOCAL_PASS_ARG=""
+    if [ -n "${LOCAL_DB_PASS}" ]; then
+        LOCAL_PASS_ARG="-p${LOCAL_DB_PASS}"
+    fi
 
-foreach ( $domains as $domain ) {
-    $d_esc = $mysqli->real_escape_string( $domain );
-    
-    // 普通路径剥离域名
-    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_esc}', '')" );
-    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '')" );
-    $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '')" );
-    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '')" );
+    run_db() {
+        mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}" 2>/dev/null \
+            || mariadb -u root ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}" 2>/dev/null \
+            || sudo mariadb "${LOCAL_DB_NAME}"
+    }
 
-    // JSON / Serialized 字符串剥离域名
-    $d_slash = str_replace( '/', '\\/', $domain );
-    $d_slash_esc = $mysqli->real_escape_string( $d_slash );
-    $mysqli->query( "UPDATE wp_options SET option_value = REPLACE(option_value, '{$d_slash_esc}', '')" );
-    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_slash_esc}', '')" );
-    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_slash_esc}', '')" );
-}
+    echo "正在导入本地 MariaDB 数据库..."
+    run_db < "${TEMP_DUMP}"
+    rm -f "${TEMP_DUMP}"
 
-$mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
-$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
+    echo "正在配置本地站点域名、导航菜单与主题配置..."
+    run_db << 'SQL'
+SET FOREIGN_KEY_CHECKS = 0;
+UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home');
+UPDATE wp_options SET option_value='avril' WHERE option_name='template';
+UPDATE wp_options SET option_value='avril-child' WHERE option_name='stylesheet';
+INSERT INTO wp_options (option_name, option_value, autoload)
+SELECT 'theme_mods_avril-child', option_value, autoload FROM wp_options WHERE option_name='theme_mods_avril'
+ON DUPLICATE KEY UPDATE option_value=VALUES(option_value);
+UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, 'https://chinacongress.net', '') WHERE meta_key = '_menu_item_url';
+UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, 'http://chinacongress.net', '') WHERE meta_key = '_menu_item_url';
+SET FOREIGN_KEY_CHECKS = 1;
+SQL
 
-@unlink( $dump_file );
-@unlink( __FILE__ );
-
-echo "SUCCESS_IMPORTED_" . $count . "_QUERIES";
-EOF
-
-    echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
-    curl -s "http://localhost/import_data.php"
-    echo ""
-    echo "✅ 线上数据库导入及全量相对 URL 修正完成。"
+    echo "✅ 线上数据库导入及本地域名/配置同步完成。"
 else
-    echo "❌ 线上数据库导出失败，请检查连接。"
+    rm -f "${TEMP_DUMP}"
+    echo "❌ 线上数据库导出失败，请检查连接或环境变量配置。"
     exit 1
 fi
 

@@ -294,3 +294,187 @@ function chinacongress_slider_speed_boost() {
 }
 add_action( 'wp_footer', 'chinacongress_slider_speed_boost', 99 );
 
+// ==============================================================================
+// 自动全站正文路径相对化：入库自动清洗 & 前台动态显示双重保险
+// ==============================================================================
+
+// 1. 保存文章时自动清洗：编辑点击“发布/更新”时，自动将正文里的本站绝对路径转为相对路径入库
+function chinacongress_content_save_relative( $content ) {
+    if ( empty( $content ) ) {
+        return $content;
+    }
+    return preg_replace( '#https?://(www\.)?chinacongress\.net/#i', '/', $content );
+}
+add_filter( 'content_save_pre', 'chinacongress_content_save_relative', 99 );
+
+// 2. 前台展示时自动清洗：防止历史数据遗留，输出正文时一律将本站绝对域名转换为相对路径
+function chinacongress_content_display_relative( $content ) {
+    if ( empty( $content ) ) {
+        return $content;
+    }
+    return preg_replace( '#https?://(www\.)?chinacongress\.net/#i', '/', $content );
+}
+add_filter( 'the_content', 'chinacongress_content_display_relative', 99 );
+
+// 4. 极重要修补：修复 Clever Fox 插件因判断 $theme->name === 'Avril' 导致子主题 (Avril Child) 下轮播图与核心组件丢失的 Bug
+function chinacongress_ensure_cleverfox_avril_loaded() {
+    if ( defined( 'CLEVERFOX_PLUGIN_DIR' ) ) {
+        if ( ! function_exists( 'cleverfox_avril_frontpage_sections' ) ) {
+            $avril_file = CLEVERFOX_PLUGIN_DIR . 'inc/avril/avril.php';
+            if ( file_exists( $avril_file ) ) {
+                require_once $avril_file;
+            }
+        }
+    }
+}
+add_action( 'plugins_loaded', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
+add_action( 'init', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
+
+// 5. Customizer 配置继承保底：解决 Clever Fox 升级后校验子主题配置导致轮播图/组件丢失的问题
+function chinacongress_theme_mods_fallback( $mods ) {
+    $parent_mods = get_option( 'theme_mods_avril' );
+    if ( is_array( $parent_mods ) ) {
+        if ( ! is_array( $mods ) ) {
+            $mods = array();
+        }
+        foreach ( $parent_mods as $key => $val ) {
+            if ( ! isset( $mods[ $key ] ) || empty( $mods[ $key ] ) ) {
+                $mods[ $key ] = $val;
+            }
+        }
+        $mods['hs_slider']  = '1';
+        $mods['hs_feature'] = '1';
+        $mods['hs_service'] = '1';
+        $mods['hs_blog']    = '1';
+    }
+    return $mods;
+}
+add_filter( 'option_theme_mods_avril-child', 'chinacongress_theme_mods_fallback', 99 );
+
+add_filter( 'theme_mod_slider', function( $val ) {
+    if ( empty( $val ) ) {
+        $pm = get_option( 'theme_mods_avril' );
+        return ! empty( $pm['slider'] ) ? $pm['slider'] : $val;
+    }
+    return $val;
+}, 99 );
+
+add_filter( 'theme_mod_features_contents', function( $val ) {
+    if ( empty( $val ) ) {
+        $pm = get_option( 'theme_mods_avril' );
+        return ! empty( $pm['features_contents'] ) ? $pm['features_contents'] : $val;
+    }
+    return $val;
+}, 99 );
+
+// 4. 重写顶栏 (Above Header) 逻辑：在子主题中强行将“法律顾问 / Counsel”绑定跳转至创世律师事务所 (https://chuangshilaw.com/)
+function chinacongress_above_header_override() {
+    remove_action( 'avril_above_header', 'avril_above_header' );
+    add_action( 'avril_above_header', 'chinacongress_above_header_custom' );
+}
+add_action( 'wp_head', 'chinacongress_above_header_override', 1 );
+
+function chinacongress_above_header_custom() {
+    $avril_hide_show_social_icon = get_theme_mod( 'hide_show_social_icon', '1' ); 
+    $avril_social_icons          = get_theme_mod( 'social_icons', function_exists( 'avril_get_social_icon_default' ) ? avril_get_social_icon_default() : '' );
+    ?>
+    <!--===// Start: Header Above ===-->
+    <div id="above-header" class="header-above-info d-av-block d-none wow fadeInDown">
+        <div class="header-widget">
+            <div class="av-container">
+                <div class="av-columns-area">
+                    <div class="av-column-5">
+                        <div class="widget-left text-av-left text-center">
+                            <?php if ( $avril_hide_show_social_icon == '1' ) : ?>
+                                <aside class="widget widget_social_widget">
+                                    <ul>
+                                        <?php
+                                        $avril_social_icons = json_decode( $avril_social_icons );
+                                        if ( ! empty( $avril_social_icons ) && is_array( $avril_social_icons ) ) {
+                                            foreach ( $avril_social_icons as $avril_social_item ) {    
+                                                $avril_repeater_social_icon = ! empty( $avril_social_item->icon_value ) ? apply_filters( 'avril_translate_single_string', $avril_social_item->icon_value, 'Header section' ) : ''; 
+                                                $avril_repeater_social_link = ! empty( $avril_social_item->link ) ? apply_filters( 'avril_translate_single_string', $avril_social_item->link, 'Header section' ) : '';
+                                                ?>
+                                                <li><a href="<?php echo esc_url( $avril_repeater_social_link ); ?>"><i class="fa <?php echo esc_attr( $avril_repeater_social_icon ); ?>"></i></a></li>
+                                            <?php }
+                                        } ?>
+                                    </ul>
+                                </aside>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="av-column-7">
+                        <div class="widget-right text-av-right text-center"> 
+                            <?php 
+                            $avril_hide_show_cntct_details = get_theme_mod( 'hide_show_cntct_details', '1' ); 
+                            $avril_tlh_contct_icon         = get_theme_mod( 'tlh_contct_icon', 'fa-book' );   
+                            $avril_tlh_contact_title       = get_theme_mod( 'tlh_contact_title', '法律顾问' ); 
+                            $avril_tlh_contact_sbtitle     = get_theme_mod( 'tlh_contact_sbtitle', 'Counsel' ); 
+                            ?>
+                            <?php if ( $avril_hide_show_cntct_details == '1' ) : ?>
+                                <aside class="widget widget-contact wgt-1">
+                                    <div class="contact-area">
+                                        <div class="contact-icon">
+                                           <i class="fa <?php echo esc_attr( $avril_tlh_contct_icon ); ?>"></i>
+                                        </div>
+                                        <a href="https://chuangshilaw.com/" target="_blank" class="contact-info">
+                                            <span class="text"><?php echo esc_html( $avril_tlh_contact_title ); ?></span>
+                                            <span class="title"><?php echo esc_html( $avril_tlh_contact_sbtitle ); ?></span>
+                                        </a>
+                                    </div>
+                                </aside>
+                            <?php endif; ?>
+                            <?php 
+                            $avril_hide_show_email_details = get_theme_mod( 'hide_show_email_details', '1' );
+                            $avril_tlh_email_icon          = get_theme_mod( 'tlh_email_icon', 'fa-envelope-o' );   
+                            $avril_tlh_email_title         = get_theme_mod( 'tlh_email_title', __( 'Email Us', 'clever-fox' ) ); 
+                            $avril_tlh_email_sbtitle       = get_theme_mod( 'tlh_email_sbtitle', 'info@chinacongress.net' ); 
+                            ?>  
+                            <?php if ( $avril_hide_show_email_details == '1' ) : ?>
+                                <aside class="widget widget-contact wgt-2">
+                                    <div class="contact-area">
+                                        <div class="contact-icon">
+                                            <i class="fa <?php echo esc_attr( $avril_tlh_email_icon ); ?>"></i>
+                                        </div>
+                                        <a href="mailto:<?php echo esc_html( $avril_tlh_email_sbtitle ); ?>" class="contact-info">
+                                            <span class="text"><?php echo esc_html( $avril_tlh_email_title ); ?></span>
+                                            <span class="title"><?php echo esc_html( $avril_tlh_email_sbtitle ); ?></span>
+                                        </a>
+                                    </div>
+                                </aside>
+                            <?php endif; ?> 
+                            <?php 
+                            $avril_hide_show_mbl_details = get_theme_mod( 'hide_show_mbl_details', '1' );   
+                            $avril_tlh_mobile_icon       = get_theme_mod( 'tlh_mobile_icon', 'fa-usd' );
+                            $avril_tlh_mobile_title      = get_theme_mod( 'tlh_mobile_title', 'Zelle 捐助' ); 
+                            $avril_tlh_mobile_sbtitle    = get_theme_mod( 'tlh_mobile_sbtitle', 'chinacongress' ); 
+                            ?>
+                            <?php if ( $avril_hide_show_mbl_details == '1' ) : ?>
+                                <aside class="widget widget-contact wgt-3">
+                                    <div class="contact-area">
+                                        <div class="contact-icon">
+                                            <i class="fa <?php echo esc_attr( $avril_tlh_mobile_icon ); ?>"></i>
+                                        </div>
+                                        <a href="javascript:void(0)" class="contact-info">
+                                            <span class="text"><?php echo esc_html( $avril_tlh_mobile_title ); ?></span>
+                                            <span class="title"><?php echo esc_html( $avril_tlh_mobile_sbtitle ); ?></span>
+                                        </a>
+                                    </div>
+                                </aside>
+                            <?php endif; ?> 
+                        </div>  
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>  
+    <!--===// End: Header Top ===-->
+    <?php
+}
+
+
+
+
+
+
+

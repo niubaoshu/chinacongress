@@ -35,8 +35,8 @@ elif [ "${TARGET}" = "production" ] || [ "${TARGET}" = "remote" ]; then
         exit 1
     fi
 
-    echo "2. 正在将主线 main 分支代码部署到线上生产服务器 (Chinacongress) ..."
-    rsync -avz --delete --exclude='.git' \
+    echo "2. 正在将主线 main 分支代码部署到线上生产服务器 (Chinacongress) [排除 scripts 目录] ..."
+    rsync -avz --delete --exclude='.git' --exclude='scripts' \
       "${CHILD_THEME_SRC}/" \
       "${REMOTE_DEST}/"
     echo "✅ 线上生产环境部署完成！"

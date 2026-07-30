@@ -21,9 +21,18 @@ echo "🌐 开始执行【线上生产服务器 Chinacongress】纯用户数据�
 echo "=========================================="
 
 # 1. 导出线上 MySQL 数据库
+REMOTE_DB_USER="${REMOTE_DB_USER:-chinacongress}"
+REMOTE_DB_PASS="${REMOTE_DB_PASS:-}"
+REMOTE_DB_NAME="${REMOTE_DB_NAME:-chinacongress}"
+
+DB_PASS_ARG=""
+if [ -n "${REMOTE_DB_PASS}" ]; then
+    DB_PASS_ARG="-p${REMOTE_DB_PASS}"
+fi
+
 DB_FILE="${TARGET_DIR}/db_production_${TIMESTAMP}.sql"
 echo "1. 正在通过 SSH 导出线上数据库 ..."
-ssh Chinacongress "mysqldump -uchinacongress -p*** chinacongress" > "${DB_FILE}"
+ssh Chinacongress "mysqldump -u${REMOTE_DB_USER} ${DB_PASS_ARG} ${REMOTE_DB_NAME}" > "${DB_FILE}"
 
 if [ -s "${DB_FILE}" ]; then
     gzip -f "${DB_FILE}"

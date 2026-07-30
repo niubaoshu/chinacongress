@@ -39,12 +39,18 @@ if ( $avril_hs_feature == '1' ) {
 						$avril_repeater_image = ! empty( $avril_feature_item->image_url ) ? apply_filters( 'avril_translate_single_string', $avril_feature_item->image_url, 'feature section' ) : '';
 						$avril_repeater_link  = ! empty( $avril_feature_item->link ) ? apply_filters( 'avril_translate_single_string', $avril_feature_item->link, 'feature section' ) : '#';
 
+						// 自动清洗链接：若配置中包含了本站线上绝对域名，自动剥离转换为相对路径
+						if ( ! empty( $avril_repeater_link ) && $avril_repeater_link !== '#' ) {
+							$avril_repeater_link = preg_replace( '#^https?://(www\.)?chinacongress\.net#i', '', $avril_repeater_link );
+						}
+
 						// 智能获取图片：优先 Customizer 自定义图片 -> 自动抓取关联文章的第一张图/视频海报 -> 规则 Logo 兜底
 						$img_url = '';
 						if ( ! empty( $avril_repeater_image ) ) {
 							$img_url = $avril_repeater_image;
 						} elseif ( ! empty( $avril_repeater_link ) && $avril_repeater_link !== '#' ) {
-							$post_id = url_to_postid( $avril_repeater_link );
+							$full_link = ( 0 === strpos( $avril_repeater_link, '/' ) ) ? home_url( $avril_repeater_link ) : $avril_repeater_link;
+							$post_id   = url_to_postid( $full_link );
 							if ( $post_id ) {
 								$img_url = chinacongress_get_first_image_url( $post_id );
 							}

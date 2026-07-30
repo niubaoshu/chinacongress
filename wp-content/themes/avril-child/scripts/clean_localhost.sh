@@ -13,11 +13,14 @@ echo "=========================================="
 echo "🧹 开始彻底清空本地 localhost 环境..."
 echo "=========================================="
 
-# 1. 直接 DROP DATABASE 删除数据库
-echo "1. 正在删除/清空本地区域数据库 (${DB_NAME}) ..."
-mariadb -e "DROP DATABASE IF EXISTS \`${DB_NAME}\`; CREATE DATABASE \`${DB_NAME}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || \
-mariadb -u"${DB_NAME}" -e "DROP DATABASE IF EXISTS \`${DB_NAME}\`;" 2>/dev/null || true
-echo "✅ 数据库 (${DB_NAME}) 已直接 DROP 彻底删除。"
+# 1. 直接 DROP DATABASE 删除数据库并删除专用用户
+echo "1. 正在彻底删除本地数据库 (${DB_NAME}) 及专用数据库用户 (${DB_NAME})..."
+DROP_SQL="DROP DATABASE IF EXISTS \`${DB_NAME}\`; DROP USER IF EXISTS '${DB_NAME}'@'localhost'; FLUSH PRIVILEGES;"
+
+mariadb -e "${DROP_SQL}" 2>/dev/null \
+    || sudo mariadb -e "${DROP_SQL}" 2>/dev/null \
+    || mysql -u root -e "${DROP_SQL}" 2>/dev/null || true
+echo "✅ 数据库 (${DB_NAME}) 及专用用户 (${DB_NAME}) 已彻底删除。"
 
 # 2. 清空本地 Web 目录
 echo "2. 正在清空本地 Web 目录: ${LOCAL_WEB_ROOT} ..."

@@ -115,6 +115,27 @@ i.fa-usd:before {
     border-color: rgba(58, 117, 161, 0.3) !important;
 }
 
+/* ==============================================================================
+ * FontAwesome 4 / 5 / 6 图标库向前兼容修补（解决 Clever Fox 插件升级图标丢失问题）
+ * ============================================================================== */
+.fa-twitter:before { content: "\f099" !important; font-family: 'FontAwesome' !important; }
+.fa-youtube-play:before, .fa-youtube:before { content: "\f167" !important; font-family: 'FontAwesome' !important; }
+.fa-facebook:before { content: "\f09a" !important; font-family: 'FontAwesome' !important; }
+.fa-google-plus:before { content: "\f0d5" !important; font-family: 'FontAwesome' !important; }
+.fa-book:before { content: "\f02d" !important; font-family: 'FontAwesome' !important; }
+.fa-envelope-o:before, .fa-envelope:before { content: "\f003" !important; font-family: 'FontAwesome' !important; }
+.fa-usd:before { content: "\f155" !important; font-family: 'FontAwesome' !important; }
+.fa-search:before { content: "\f002" !important; font-family: 'FontAwesome' !important; }
+.fa-user:before { content: "\f007" !important; font-family: 'FontAwesome' !important; }
+.fa-bar-chart:before { content: "\f080" !important; font-family: 'FontAwesome' !important; }
+.fa-connectdevelop:before { content: "\f20e" !important; font-family: 'FontAwesome' !important; }
+.fa-tachometer:before { content: "\f0e4" !important; font-family: 'FontAwesome' !important; }
+.fa-bank:before { content: "\f19c" !important; font-family: 'FontAwesome' !important; }
+.fa-folder-open-o:before { content: "\f115" !important; font-family: 'FontAwesome' !important; }
+.fa-users:before { content: "\f0c0" !important; font-family: 'FontAwesome' !important; }
+.fa-angle-right:before { content: "\f105" !important; font-family: 'FontAwesome' !important; }
+.fa-chevron-right:before { content: "\f054" !important; font-family: 'FontAwesome' !important; }
+
 /* 左侧图片海报区域 */
 .category-post-card .category-post-thumb-wrap {
     flex: 0 0 38% !important;

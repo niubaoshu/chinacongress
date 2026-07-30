@@ -84,12 +84,16 @@ fi
 echo "✅ 官方 Clever Fox 插件全新安装及子主题兼容配置完成。"
 
 # 4. 生成本地 wp-config.php 配置文件
+LOCAL_DB_NAME="${LOCAL_DB_NAME:-chinacongress}"
+LOCAL_DB_USER="${LOCAL_DB_USER:-chinacongress}"
+LOCAL_DB_PASS="${LOCAL_DB_PASS:-}"
+
 echo "4. 正在生成本地 localhost 数据库配置文件 wp-config.php ..."
 cat << 'EOF' > "${LOCAL_WEB_ROOT}/wp-config.php"
 <?php
-define( 'DB_NAME', 'chinacongress' );
-define( 'DB_USER', 'chinacongress' );
-define( 'DB_PASSWORD', '' );
+define( 'DB_NAME', '__DB_NAME__' );
+define( 'DB_USER', '__DB_USER__' );
+define( 'DB_PASSWORD', '__DB_PASS__' );
 define( 'DB_HOST', 'localhost' );
 define( 'DB_CHARSET', 'utf8mb4' );
 define( 'DB_COLLATE', '' );
@@ -111,6 +115,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 require_once ABSPATH . 'wp-settings.php';
 EOF
+
+sed -i "s/__DB_NAME__/${LOCAL_DB_NAME}/g" "${LOCAL_WEB_ROOT}/wp-config.php"
+sed -i "s/__DB_USER__/${LOCAL_DB_USER}/g" "${LOCAL_WEB_ROOT}/wp-config.php"
+sed -i "s/__DB_PASS__/${LOCAL_DB_PASS}/g" "${LOCAL_WEB_ROOT}/wp-config.php"
 echo "✅ wp-config.php 配置生成完成。"
 
 # 5. 恢复媒体文件与数据库文件
@@ -120,137 +128,59 @@ if [ "${SKIP_LOCAL_RESTORE:-false}" = "false" ]; then
     tar -xzf "${UPLOADS_FILE}" -C "${LOCAL_WEB_ROOT}/wp-content/uploads/" --strip-components=1 || tar -xzf "${UPLOADS_FILE}" -C "${LOCAL_WEB_ROOT}/wp-content/"
     echo "✅ 媒体文件解压导入完成。"
 
-    echo "5.2 正在准备数据库 SQL 文件并解压处理..."
-    if [[ "${DB_FILE}" == *.gz ]]; then
-        gunzip -c "${DB_FILE}" > "${LOCAL_WEB_ROOT}/dump.sql"
-    else
-        cp "${DB_FILE}" "${LOCAL_WEB_ROOT}/dump.sql"
+    echo "5.2 正在自动创建本地数据库与用户授权 (${LOCAL_DB_USER})..."
+    # 使用 sudo mariadb 或 root 免密创建数据库、创建用户并授权
+    CREATE_DB_SQL="CREATE DATABASE IF NOT EXISTS \`${LOCAL_DB_NAME}\` DEFAULT CHARACTER SET utf8mb4; CREATE USER IF NOT EXISTS '${LOCAL_DB_USER}'@'localhost' IDENTIFIED BY '${LOCAL_DB_PASS}'; GRANT ALL PRIVILEGES ON \`${LOCAL_DB_NAME}\`.* TO '${LOCAL_DB_USER}'@'localhost'; FLUSH PRIVILEGES;"
+    
+    mariadb -u root -e "${CREATE_DB_SQL}" 2>/dev/null \
+        || sudo mariadb -e "${CREATE_DB_SQL}" 2>/dev/null \
+        || mariadb -u "${LOCAL_DB_USER}" -e "${CREATE_DB_SQL}" 2>/dev/null || true
+
+    LOCAL_PASS_ARG=""
+    if [ -n "${LOCAL_DB_PASS}" ]; then
+        LOCAL_PASS_ARG="-p${LOCAL_DB_PASS}"
     fi
-    chmod 666 "${LOCAL_WEB_ROOT}/dump.sql"
 
-    # 生成全量相对 URL 修正免密 Web 导入管道脚本
-    cat << 'EOF' > "${LOCAL_WEB_ROOT}/import_data.php"
-<?php
-$dump_file = __DIR__ . '/dump.sql';
-if ( ! file_exists( $dump_file ) || filesize( $dump_file ) === 0 ) {
-    die( "❌ 待导入的 SQL 文件不存在或为空！\n" );
-}
-
-$mysqli = new mysqli( 'localhost', 'chinacongress', '', 'chinacongress' );
-if ( $mysqli->connect_error ) {
-    $mysqli = new mysqli( 'localhost', 'root', '', 'chinacongress' );
-}
-
-if ( $mysqli->connect_error ) {
-    die( "❌ 数据库连接失败: " . $mysqli->connect_error . "\n" );
-}
-
-$mysqli->set_charset( 'utf8mb4' );
-$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 0' );
-
-$sql_content = file_get_contents( $dump_file );
-if ( $mysqli->multi_query( $sql_content ) ) {
-    do {
-        if ( $result = $mysqli->store_result() ) {
-            $result->free();
-        }
-    } while ( $mysqli->more_results() && $mysqli->next_result() );
-}
-
-// 自动全量将本站点绝对 URL 转换为无协议/无域名的纯相对路径 (保留二级域名如 reg.chinacongress.net)
-$domains = array(
-    'https://chinacongress.net',
-    'http://chinacongress.net',
-    'https://www.chinacongress.net',
-    'http://www.chinacongress.net',
-    'http://localhost'
-);
-
-foreach ( $domains as $domain ) {
-    $d_esc = $mysqli->real_escape_string( $domain );
-    
-    // 普通路径剥离域名 (只针对 wp_posts 和 wp_postmeta，严禁对 wp_options 直接运行 SQL REPLACE 以防序列化长度被破坏)
-    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_esc}', '')" );
-    $mysqli->query( "UPDATE wp_posts SET guid = REPLACE(guid, '{$d_esc}', '')" );
-    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_esc}', '')" );
-
-    // JSON / Escaped 字符串剥离域名
-    $d_slash = str_replace( '/', '\\/', $domain );
-    $d_slash_esc = $mysqli->real_escape_string( $d_slash );
-    $mysqli->query( "UPDATE wp_posts SET post_content = REPLACE(post_content, '{$d_slash_esc}', '')" );
-    $mysqli->query( "UPDATE wp_postmeta SET meta_value = REPLACE(meta_value, '{$d_slash_esc}', '')" );
-}
-
-// 安全处理 wp_options 中的 theme_mods（包含首页推荐内容、轮播图与数据指标）
-$res_m = $mysqli->query( "SELECT option_name, option_value FROM wp_options WHERE option_name IN ('theme_mods_avril', 'theme_mods_avril-child') ORDER BY LENGTH(option_value) DESC" );
-$best_arr = null;
-if ( $res_m ) {
-    while ( $r_m = $res_m->fetch_assoc() ) {
-        $arr = @unserialize( $r_m['option_value'] );
-        if ( is_array( $arr ) && count( $arr ) > 10 ) {
-            $best_arr = $arr;
-            break;
-        }
+    # 定义 MariaDB 连接函数
+    run_db() {
+        mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}" 2>/dev/null \
+            || mariadb -u root "${LOCAL_DB_NAME}" 2>/dev/null \
+            || sudo mariadb "${LOCAL_DB_NAME}"
     }
-}
 
-if ( is_array( $best_arr ) ) {
-    $cleaner = function( &$item ) use ( &$cleaner ) {
-        if ( is_string( $item ) ) {
-            $item = str_replace(
-                array( 'https://chinacongress.net', 'http://chinacongress.net', 'https://www.chinacongress.net', 'http://www.chinacongress.net' ),
-                '',
-                $item
-            );
-        } elseif ( is_array( $item ) ) {
-            foreach ( $item as &$v ) {
-                $cleaner( $v );
-            }
-        }
-    };
-    $cleaner( $best_arr );
-    
-    $ser_val = $mysqli->real_escape_string( serialize( $best_arr ) );
-    $mysqli->query( "UPDATE wp_options SET option_value='{$ser_val}' WHERE option_name='theme_mods_avril'" );
-    $mysqli->query( "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('theme_mods_avril-child', '{$ser_val}', 'yes') ON DUPLICATE KEY UPDATE option_value='{$ser_val}'" );
-}
+    echo "5.3 正在将数据库 SQL 文件导入本地 MariaDB (chinacongress) ..."
+    # 判断格式并流式导入 SQL
+    if [[ "${DB_FILE}" == *.gz ]]; then
+        gunzip -c "${DB_FILE}" | run_db
+    else
+        run_db < "${DB_FILE}"
+    fi
 
-$mysqli->query( "UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home')" );
-$mysqli->query( 'SET FOREIGN_KEY_CHECKS = 1' );
+    echo "5.4 正在使用 MariaDB CLI 执行本地配置与域名同步..."
+    run_db << 'SQL'
+SET FOREIGN_KEY_CHECKS = 0;
 
-@unlink( $dump_file );
-@unlink( __FILE__ );
+-- 1. 设置本地站点 URL
+UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('siteurl', 'home');
 
-echo "SUCCESS_IMPORTED_FULL_DATABASE";
-EOF
+-- 2. 确保激活 Avril-child 子主题
+UPDATE wp_options SET option_value='avril' WHERE option_name='template';
+UPDATE wp_options SET option_value='avril-child' WHERE option_name='stylesheet';
 
-    echo "正在将数据库一键导入本地 MySQL (chinacongress) ..."
-    curl -s "http://localhost/import_data.php"
-    echo ""
-    echo "✅ 本地数据库导入及全量相对 URL 修正完成。"
+-- 3. 确保子主题 (avril-child) 自动继承并同步父主题的 Customizer 配置
+INSERT INTO wp_options (option_name, option_value, autoload)
+SELECT 'theme_mods_avril-child', option_value, autoload FROM wp_options WHERE option_name='theme_mods_avril'
+ON DUPLICATE KEY UPDATE option_value=VALUES(option_value);
+
+SET FOREIGN_KEY_CHECKS = 1;
+SQL
+
+    echo "✅ 本地数据库创建、导入及配置同步成功。"
 fi
 
 # 6. 从本地 Git 仓库部署二次开发代码 (avril-child)
 echo "6. 正在部署二次开发 Git 仓库代码 (avril-child)..."
 bash "${SCRIPT_DIR}/sync_custom_code.sh" localhost
-
-# 7. 修正数据库 Customizer 配置兼容性
-php -r "
-require '${LOCAL_WEB_ROOT}/wp-config.php';
-\$m = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
-\$r = \$m->query(\"SELECT option_value FROM wp_options WHERE option_name='theme_mods_avril'\")->fetch_assoc();
-if (!empty(\$r['option_value'])) {
-    \$mods = unserialize(\$r['option_value']);
-    \$mods['hs_slider'] = '1';
-    \$mods['hs_service'] = '1';
-    \$mods['hs_cta'] = '1';
-    \$mods['hs_feature'] = '1';
-    \$mods['hs_blog'] = '1';
-    \$val = \$m->real_escape_string(serialize(\$mods));
-    \$m->query(\"UPDATE wp_options SET option_value='\" . \$val . \"' WHERE option_name IN ('theme_mods_avril', 'theme_mods_avril-child')\");
-    \$m->query(\"INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('theme_mods_avril-child', '\" . \$val . \"', 'yes') ON DUPLICATE KEY UPDATE option_value='\" . \$val . \"'\");
-}
-"
 
 # 清理临时目录
 rm -rf "${TEMP_DIR}"
