@@ -22,6 +22,7 @@ echo "=========================================="
 
 if [ "${TARGET}" = "localhost" ]; then
     echo "1. 正在将当前分支 [ ${CURRENT_BRANCH} ] 代码同步至本地 localhost ..."
+    mkdir -p "${LOCAL_DEST}"
     rsync -avz --no-o --no-g --delete --exclude='.git' \
       "${CHILD_THEME_SRC}/" \
       "${LOCAL_DEST}/"
