@@ -1,0 +1,14 @@
+# ==============================================================================
+# China Congress public_html Git 忽略规则
+# 根目录位于 /public_html ，仅追踪二次开发子主题 (wp-content/themes/avril-child)
+# ==============================================================================
+
+/*
+!.gitignore
+
+# 追踪二次开发子主题及其包含的所有源码与运维脚本
+!wp-content/
+wp-content/*
+!wp-content/themes/
+wp-content/themes/*
+!wp-content/themes/avril-child/
