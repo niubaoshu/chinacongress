@@ -20,6 +20,24 @@ echo "🚀 开始同步/部署二次开发代码 (avril-child)..."
 echo "📌 当前 Git 分支：[ ${CURRENT_BRANCH} ]"
 echo "=========================================="
 
+# 0. 自动 PHP 语法安全性自动拦截检查 (Lint Check)
+echo "🔍 正在进行全站 PHP 语法安全性检查 (Lint Check)..."
+LINT_FAILED=0
+while IFS= read -r -d '' php_file; do
+    if ! php -l "${php_file}" >/dev/null 2>&1; then
+        echo "❌ 【部署拦截】：发现 PHP 语法错误：${php_file}"
+        php -l "${php_file}"
+        LINT_FAILED=1
+    fi
+done < <(find "${CHILD_THEME_SRC}" -type f -name "*.php" -print0)
+
+if [ "${LINT_FAILED}" -eq 1 ]; then
+    echo "🚨 部署中断：请修复上述 PHP 语法错误后再重试同步！"
+    exit 1
+fi
+echo "✅ 所有 PHP 文件语法校验通过 (0 Syntax Errors)！"
+echo "------------------------------------------"
+
 if [ "${TARGET}" = "localhost" ]; then
     echo "1. 正在将当前分支 [ ${CURRENT_BRANCH} ] 代码同步至本地 localhost ..."
     mkdir -p "${LOCAL_DEST}"
