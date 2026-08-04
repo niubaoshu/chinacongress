@@ -182,3 +182,11 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
     - `province` *(string)*: 成员所属省份/地区。
     - `display_name` *(string)*: 成员脱敏显示名称。
 
+---
+
+## 🛠️ 开发者指南 (Developer Guide)
+
+关于 WordPress 父子主题继承规则、钩子机制、缓存架构及二次开发组件说明，请查阅子主题目录下的完整指南：
+📖 **[WordPress 主题与子主题二次开发核心指南](wp-content/themes/avril-child/DEVELOPER_GUIDE.md)**
+
+

@@ -8,7 +8,18 @@ Template: avril
 Version: 1.0.0
 */
 
-/* 锁定全站统一强调色为中国议会标准蓝 (#3a75a1)，杜绝父主题更新恢复红色 */
+/* ==============================================================================
+ * Avril Child Theme 样式索引 (Style Index)
+ * ------------------------------------------------------------------------------
+ * 1. 全局品牌色与 CSS 变量覆盖 (Brand Colors & CSS Variables)
+ * 2. 基础排版与正文标题间距 (Typography & Post Layout Spacing)
+ * 3. 社交图标与 FontAwesome 4.6.3 / 5 兼容修复 (FontAwesome Compat)
+ * 4. 分类/归档/搜索大图左图右文卡片 (Category & Archive Post Cards)
+ * 5. 首页核心板块微调 (CTA Dual Box, Features Repeater, Blog Grid)
+ * 6. 选民走马灯自适应与响应式媒体查询 (Voter Ticker Responsive Media Queries)
+ * ============================================================================== */
+
+/* 1. 锁定全站统一强调色为标准蓝 (#3a75a1)，杜绝父主题更新恢复红色 */
 :root {
     --sp-primary: #3a75a1 !important;
     --sp-primary-dark: #2b5a7e !important;

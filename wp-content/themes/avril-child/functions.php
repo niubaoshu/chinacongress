@@ -1,17 +1,43 @@
 <?php
-// Enqueue Parent Theme Style, Child Theme Style & Permanent FontAwesome Backup
+/**
+ * ==============================================================================
+ * Avril Child Theme 功能扩展与核心业务逻辑 (functions.php)
+ * ==============================================================================
+ * 本文件包含了 Avril 子主题的所有核心扩展功能，包括：
+ * 1. 样式与脚本加载 (Parent/Child CSS, FontAwesome 4.6.3 兜底, Customizer 控件脚本)
+ * 2. 核心 API 异步同步 (大陆院选民人数 & 最新 5 位选民走马灯，包含 5 分钟 WP-Cron)
+ * 3. 首页核心板块重写 (双选民登记卡片、推荐内容、最新发布)
+ * 4. 智能媒体提取引擎 (文章第一张图/YouTube封面/video poster 自动抓取)
+ * 5. 全网 Open Graph / Twitter Cards 社交分享元数据自动生成
+ * 6. 全站 URL 相对化自动清洗 (防止域名硬编码导致迁站失效)
+ * 7. Clever Fox 插件与父主题兼容性修复 (Theme Mods 继承保底与控制项修复)
+ * ==============================================================================
+ */
+
+/**
+ * 1. 加载父主题样式、子主题样式及 FontAwesome 4.6.3 本地矢量图标兜底库
+ */
 add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
 function avril_child_enqueue_styles() {
+    // 加载父主题主样式表
     wp_enqueue_style( 'avril-parent-style', get_template_directory_uri() . '/style.css' );
+    // 加载子主题主样式表（附带时间戳 query 避免浏览器缓存滞后）
     wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), time() );
+    // 加载子主题自带的永久 FontAwesome 4.6.3 字体图标库（解决 CDN 丢失问题）
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
 
-// Load Child Theme Section Blog & Features Override so parent function is safely overridden
+/**
+ * 2. 引入子主题安全覆盖模板片段 (Section Blog & Section Features)
+ */
 require_once get_stylesheet_directory() . '/template-parts/sections/section-blog.php';
 require_once get_stylesheet_directory() . '/template-parts/sections/section-features.php';
 
-// Search Sort by Date DESC
+/**
+ * 3. 强制全站主搜索结果按照发布时间倒序 (Date DESC) 排列
+ *
+ * @param WP_Query $query 当前查询对象
+ */
 function chinacongress_sort_search_by_date( $query ) {
     if ( ! is_admin() && $query->is_main_query() && $query->is_search() ) {
         $query->set( 'orderby', 'date' );
@@ -20,7 +46,9 @@ function chinacongress_sort_search_by_date( $query ) {
 }
 add_action( 'pre_get_posts', 'chinacongress_sort_search_by_date' );
 
-// Enqueue Customizer JS for 50 Sliders Limit in Customizer
+/**
+ * 4. 替换 Customizer 控件 JS 脚本，解除父主题限制，允许设置最多 50 个轮播图/推荐项
+ */
 function avril_child_customizer_control_scripts() {
     wp_dequeue_script( 'avril_customizer-repeater-script' );
     wp_enqueue_script(
@@ -33,7 +61,11 @@ function avril_child_customizer_control_scripts() {
 }
 add_action( 'customize_controls_enqueue_scripts', 'avril_child_customizer_control_scripts', 99 );
 
-// Register dedicated input field for Mainland Voter Count in Customizer Call to Action Section
+/**
+ * 5. 在后台 Customizer (外观 - 自定义) 的 CTA 板块注册“大陆院选民登记人数”独立设置项
+ *
+ * @param WP_Customize_Manager $wp_customize 自定义管理器对象
+ */
 function avril_child_customize_register( $wp_customize ) {
     $wp_customize->add_setting( 'mainland_voter_count', array(
         'default'           => '180',
@@ -49,8 +81,17 @@ function avril_child_customize_register( $wp_customize ) {
         'priority'    => 15,
     ) );
 }
+add_action( 'customize_register', 'avril_child_customize_register' );
+
+// ==============================================================================
+// 核心 API 自动化数据同步与 WP-Cron 后台任务机制
+// ==============================================================================
+
 /**
- * 1. 注册 5 分钟 WP-Cron 任务时间间隔
+ * 注册自定义 5 分钟 (300 秒) WP-Cron 定时任务时间间隔
+ *
+ * @param array $schedules 已存在的 Cron 时间间隔数组
+ * @return array 增加 5 分钟间隔后的数组
  */
 function chinacongress_add_five_minute_cron_interval( $schedules ) {
 	$schedules['every_five_minutes'] = array(
@@ -62,7 +103,7 @@ function chinacongress_add_five_minute_cron_interval( $schedules ) {
 add_filter( 'cron_schedules', 'chinacongress_add_five_minute_cron_interval' );
 
 /**
- * 自动从 API 同步大陆院选民登记人数到数据库 (theme_mod: mainland_voter_count)
+ * 自动从远程 API (registration_count.json) 同步大陆院选民登记总人数并写入 wp_options 数据库
  */
 function chinacongress_sync_mainland_voter_count() {
 	$response = wp_remote_get( 'https://reg.congresscenter.org/api/public/registration_count.json', array(
@@ -84,7 +125,10 @@ function chinacongress_sync_mainland_voter_count() {
 }
 
 /**
- * 获取大陆院最新登记选民列表 (从 API: latest_members.json 获取，支持强刷与 300 秒缓存)
+ * 从远程 API (latest_members.json) 获取大陆院最新登记选民列表 (返回前 5 位选民，带 300 秒 Transient 缓存)
+ *
+ * @param bool $force 是否强制忽略缓存向远程 API 发起全新请求
+ * @return array 包含选民省份与 display_name 的数组
  */
 function chinacongress_get_latest_mainland_members( $force = false ) {
 	$members = false;
@@ -107,6 +151,7 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 			}
 		}
 
+		// 远程 API 离线时的默认安全兜底数据
 		if ( empty( $members ) ) {
 			$members = array(
 				array( 'province' => '江蘇', 'display_name' => '***7E6' ),
@@ -123,7 +168,7 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 }
 
 /**
- * 2. 挂载 Cron 后台定时异步任务
+ * 调度挂载 5 分钟 WP-Cron 后台异步任务事件
  */
 function chinacongress_schedule_cron_sync() {
 	if ( ! wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' ) ) {
@@ -132,6 +177,9 @@ function chinacongress_schedule_cron_sync() {
 }
 add_action( 'wp', 'chinacongress_schedule_cron_sync' );
 
+/**
+ * WP-Cron 定时任务执行体：静默同步选民总数与强刷最新选民列表
+ */
 function chinacongress_execute_cron_sync() {
 	chinacongress_sync_mainland_voter_count();
 	chinacongress_get_latest_mainland_members( true );
