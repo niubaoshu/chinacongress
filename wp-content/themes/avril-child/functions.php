@@ -305,6 +305,17 @@ function avril_lite_cta() {
 // 动态智能提取文章第一张图 / 嵌入视频封面 / 规则兜底 & 全网社交分享 OG 卡片自动输出
 // ==============================================================================
 
+// 封装统一的纯文本摘要提取工具函数 (剥离 HTML 标签、多余换行缩紧、中文截断)
+function chinacongress_get_clean_excerpt( $length = 140, $post_id = null ) {
+    $post = get_post( $post_id );
+    if ( ! $post || empty( $post->post_content ) ) {
+        return '';
+    }
+    $raw_content = wp_strip_all_tags( $post->post_content );
+    $clean_text  = preg_replace( '/\s+/', ' ', $raw_content );
+    return mb_strimwidth( trim( $clean_text ), 0, $length, '...' );
+}
+
 function chinacongress_get_first_image_url( $post_id = null ) {
     if ( ! $post_id ) {
         $post_id = get_the_ID();
@@ -443,23 +454,16 @@ add_action( 'wp_footer', 'chinacongress_slider_speed_boost', 99 );
 // 自动全站正文路径相对化：入库自动清洗 & 前台动态显示双重保险
 // ==============================================================================
 
-// 1. 保存文章时自动清洗：编辑点击“发布/更新”时，自动将正文里的本站绝对路径转为相对路径入库
-function chinacongress_content_save_relative( $content ) {
+// 1. 全站正文路径相对化：保存入库与前台展示统一通过单一定义函数清洗本站绝对域名
+function chinacongress_make_content_relative( $content ) {
     if ( empty( $content ) ) {
         return $content;
     }
     return preg_replace( '#https?://(www\.)?chinacongress\.net/#i', '/', $content );
 }
-add_filter( 'content_save_pre', 'chinacongress_content_save_relative', 99 );
+add_filter( 'content_save_pre', 'chinacongress_make_content_relative', 99 );
+add_filter( 'the_content', 'chinacongress_make_content_relative', 99 );
 
-// 2. 前台展示时自动清洗：防止历史数据遗留，输出正文时一律将本站绝对域名转换为相对路径
-function chinacongress_content_display_relative( $content ) {
-    if ( empty( $content ) ) {
-        return $content;
-    }
-    return preg_replace( '#https?://(www\.)?chinacongress\.net/#i', '/', $content );
-}
-add_filter( 'the_content', 'chinacongress_content_display_relative', 99 );
 
 // 4. 极重要修补：修复 Clever Fox 插件因判断 $theme->name === 'Avril' 导致子主题 (Avril Child) 下轮播图与核心组件丢失的 Bug
 function chinacongress_ensure_cleverfox_avril_loaded() {

@@ -52,11 +52,7 @@ if($hs_blog == '1') {
 										<a href="<?php echo esc_url( get_permalink() ); ?>" rel="bookmark"><?php echo esc_html( get_the_title() ); ?></a>
 									</h4>
 									<p class="home-blog-excerpt">
-										<?php
-										$raw_content = wp_strip_all_tags( get_the_content() );
-										$clean_text  = preg_replace( '/\s+/', ' ', $raw_content );
-										echo esc_html( mb_strimwidth( trim( $clean_text ), 0, 110, '...' ) );
-										?>
+										<?php echo esc_html( chinacongress_get_clean_excerpt( 110 ) ); ?>
 									</p>
 								</div>
 								<div>

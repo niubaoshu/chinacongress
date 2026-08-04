@@ -12,10 +12,7 @@ $title         = get_the_title();
 $date_str      = esc_html( get_the_date() );
 $categories    = get_the_category();
 $category_name = ! empty( $categories[0] ) ? esc_html( $categories[0]->name ) : '';
-
-$raw_content   = wp_strip_all_tags( get_the_content() );
-$clean_text    = preg_replace( '/\s+/', ' ', $raw_content );
-$excerpt       = mb_strimwidth( trim( $clean_text ), 0, 140, '...' );
+$excerpt       = chinacongress_get_clean_excerpt( 140, $post_id );
 ?>
 
 <article id="post-<?php the_ID(); ?>" <?php post_class('category-post-card'); ?>>

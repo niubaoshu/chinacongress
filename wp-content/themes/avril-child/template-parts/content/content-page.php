@@ -2,11 +2,6 @@
 /**
  * Template part for displaying page content in Child Theme.
  */
-
-if ( ! is_single() && ! is_page() ) {
-    get_template_part( 'template-parts/content/content', 'search' );
-    return;
-}
 ?>
 <article id="post-<?php the_ID(); ?>" <?php post_class('post-items mb-6'); ?>>
 	<figure class="post-image">
