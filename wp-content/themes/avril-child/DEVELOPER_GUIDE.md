@@ -88,6 +88,56 @@ add_filter( 'the_content', 'chinacongress_make_content_relative', 99 );
 add_filter( 'get_the_archive_title', 'chinacongress_clean_archive_title' );
 ```
 
+### 3. `add_action` 与 `add_filter` 核心参数详解
+
+`add_action` 与 `add_filter` 是 WordPress 钩子机制中最核心的两个 API 函数。两者的**参数签名完全一致**，但在**用途**与**回调函数的要求**上有所不同。
+
+#### 📌 函数签名 (Function Signature)
+```php
+// 注册动作钩子
+add_action( string $hook_name, callable $callback_to_run, int $priority = 10, int $accepted_args = 1 );
+
+// 注册过滤器钩子
+add_filter( string $hook_name, callable $callback_to_run, int $priority = 10, int $accepted_args = 1 );
+```
+
+#### 📋 4 个参数详解
+
+| 参数序号 | 参数名 | 数据类型 | 必需 / 可选 | 默认值 | 详细功能说明 |
+| :---: | :--- | :---: | :---: | :---: | :--- |
+| **`$1`** | **`$hook_name`** | `string` | **必需** | 无 | **钩子名称**。指定要监听的目标事件或过滤器名称（如 `'wp_head'`, `'the_content'`, `'pre_get_posts'`）。 |
+| **`$2`** | **`$callback_to_run`** | `callable` | **必需** | 无 | **回调函数**。当钩子被触发时要调用的函数。支持字符串函数名 `'my_function'`、匿名闭包 `function(){}`，或类方法 `array($this, 'my_method')`。 |
+| **`$3`** | **`$priority`** | `int` | *可选* | `10` | **执行优先级**。控制绑定到同一个钩子上的多个回调函数的执行顺序。<br>• 数字**越小**，越早执行（如 `1` 先于 `10`）<br>• 数字**越大**，越晚/靠后执行（如 `99` 在最后执行，常用于覆盖父主题逻辑）。 |
+| **`$4`** | **`$accepted_args`** | `int` | *可选* | `1` | **传递参数个数**。指定传递给回调函数的形参个数。必须与回调函数实际定义的形参数量相匹配。 |
+
+---
+
+#### ⚖️ `add_action` 与 `add_filter` 的核心区别
+
+| 维度 | `add_action` (动作钩子) | `add_filter` (过滤器钩子) |
+| :--- | :--- | :--- |
+| **触发机制** | 由 `do_action( 'hook_name' )` 触发 | 由 `apply_filters( 'hook_name', $value )` 触发 |
+| **核心目的** | 在特定时间点**执行一段动作**（如输出代码、发送邮件、修改全局变量）。 | 对传入的变量或内容进行**加工过滤与修改**。 |
+| **回调函数返回值** | **不需要 return**（即使 return 也会被忽略）。 | **必须 return** 处理后的数据！若漏写 `return` 会导致原始数据变为空值 `null` 破坏页面。 |
+| **典型应用场景** | `wp_enqueue_scripts` (加载 CSS/JS)<br>`wp_head` (在 `<head>` 输出标签)<br>`customize_register` (注册自定义选项) | `the_content` (清洗正文文本/URL)<br>`post_thumbnail_html` (自定义缩略图 HTML)<br>`get_the_archive_title` (清理分类标题前缀) |
+
+#### 💡 典型代码示例
+
+```php
+// 示例 1：add_action - 使用第 3 参数 priority = 99 确保最晚加载
+add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
+
+// 示例 2：add_filter - 使用第 4 参数 accepted_args = 5 接收 5 个传递参数
+add_filter( 'post_thumbnail_html', 'chinacongress_auto_first_image_html', 10, 5 );
+function chinacongress_auto_first_image_html( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
+    if ( ! empty( $html ) ) {
+        return $html; // 必须 return 过滤后的结果！
+    }
+    // ...
+    return $html;
+}
+```
+
 ---
 
 ## 4. 数据缓存与 WP-Cron 后台任务
