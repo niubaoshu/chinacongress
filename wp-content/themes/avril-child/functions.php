@@ -49,10 +49,37 @@ function avril_child_customize_register( $wp_customize ) {
         'priority'    => 15,
     ) );
 }
-add_action( 'customize_register', 'avril_child_customize_register', 99 );
+/**
+ * 自动从 API 同步大陆院选民登记人数到数据库 (theme_mod: mainland_voter_count)
+ * 每 5 分钟（300秒）检查并同步一次，获取最新 total 后自动写入 wp_options
+ */
+function chinacongress_sync_mainland_voter_count() {
+	if ( false === get_transient( 'chinacongress_mainland_voter_count_lock' ) ) {
+		set_transient( 'chinacongress_mainland_voter_count_lock', true, 300 );
+
+		$response = wp_remote_get( 'https://reg.congresscenter.org/api/public/registration_count.json', array(
+			'timeout'   => 5,
+			'sslverify' => false,
+		) );
+
+		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+
+			if ( is_array( $data ) && isset( $data['total'] ) && is_numeric( $data['total'] ) ) {
+				$total = (int) $data['total'];
+				if ( $total > 0 ) {
+					set_theme_mod( 'mainland_voter_count', (string) $total );
+				}
+			}
+		}
+	}
+}
 
 // Dual Voter Registration Boxes (CTA Section) editable via Customizer
 function avril_lite_cta() {
+	chinacongress_sync_mainland_voter_count();
+
 	$avril_hs_cta            = get_theme_mod('hs_cta','1');	
 	$avril_cta_title         = get_theme_mod('cta_title', __('海外院选民登记人数： ', 'clever-fox'));
 	$renshu_overseas_val     = get_theme_mod('cta_description', '425');
