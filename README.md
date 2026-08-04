@@ -125,9 +125,9 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
 
 ## 🌐 公开 API 接口文档 (Public API Endpoints)
 
-系统提供以下公共 JSON API 接口：
+系统提供以下公共 JSON API 接口（用于大陆院注册相关数据获取）：
 
-### 1. 注册人数统计接口 (Registration Count API)
+### 1. 大陆院注册人数统计接口 (Registration Count API)
 
 - **接口 URL**：`https://reg.congresscenter.org/api/public/registration_count.json`
 - **请求方式**：`GET`
@@ -141,9 +141,9 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
   ```
 - **字段说明**：
   - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
-  - `total` *(integer)*: 注册总人数。
+  - `total` *(integer)*: 大陆院注册总人数。
 
-### 2. 最新注册成员接口 (Latest Members API)
+### 2. 大陆院最新注册成员接口 (Latest Members API)
 
 - **接口 URL**：`https://reg.congresscenter.org/api/public/latest_members.json`
 - **请求方式**：`GET`
@@ -178,7 +178,7 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
   ```
 - **字段说明**：
   - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
-  - `members` *(array)*: 最新注册成员列表。
+  - `members` *(array)*: 大陆院最新注册成员列表。
     - `province` *(string)*: 成员所属省份/地区。
     - `display_name` *(string)*: 成员脱敏显示名称。
 
