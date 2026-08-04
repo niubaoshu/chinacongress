@@ -473,8 +473,50 @@ function chinacongress_above_header_custom() {
 }
 
 
+/**
+ * 修正「推荐内容」版位在 Customizer 儲存時遺失連結與封面圖的問題。（2026-07-31）
+ *
+ * 根因：clever-fox 註冊 features_contents 控制項時只開了 icon / title / text 三個旗標，
+ * link 與 image 兩個旗標為 false，控制項不 render 對應的輸入框（實測渲染 HTML：
+ * customizer-repeater-link-control 出現 0 次、custom-media-url 出現 0 次）。
+ * 但 customizer_repeater.js:149,154 仍無條件讀取這兩個欄位，取到 undefined，
+ * 而 JSON.stringify 會直接省略值為 undefined 的屬性 —— 於是只要有人在 Customizer
+ * 存一次「推荐内容」，六張卡的 link 與 image_url 就全部從 theme_mods 消失，
+ * 首頁卡片連結一律變成 #、縮圖全部掉到 logo 兜底。
+ *
+ * 修法：在 clever-fox 註冊之後（priority 100）移除該控制項並以相同 setting
+ * 重新註冊，補開 link 與 image 兩個旗標。不動外掛與父主題檔案。
+ */
+function chinacongress_fix_features_repeater_controls( $wp_customize ) {
 
+	if ( ! class_exists( 'AVRIL_Repeater' ) ) {
+		return;
+	}
 
+	// 控制項必須已由 clever-fox 註冊過，否則不介入。
+	if ( ! $wp_customize->get_control( 'features_contents' ) ) {
+		return;
+	}
 
+	$wp_customize->remove_control( 'features_contents' );
 
+	$wp_customize->add_control(
+		new AVRIL_Repeater(
+			$wp_customize,
+			'features_contents',
+			array(
+				'label'                             => esc_html__( 'Features', 'clever-fox' ),
+				'section'                           => 'feature_setting',
+				'add_field_label'                   => esc_html__( 'Add New Feature', 'clever-fox' ),
+				'item_name'                         => esc_html__( 'Feature', 'clever-fox' ),
+				'customizer_repeater_icon_control'  => true,
+				'customizer_repeater_title_control' => true,
+				'customizer_repeater_text_control'  => true,
+				'customizer_repeater_link_control'  => true,
+				'customizer_repeater_image_control' => true,
+			)
+		)
+	);
+}
+add_action( 'customize_register', 'chinacongress_fix_features_repeater_controls', 100 );
 
