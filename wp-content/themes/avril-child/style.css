@@ -629,3 +629,21 @@ i.fa-usd:before {
     border-color: #3a75a1 !important;
     transform: scale(1.25) !important;
 }
+
+/* ==============================================================================
+ * 大陆院最新登记选民走马灯 移动端自适应响应式规则
+ * ============================================================================== */
+@media (max-width: 991px) {
+    #cta-section-mainland .cta-wrapper {
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+    }
+    .mainland-members-container {
+        width: 100% !important;
+        margin-top: 10px !important;
+        padding-top: 8px !important;
+        border-top: 1px dashed rgba(0, 0, 0, 0.1) !important;
+    }
+}
+
