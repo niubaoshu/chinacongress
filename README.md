@@ -120,3 +120,65 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
 ```
 
 搭建完成后，在本地浏览器访问 `http://localhost/` 即可开始测试。
+
+---
+
+## 🌐 公开 API 接口文档 (Public API Endpoints)
+
+系统提供以下公共 JSON API 接口：
+
+### 1. 注册人数统计接口 (Registration Count API)
+
+- **接口 URL**：`https://reg.congresscenter.org/api/public/registration_count.json`
+- **请求方式**：`GET`
+- **数据格式**：`JSON`
+- **响应示例**：
+  ```json
+  {
+      "updated_at": "2026-08-02T22:12:22-07:00",
+      "total": 730
+  }
+  ```
+- **字段说明**：
+  - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
+  - `total` *(integer)*: 注册总人数。
+
+### 2. 最新注册成员接口 (Latest Members API)
+
+- **接口 URL**：`https://reg.congresscenter.org/api/public/latest_members.json`
+- **请求方式**：`GET`
+- **数据格式**：`JSON`
+- **响应示例**：
+  ```json
+  {
+      "updated_at": "2026-08-02T22:12:22-07:00",
+      "members": [
+          {
+              "province": "江蘇",
+              "display_name": "***7E6"
+          },
+          {
+              "province": "廣東",
+              "display_name": "***X9K"
+          },
+          {
+              "province": "北京",
+              "display_name": "***JT4"
+          },
+          {
+              "province": "北京",
+              "display_name": "***JWP"
+          },
+          {
+              "province": "湖南",
+              "display_name": "***FRQ"
+          }
+      ]
+  }
+  ```
+- **字段说明**：
+  - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
+  - `members` *(array)*: 最新注册成员列表。
+    - `province` *(string)*: 成员所属省份/地区。
+    - `display_name` *(string)*: 成员脱敏显示名称。
+
