@@ -167,10 +167,9 @@ UPDATE wp_options SET option_value='http://localhost' WHERE option_name IN ('sit
 UPDATE wp_options SET option_value='avril' WHERE option_name='template';
 UPDATE wp_options SET option_value='avril-child' WHERE option_name='stylesheet';
 
--- 3. 确保子主题 (avril-child) 自动继承并同步父主题的 Customizer 配置
-INSERT INTO wp_options (option_name, option_value, autoload)
-SELECT 'theme_mods_avril-child', option_value, autoload FROM wp_options WHERE option_name='theme_mods_avril'
-ON DUPLICATE KEY UPDATE option_value=VALUES(option_value);
+-- 3. 确保子主题 (avril-child) 在配置不存在时继承父主题 Customizer 配置
+INSERT IGNORE INTO wp_options (option_name, option_value, autoload)
+SELECT 'theme_mods_avril-child', option_value, autoload FROM wp_options WHERE option_name='theme_mods_avril';
 
 SET FOREIGN_KEY_CHECKS = 1;
 SQL
