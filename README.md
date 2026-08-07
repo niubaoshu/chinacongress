@@ -125,9 +125,42 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
 
 ## 🌐 公开 API 接口文档 (Public API Endpoints)
 
-系统提供以下公共 JSON API 接口（用于大陆院注册相关数据获取）：
+系统提供以下公共 JSON API 接口（用于大陆院与海外院注册相关数据自动同步）：
 
-### 1. 大陆院注册人数统计接口 (Registration Count API)
+### 1. 海外院选民登记人数与最新选民接口 (Overseas Council API)
+
+- **接口 URL**：`https://api.fdcusa.org/?token=8d9f3b7c2e6a`
+- **请求方式**：`GET`
+- **数据格式**：`JSON`
+- **响应示例**：
+  ```json
+  {
+      "success": true,
+      "total": 444,
+      "data": [
+          {
+              "name": "Z**",
+              "residence": "德国"
+          },
+          {
+              "name": "L**",
+              "residence": "德国"
+          },
+          {
+              "name": "蒋**",
+              "residence": "其他"
+          }
+      ]
+  }
+  ```
+- **字段说明**：
+  - `success` *(boolean)*: 接口响应状态。
+  - `total` *(integer)*: 海外院选民登记总人数。
+  - `data` *(array)*: 海外院最新登记选民列表。
+    - `residence` *(string)*: 选民居住国家/地区。
+    - `name` *(string)*: 选民脱敏显示姓名。
+
+### 2. 大陆院注册人数统计接口 (Registration Count API)
 
 - **接口 URL**：`https://reg.congresscenter.org/api/public/registration_count.json`
 - **请求方式**：`GET`
