@@ -168,6 +168,67 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 }
 
 /**
+ * 从远程 API (https://api.fdcusa.org/?token=8d9f3b7c2e6a) 自动同步海外院选民登记总人数与最新选民列表
+ *
+ * @param bool $force 是否强制忽略 Transient 缓存向远程 API 发起全新请求
+ * @return array 包含选民居住地 (residence) 与 姓名 (name) 的数组
+ */
+function chinacongress_sync_overseas_voter_data( $force = false ) {
+	$members = false;
+	if ( ! $force ) {
+		$members = get_transient( 'chinacongress_latest_overseas_members' );
+	}
+
+	if ( false === $members ) {
+		$response = wp_remote_get( 'https://api.fdcusa.org/?token=8d9f3b7c2e6a', array(
+			'timeout'   => 5,
+			'sslverify' => false,
+		) );
+
+		$members = array();
+		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+
+			if ( is_array( $data ) && ! empty( $data['success'] ) ) {
+				// 1. 同步选民总人数并写入 wp_options 数据库 (theme_mod: cta_description)
+				if ( isset( $data['total'] ) && is_numeric( $data['total'] ) ) {
+					$total = (int) $data['total'];
+					if ( $total > 0 ) {
+						set_theme_mod( 'cta_description', (string) $total );
+					}
+				}
+
+				// 2. 提取前 5 位选民作为走马灯数据
+				if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
+					$raw_list = array_slice( $data['data'], 0, 5 );
+					foreach ( $raw_list as $item ) {
+						$residence = ! empty( $item['residence'] ) ? trim( $item['residence'] ) : '海外';
+						$name      = ! empty( $item['name'] ) ? trim( $item['name'] ) : '***';
+						$members[] = array(
+							'residence' => $residence,
+							'name'      => $name,
+						);
+					}
+				}
+			}
+		}
+
+		// API 离线时的默认安全兜底数据
+		if ( empty( $members ) ) {
+			$members = array(
+				array( 'residence' => '德国', 'name' => 'Z**' ),
+				array( 'residence' => '德国', 'name' => 'L**' ),
+				array( 'residence' => '其他', 'name' => '蒋**' ),
+			);
+		}
+
+		set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
+	}
+	return $members;
+}
+
+/**
  * 调度挂载 5 分钟 WP-Cron 后台异步任务事件
  */
 function chinacongress_schedule_cron_sync() {
@@ -178,11 +239,12 @@ function chinacongress_schedule_cron_sync() {
 add_action( 'wp', 'chinacongress_schedule_cron_sync' );
 
 /**
- * WP-Cron 定时任务执行体：静默同步选民总数与强刷最新选民列表
+ * WP-Cron 定时任务执行体：静默同步选民总数与强刷最新选民列表 (包含大陆院与海外院)
  */
 function chinacongress_execute_cron_sync() {
 	chinacongress_sync_mainland_voter_count();
 	chinacongress_get_latest_mainland_members( true );
+	chinacongress_sync_overseas_voter_data( true );
 }
 add_action( 'chinacongress_cron_sync_api_data_event', 'chinacongress_execute_cron_sync' );
 
@@ -214,6 +276,29 @@ function avril_lite_cta() {
 								</h4>
 							<?php endif; ?>
                         </div>
+
+						<?php
+						$latest_overseas_members = chinacongress_sync_overseas_voter_data();
+						if ( ! empty( $latest_overseas_members ) ) :
+						?>
+						<!-- 海外院最新登记选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
+						<div class="cta-content overseas-members-container">
+							<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+								<span style="white-space: nowrap;">最新登记选民：</span>
+								<span class="overseas-members-ticker" id="overseas_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
+									<ul class="overseas-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
+										<?php foreach ( $latest_overseas_members as $member ) : ?>
+											<li style="height: 36px; line-height: 36px; font-size: inherit; font-weight: inherit; color: inherit; white-space: nowrap;">
+												<span><?php echo esc_html( $member['residence'] ); ?></span>
+												<span style="margin-left: 6px;"><?php echo esc_html( $member['name'] ); ?></span>
+											</li>
+										<?php endforeach; ?>
+									</ul>
+								</span>
+							</h4>
+						</div>
+						<?php endif; ?>
+
                         <div class="cta-btn-wrap text-av-right text-center">
 							<?php if ( ! empty( $avril_cta_btn_lbl1 ) ) : ?>
 								<a href="<?php echo esc_url($avril_cta_btn_link1); ?>" class="av-btn av-btn-primary" target="_blank"><?php echo esc_html($avril_cta_btn_lbl1); ?></a>
@@ -309,11 +394,11 @@ function avril_lite_cta() {
 		setupObserver("number_overseas", <?php echo $renshu_overseas; ?>);
 		setupObserver("number_mainland", <?php echo $renshu_mainland; ?>);
 
-		// 5 位选民平滑渐变（Fade & Slide）无缝轮播
-		(function() {
-			let ticker = document.getElementById('mainland_members_ticker');
+		// 选民平滑渐变（Fade & Slide）无缝轮播通用初始化函数
+		function initTicker(tickerId, listClass) {
+			let ticker = document.getElementById(tickerId);
 			if (!ticker) return;
-			let list = ticker.querySelector('.mainland-members-list');
+			let list = ticker.querySelector('.' + listClass);
 			if (!list) return;
 			let items = list.querySelectorAll('li');
 			if (items.length <= 1) return;
@@ -342,7 +427,10 @@ function avril_lite_cta() {
 					}, 50);
 				}, 250);
 			}, 3500);
-		})();
+		}
+
+		initTicker('mainland_members_ticker', 'mainland-members-list');
+		initTicker('overseas_members_ticker', 'overseas-members-list');
 	})();
 	</script>
 	<?php	

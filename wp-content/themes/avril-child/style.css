@@ -653,19 +653,22 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 大陆院最新登记选民走马灯 移动端自适应响应式规则
+ * 大陆院与海外院最新登记选民走马灯 移动端自适应响应式规则
  * ============================================================================== */
 @media (max-width: 991px) {
-    #cta-section-mainland .cta-wrapper {
+    #cta-section-mainland .cta-wrapper,
+    #cta-section-overseas .cta-wrapper {
         flex-wrap: wrap !important;
         justify-content: space-between !important;
         gap: 10px !important;
     }
-    .mainland-members-container {
+    .mainland-members-container,
+    .overseas-members-container {
         width: 100% !important;
         margin-top: 10px !important;
         padding-top: 8px !important;
         border-top: 1px dashed rgba(0, 0, 0, 0.1) !important;
     }
 }
+
 
