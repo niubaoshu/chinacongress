@@ -10,6 +10,7 @@ $permalink     = esc_url( get_permalink() );
 $thumb_url     = esc_url( chinacongress_get_first_image_url( $post_id ) );
 $title         = get_the_title();
 $date_str      = esc_html( get_the_date() );
+$date_url      = esc_url( get_day_link( get_the_time( 'Y' ), get_the_time( 'm' ), get_the_time( 'd' ) ) );
 $categories    = get_the_category();
 $category_name = ! empty( $categories[0] ) ? esc_html( $categories[0]->name ) : '';
 $excerpt       = chinacongress_get_clean_excerpt( 140, $post_id );
@@ -30,7 +31,7 @@ $excerpt       = chinacongress_get_clean_excerpt( 140, $post_id );
 	<div class="category-post-content-wrap">
 		<div>
 			<div class="category-post-meta">
-				<span><i class="fa fa-calendar"></i> <?php echo $date_str; ?></span>
+				<span><i class="fa fa-calendar"></i> <a href="<?php echo $date_url; ?>" title="<?php echo esc_attr__( '查看当天发布的全部文章', 'avril-child' ); ?>"><?php echo $date_str; ?></a></span>
 			</div>
 			
 			<h5 class="category-post-title">

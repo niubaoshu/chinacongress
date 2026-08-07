@@ -209,6 +209,17 @@ i.fa-usd:before {
     gap: 12px !important;
 }
 
+.category-post-card .category-post-meta a {
+    color: inherit !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.category-post-card .category-post-meta a:hover {
+    color: #3a75a1 !important;
+    text-decoration: underline !important;
+}
+
 .category-post-card .category-post-meta i {
     color: #3a75a1 !important;
     margin-right: 4px !important;
