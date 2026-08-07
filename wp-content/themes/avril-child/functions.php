@@ -251,7 +251,11 @@ add_action( 'chinacongress_cron_sync_api_data_event', 'chinacongress_execute_cro
 // Dual Voter Registration Boxes (CTA Section) editable via Customizer
 function avril_lite_cta() {
 	$avril_hs_cta            = get_theme_mod('hs_cta','1');	
-	$avril_cta_title         = get_theme_mod('cta_title', __('海外院选民登记人数： ', 'clever-fox'));
+	$avril_cta_title         = get_theme_mod('cta_title', __('海外院选民注册人数： ', 'clever-fox'));
+	if ( false !== strpos( $avril_cta_title, '选民登记人数' ) ) {
+		$avril_cta_title = str_replace( '选民登记人数', '选民注册人数', $avril_cta_title );
+		set_theme_mod( 'cta_title', $avril_cta_title );
+	}
 	$renshu_overseas_val     = get_theme_mod('cta_description', '425');
 	$renshu_overseas         = is_numeric(trim($renshu_overseas_val)) ? (int)trim($renshu_overseas_val) : 425;
 
@@ -263,7 +267,7 @@ function avril_lite_cta() {
 
 	if($avril_hs_cta == '1') {	
 	?>	
-	 <!-- 1. 海外院选民登记框 -->
+	 <!-- 1. 海外院选民注册框 -->
 	 <section id="cta-section-overseas" class="cta-section cta-shadow-one av-mb-default home-cta">
         <div class="av-container">
             <div class="av-columns-area">
@@ -281,10 +285,10 @@ function avril_lite_cta() {
 						$latest_overseas_members = chinacongress_sync_overseas_voter_data();
 						if ( ! empty( $latest_overseas_members ) ) :
 						?>
-						<!-- 海外院最新登记选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
+						<!-- 海外院最新注册选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
 						<div class="cta-content overseas-members-container">
 							<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-								<span style="white-space: nowrap;">最新登记选民：</span>
+								<span style="white-space: nowrap;">最新注册选民：</span>
 								<span class="overseas-members-ticker" id="overseas_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
 									<ul class="overseas-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
 										<?php foreach ( $latest_overseas_members as $member ) : ?>
@@ -310,14 +314,14 @@ function avril_lite_cta() {
         </div>
     </section>
 
-	 <!-- 2. 大陆院选民登记框 -->
+	 <!-- 2. 大陆院选民注册框 -->
 	 <section id="cta-section-mainland" class="cta-section cta-shadow-one av-mb-default home-cta">
         <div class="av-container">
             <div class="av-columns-area">
                 <div class="av-column-12">
                     <div class="cta-wrapper">
                         <div class="cta-content">
-							<h4>大陆院选民登记人数： 
+							<h4>大陆院选民注册人数： 
 								<span id="number_mainland"><?php echo esc_html($renshu_mainland); ?></span>
 							</h4>
                         </div>
@@ -326,10 +330,10 @@ function avril_lite_cta() {
 						$latest_members = chinacongress_get_latest_mainland_members();
 						if ( ! empty( $latest_members ) ) :
 						?>
-						<!-- 最新登记选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
+						<!-- 最新注册选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
 						<div class="cta-content mainland-members-container">
 							<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-								<span style="white-space: nowrap;">最新登记选民：</span>
+								<span style="white-space: nowrap;">最新注册选民：</span>
 								<span class="mainland-members-ticker" id="mainland_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
 									<ul class="mainland-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
 										<?php foreach ( $latest_members as $member ) : ?>
