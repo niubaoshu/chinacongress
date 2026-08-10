@@ -669,6 +669,29 @@ i.fa-usd:before {
         padding-top: 8px !important;
         border-top: 1px dashed rgba(0, 0, 0, 0.1) !important;
     }
+}/* ==============================================================================
+ * 顶部导航菜单防换行与间距优化 (Header Navigation Menu Wrap Fix)
+ * 说明：防止菜单项过多或在部分页面/管理员登录时导致最后一个菜单项 (如“联系我们”) 折行
+ * ============================================================================== */
+@media (min-width: 992px) {
+    .theme-menu {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+    }
+    .navbar-area .menubar .menu-wrap {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        margin-bottom: 0 !important;
+    }
+    .navbar-area .menubar .menu-wrap > li {
+        white-space: nowrap !important;
+    }
+    .navbar-area .menubar .menu-wrap > li > a {
+        padding-left: 9px !important;
+        padding-right: 9px !important;
+        white-space: nowrap !important;
+    }
 }
-
-
