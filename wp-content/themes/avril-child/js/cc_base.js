@@ -42,7 +42,7 @@ function cc_base () {
         });
     }
     for (const e of getTagName("ul")) {
-        if (e.classList.contains("menu-wrap") || e.closest("#header-section") || e.closest(".theme-menu") || e.closest(".widget")) continue;
+        if (e.closest("#wpadminbar") || e.closest("header") || e.closest("#header-section") || e.closest("footer") || e.closest(".widget") || e.closest(".theme-menu") || e.classList.contains("menu-wrap")) continue;
         Object.assign(e.style, { marginLeft: '2em' });
     }
     for (const e of getTagName("oc")) {
