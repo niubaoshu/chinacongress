@@ -1,7 +1,7 @@
 if (self !== top) { top.location.href = self.location.href; }
 const host = 'https://chinacongress.net';
 const local = window.location.origin;
-const theme = host === local? "avril-child" : "avril";
+const theme = "avril-child";
 const sessid=new URLSearchParams(window.location.search).get("sessid");
 const cc = { local: local, host: host,
     session: sessid,
