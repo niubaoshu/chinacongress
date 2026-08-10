@@ -843,3 +843,24 @@ add_filter( 'wp_prepare_attachment_for_js', function ( $response, $attachment ) 
     }
     return $response;
 }, 10, 2 );
+
+/**
+ * 允许分类列表页 (Category Archive) 也支持文章置顶 (Sticky Posts) 自动排列在列表最前面
+ *
+ * @param string   $orderby 原始 SQL orderby 子句
+ * @param WP_Query $query   当前 WP_Query 实例
+ * @return string 修改后的 orderby 子句
+ */
+function chinacongress_sort_category_sticky_posts_first( $orderby, $query ) {
+	if ( ! is_admin() && $query->is_main_query() && $query->is_category() ) {
+		$sticky = get_option( 'sticky_posts' );
+		if ( ! empty( $sticky ) && is_array( $sticky ) ) {
+			global $wpdb;
+			$sticky_ids = implode( ',', array_map( 'absint', $sticky ) );
+			return "CASE WHEN {$wpdb->posts}.ID IN ($sticky_ids) THEN 0 ELSE 1 END, " . $orderby;
+		}
+	}
+	return $orderby;
+}
+add_filter( 'posts_orderby', 'chinacongress_sort_category_sticky_posts_first', 10, 2 );
+
