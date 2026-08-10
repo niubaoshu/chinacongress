@@ -41,8 +41,8 @@ function cc_base () {
             setTimeout(()=>mask.remove(),250);
         });
     }
-    for (const e of getTagName("ul")) {
-        if (e.closest("#wpadminbar") || e.closest("header") || e.closest("#header-section") || e.closest("footer") || e.closest(".widget") || e.closest(".theme-menu") || e.classList.contains("menu-wrap")) continue;
+    const contentLists = document.querySelectorAll(".post-content ul, .entry-content ul, article ul");
+    for (const e of contentLists) {
         Object.assign(e.style, { marginLeft: '2em' });
     }
     for (const e of getTagName("oc")) {
