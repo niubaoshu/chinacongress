@@ -809,3 +809,37 @@ function chinacongress_fix_features_repeater_controls( $wp_customize ) {
 }
 add_action( 'customize_register', 'chinacongress_fix_features_repeater_controls', 100 );
 
+// 允許 SVG 上傳（僅限brook）
+add_filter( 'upload_mimes', function ( $mimes ) {
+    if ( get_current_user_id() === 12 ) {   // 換成實際 ID
+        $mimes['svg'] = 'image/svg+xml';
+    }
+    return $mimes;
+} );
+
+// 修正 finfo 真實 MIME 比對（SVG 是純文字，finfo 常回報 text/plain）
+add_filter( 'wp_check_filetype_and_ext', function ( $data, $file, $filename ) {
+    if ( ! empty( $data['ext'] ) && ! empty( $data['type'] ) ) {
+        return $data;
+    }
+    if ( 'svg' === strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) ) ) {
+        $data['ext']  = 'svg';
+        $data['type'] = 'image/svg+xml';
+    }
+    return $data;
+}, 10, 3 );
+
+// 媒體庫縮圖顯示
+add_filter( 'wp_prepare_attachment_for_js', function ( $response, $attachment ) {
+    if ( 'image/svg+xml' === $response['mime'] ) {
+        $response['sizes'] = [
+            'full' => [
+                'url'         => $response['url'],
+                'width'       => 150,
+                'height'      => 150,
+                'orientation' => 'portrait',
+            ],
+        ];
+    }
+    return $response;
+}, 10, 2 );
