@@ -41,7 +41,10 @@ function cc_base () {
             setTimeout(()=>mask.remove(),250);
         });
     }
-    for (const e of getTagName("ul")) { Object.assign(e.style, { marginLeft: '2em' }); }
+    for (const e of getTagName("ul")) {
+        if (e.classList.contains("menu-wrap") || e.closest("#header-section") || e.closest(".theme-menu") || e.closest(".widget")) continue;
+        Object.assign(e.style, { marginLeft: '2em' });
+    }
     for (const e of getTagName("oc")) {
         if (!e.getAttribute("dcol") || e.getAttribute("dcol") === "0") continue;
         const d = getAttr(e, "dcol");
