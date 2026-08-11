@@ -180,6 +180,8 @@ fi
 
 # 6. 从本地 Git 仓库部署二次开发代码 (avril-child)
 echo "6. 正在部署二次开发 Git 仓库代码 (avril-child)..."
+mkdir -p "${LOCAL_WEB_ROOT}/wp-content/upgrade" "${LOCAL_WEB_ROOT}/wp-content/plugins"
+chmod -R 777 "${LOCAL_WEB_ROOT}/wp-content" 2>/dev/null || true
 bash "${SCRIPT_DIR}/sync_custom_code.sh" localhost
 
 # 清理临时目录
