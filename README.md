@@ -9,8 +9,9 @@
 
 ```text
 public_html/ (Git 仓库根目录)
-├── .gitignore                          # Git 忽略配置（仅追踪 README.md 与 avril-child）
+├── .gitignore                          # Git 忽略配置（仅追踪 README.md、API_ENDPOINTS.md 与 avril-child）
 ├── README.md                           # 本项目开发者与运维指南文档
+├── API_ENDPOINTS.md                    # 外部第三方平台 API 接口集成文档
 └── wp-content/
     └── themes/
         └── avril-child/                # 二次开发子主题（Git 核心追踪项目）
@@ -123,97 +124,12 @@ bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
 
 ---
 
-## 🌐 公开 API 接口文档 (Public API Endpoints)
+## 🌐 外部平台 API 接口集成说明
 
-系统提供以下公共 JSON API 接口（用于大陆院与海外院注册相关数据自动同步）：
+本项目前端（如选民注册人数、最新登记列表）依赖调用的公共 JSON API 接口均为**第三方外部平台**（如 `api.fdcusa.org` 与 `reg.congresscenter.org`）提供，**并非本项目本地开发或托管的接口**。
 
-### 1. 海外院选民登记人数与最新选民接口 (Overseas Council API)
-
-- **接口 URL**：`https://api.fdcusa.org/?token=8d9f3b7c2e6a`
-- **请求方式**：`GET`
-- **数据格式**：`JSON`
-- **响应示例**：
-  ```json
-  {
-      "success": true,
-      "total": 444,
-      "data": [
-          {
-              "name": "Z**",
-              "residence": "德国"
-          },
-          {
-              "name": "L**",
-              "residence": "德国"
-          },
-          {
-              "name": "蒋**",
-              "residence": "其他"
-          }
-      ]
-  }
-  ```
-- **字段说明**：
-  - `success` *(boolean)*: 接口响应状态。
-  - `total` *(integer)*: 海外院选民登记总人数。
-  - `data` *(array)*: 海外院最新登记选民列表。
-    - `residence` *(string)*: 选民居住国家/地区。
-    - `name` *(string)*: 选民脱敏显示姓名。
-
-### 2. 大陆院注册人数统计接口 (Registration Count API)
-
-- **接口 URL**：`https://reg.congresscenter.org/api/public/registration_count.json`
-- **请求方式**：`GET`
-- **数据格式**：`JSON`
-- **响应示例**：
-  ```json
-  {
-      "updated_at": "2026-08-02T22:12:22-07:00",
-      "total": 730
-  }
-  ```
-- **字段说明**：
-  - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
-  - `total` *(integer)*: 大陆院注册总人数。
-
-### 2. 大陆院最新注册成员接口 (Latest Members API)
-
-- **接口 URL**：`https://reg.congresscenter.org/api/public/latest_members.json`
-- **请求方式**：`GET`
-- **数据格式**：`JSON`
-- **响应示例**：
-  ```json
-  {
-      "updated_at": "2026-08-02T22:12:22-07:00",
-      "members": [
-          {
-              "province": "江蘇",
-              "display_name": "***7E6"
-          },
-          {
-              "province": "廣東",
-              "display_name": "***X9K"
-          },
-          {
-              "province": "北京",
-              "display_name": "***JT4"
-          },
-          {
-              "province": "北京",
-              "display_name": "***JWP"
-          },
-          {
-              "province": "湖南",
-              "display_name": "***FRQ"
-          }
-      ]
-  }
-  ```
-- **字段说明**：
-  - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
-  - `members` *(array)*: 大陆院最新注册成员列表。
-    - `province` *(string)*: 成员所属省份/地区。
-    - `display_name` *(string)*: 成员脱敏显示名称。
+详细的第三方 API 接口定义、请求参数与响应数据结构说明，请查阅独立的接口文档：
+📖 **[外部平台 API 接口集成文档](API_ENDPOINTS.md)**
 
 ---
 
