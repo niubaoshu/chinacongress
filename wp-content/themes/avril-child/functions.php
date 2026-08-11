@@ -845,7 +845,80 @@ add_filter( 'wp_prepare_attachment_for_js', function ( $response, $attachment ) 
 }, 10, 2 );
 
 /**
- * 允许分类列表页 (Category Archive) 也支持文章置顶 (Sticky Posts) 自动排列在列表最前面
+ * 允许文章 (Post) 开启原生“排序 (menu_order)”字段支持，并在后台快速编辑、编辑页及文章列表中提供直观设置
+ */
+// 1. 允许文章 (Post) 启用原生页面属性支持（开启文章编辑页右侧栏“排序”数值框与快速编辑原生的排序框）
+add_action( 'init', function() {
+	add_post_type_support( 'post', 'page-attributes' );
+} );
+
+// 2. 在文章后台列表中增加“排序号”列显示与排序支持
+add_filter( 'manage_posts_columns', function( $columns ) {
+	$columns['menu_order'] = '排序号';
+	return $columns;
+} );
+add_action( 'manage_posts_custom_column', function( $column, $post_id ) {
+	if ( 'menu_order' === $column ) {
+		echo (int) get_post_field( 'menu_order', $post_id );
+	}
+}, 10, 2 );
+add_filter( 'manage_edit-post_sortable_columns', function( $columns ) {
+	$columns['menu_order'] = 'menu_order';
+	return $columns;
+} );
+
+// 3. 在后台点击“快速编辑”时自动填入数据并为原生的“排序”框加上说明提示文字
+add_action( 'admin_footer-edit.php', function() {
+	global $current_screen;
+	if ( $current_screen && 'post' === $current_screen->post_type ) {
+		?>
+		<style>
+		/* 纯 CSS 注入说明提示文字，保证在快速编辑弹出时瞬间显示 */
+		tr.inline-edit-post label:has(input[name="menu_order"]):after {
+			content: '（数字越小越靠前，支持负数如 -1，默认：0）';
+			color: #666;
+			font-size: 12px;
+			margin-left: 6px;
+			font-weight: normal;
+			display: inline-block;
+			vertical-align: middle;
+		}
+		</style>
+		<script>
+		jQuery(document).ready(function($) {
+			if (typeof inlineEditPost !== 'undefined') {
+				var $wp_inline_edit = inlineEditPost.edit;
+				inlineEditPost.edit = function( id ) {
+					$wp_inline_edit.apply( this, arguments );
+					var post_id = 0;
+					if ( typeof( id ) === 'object' ) post_id = parseInt( this.getId( id ) );
+					if ( post_id > 0 ) {
+						var $row = $('#post-' + post_id);
+						var menu_order = $row.find('.column-menu_order').text().trim();
+						var $edit_row = $('#edit-' + post_id);
+						var $input = $edit_row.find('input[name="menu_order"]');
+						if ($input.length) {
+							$input.val(menu_order || '0');
+							var $label = $input.closest('label');
+							if ($label.length) {
+								$label.find('.title').text('排序号');
+								if (!$label.find('.menu-order-tip').length) {
+									$label.append('<span class="menu-order-tip" style="display:inline-block; color:#666; font-size:12px; margin-left:6px; vertical-align:middle; font-weight:normal;">（数字越小越靠前，支持负数如 -1，默认：0）</span>');
+								}
+							}
+						}
+					}
+				};
+			}
+		});
+		</script>
+		<?php
+	}
+} );
+
+/**
+ * 允许分类列表页 (Category Archive) 支持文章置顶 (Sticky Posts) 与自定义排序号 (menu_order)
+ * 排序优先级：置顶文章优先 -> 排序号小到大 (ASC) -> 发布时间倒序 (DESC)
  *
  * @param string   $orderby 原始 SQL orderby 子句
  * @param WP_Query $query   当前 WP_Query 实例
@@ -853,11 +926,13 @@ add_filter( 'wp_prepare_attachment_for_js', function ( $response, $attachment ) 
  */
 function chinacongress_sort_category_sticky_posts_first( $orderby, $query ) {
 	if ( ! is_admin() && $query->is_main_query() && $query->is_category() ) {
+		global $wpdb;
 		$sticky = get_option( 'sticky_posts' );
 		if ( ! empty( $sticky ) && is_array( $sticky ) ) {
-			global $wpdb;
 			$sticky_ids = implode( ',', array_map( 'absint', $sticky ) );
-			return "CASE WHEN {$wpdb->posts}.ID IN ($sticky_ids) THEN 0 ELSE 1 END, " . $orderby;
+			return "CASE WHEN {$wpdb->posts}.ID IN ($sticky_ids) THEN 0 ELSE 1 END, {$wpdb->posts}.menu_order ASC, " . $orderby;
+		} else {
+			return "{$wpdb->posts}.menu_order ASC, " . $orderby;
 		}
 	}
 	return $orderby;
