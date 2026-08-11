@@ -78,7 +78,7 @@ if ( $avril_hs_feature == '1' ) {
 								</div>
 								<div>
 									<a href="<?php echo esc_url( $avril_repeater_link ); ?>" class="category-read-more-btn mt-2">
-										查看详情 <i class="fa fa-angle-right"></i>
+										<?php _e( '查看详情', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
 									</a>
 								</div>
 							</div>

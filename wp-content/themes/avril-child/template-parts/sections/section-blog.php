@@ -57,7 +57,7 @@ if($hs_blog == '1') {
 								</div>
 								<div>
 									<a href="<?php echo esc_url( get_permalink() ); ?>" class="category-read-more-btn mt-2">
-										阅读全文 <i class="fa fa-angle-right"></i>
+										<?php _e( '阅读全文', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
 									</a>
 								</div>
 							</div>

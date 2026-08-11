@@ -15,6 +15,27 @@
  */
 
 /**
+ * 0. 开启子主题 Gettext 国际化 (i18n) 语言包支持与 Polylang 自定义字符串注册
+ */
+add_action( 'after_setup_theme', function() {
+    load_child_theme_textdomain( 'avril-child', get_stylesheet_directory() . '/languages' );
+} );
+
+// 注册子主题常驻界面字符串至 Polylang 翻译列表 (若激活 Polylang)
+add_action( 'init', function() {
+    if ( function_exists( 'pll_register_string' ) ) {
+        pll_register_string( 'Header Legal Counsel', '法律顾问 Counsel', 'avril-child' );
+        pll_register_string( 'Header Email Us', 'Email Us', 'avril-child' );
+        pll_register_string( 'Header Zelle Support', 'Zelle 捐助', 'avril-child' );
+        pll_register_string( 'Read More Button', '阅读全文', 'avril-child' );
+        pll_register_string( 'Search Field Placeholder', '搜索...', 'avril-child' );
+        pll_register_string( 'Search Button Text', '搜索', 'avril-child' );
+        pll_register_string( 'Search Sidebar Title', '站内搜索', 'avril-child' );
+        pll_register_string( 'YouTube Channel Subscribe', 'YouTube 频道官方订阅', 'avril-child' );
+    }
+} );
+
+/**
  * 1. 加载父主题样式、子主题样式及 FontAwesome 4.6.3 本地矢量图标兜底库
  */
 add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
@@ -488,10 +509,10 @@ function chinacongress_get_first_image_url( $post_id = null ) {
             return $matches[1][0];
         }
 
-        // 3. 视频检查：若无静态图片，检查是否嵌入了 YouTube 视频，自动提取 YouTube 1280x720 高清封面海报
+        // 3. 视频检查：若无静态图片，检查是否嵌入了 YouTube 视频，自动提取 YouTube 标准高清封面 (100% 存在且不报 404 错)
         if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_matches ) ) {
             if ( ! empty( $yt_matches[1] ) ) {
-                return 'https://img.youtube.com/vi/' . $yt_matches[1] . '/maxresdefault.jpg';
+                return 'https://img.youtube.com/vi/' . $yt_matches[1] . '/hqdefault.jpg';
             }
         }
 
