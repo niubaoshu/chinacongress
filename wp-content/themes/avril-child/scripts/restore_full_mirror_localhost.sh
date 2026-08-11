@@ -109,6 +109,7 @@ define( 'NONCE_SALT',       ' FT>s+ICiA0%mr|1.[+Q:!O%<ZCG2sQ/Wx,,G045L003R~&}Hk~
 
 $table_prefix = 'wp_';
 define( 'WP_DEBUG', false );
+define( 'FS_METHOD', 'direct' );
 
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
