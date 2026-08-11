@@ -164,18 +164,13 @@ i.fa-usd:before {
 
 /* 左侧图片海报区域 */
 .category-post-card .category-post-thumb-wrap {
-    flex: 0 0 18% !important;
-    max-width: 18% !important;
+    flex: 0 0 36% !important;
+    max-width: 36% !important;
     position: relative !important;
     overflow: hidden !important;
     border-radius: 8px !important;
-    min-height: 160px !important;
-    max-height: 210px !important;
+    min-height: 180px !important;
     background: #f4f8fb !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    align-self: center !important;
 }
 
 .category-post-card .category-post-thumb-link {
@@ -215,7 +210,7 @@ i.fa-usd:before {
 
 /* 右侧文本内容区域 */
 .category-post-card .category-post-content-wrap {
-    flex: 1 1 82% !important;
+    flex: 1 1 64% !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
