@@ -21,8 +21,10 @@ add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
 function avril_child_enqueue_styles() {
     // 加载父主题主样式表
     wp_enqueue_style( 'avril-parent-style', get_template_directory_uri() . '/style.css' );
-    // 加载子主题主样式表（附带时间戳 query 避免浏览器缓存滞后）
-    wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), time() );
+    // 加载子主题主样式表（使用文件修改时间作为版本号，允许浏览器/CDN有效缓存）
+    $child_css_file = get_stylesheet_directory() . '/style.css';
+    $child_css_ver  = file_exists( $child_css_file ) ? filemtime( $child_css_file ) : wp_get_theme()->get( 'Version' );
+    wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), $child_css_ver );
     // 加载子主题自带的永久 FontAwesome 4.6.3 字体图标库（解决 CDN 丢失问题）
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
@@ -51,11 +53,13 @@ add_action( 'pre_get_posts', 'chinacongress_sort_search_by_date' );
  */
 function avril_child_customizer_control_scripts() {
     wp_dequeue_script( 'avril_customizer-repeater-script' );
+    $repeater_js_file = get_stylesheet_directory() . '/js/customizer_repeater.js';
+    $repeater_js_ver  = file_exists( $repeater_js_file ) ? filemtime( $repeater_js_file ) : wp_get_theme()->get( 'Version' );
     wp_enqueue_script(
         'avril-child-customizer-repeater-script',
         get_stylesheet_directory_uri() . '/js/customizer_repeater.js',
         array( 'jquery', 'jquery-ui-draggable', 'wp-color-picker' ),
-        time(),
+        $repeater_js_ver,
         true
     );
 }
@@ -236,7 +240,7 @@ function chinacongress_schedule_cron_sync() {
 		wp_schedule_event( time(), 'every_five_minutes', 'chinacongress_cron_sync_api_data_event' );
 	}
 }
-add_action( 'wp', 'chinacongress_schedule_cron_sync' );
+add_action( 'init', 'chinacongress_schedule_cron_sync' );
 
 /**
  * WP-Cron 定时任务执行体：静默同步选民总数与强刷最新选民列表 (包含大陆院与海外院)
@@ -256,6 +260,10 @@ function avril_lite_cta() {
 		$avril_cta_title = str_replace( '选民登记人数', '选民注册人数', $avril_cta_title );
 		set_theme_mod( 'cta_title', $avril_cta_title );
 	}
+
+	// 优先同步/拉取最新海外选民数据（如果 Transient 缓存更新则可获取最新数据）
+	$latest_overseas_members = chinacongress_sync_overseas_voter_data();
+
 	$renshu_overseas_val     = get_theme_mod('cta_description', '425');
 	$renshu_overseas         = is_numeric(trim($renshu_overseas_val)) ? (int)trim($renshu_overseas_val) : 425;
 
@@ -282,7 +290,6 @@ function avril_lite_cta() {
                         </div>
 
 						<?php
-						$latest_overseas_members = chinacongress_sync_overseas_voter_data();
 						if ( ! empty( $latest_overseas_members ) ) :
 						?>
 						<!-- 海外院最新注册选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
@@ -391,12 +398,15 @@ function avril_lite_cta() {
 			if (elem) observer.observe(elem);
 		}
 
-		document.addEventListener('DOMContentLoaded', function() {
+		function runObservers() {
 			setupObserver("number_overseas", <?php echo $renshu_overseas; ?>);
 			setupObserver("number_mainland", <?php echo $renshu_mainland; ?>);
-		});
-		setupObserver("number_overseas", <?php echo $renshu_overseas; ?>);
-		setupObserver("number_mainland", <?php echo $renshu_mainland; ?>);
+		}
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', runObservers);
+		} else {
+			runObservers();
+		}
 
 		// 选民平滑渐变（Fade & Slide）无缝轮播通用初始化函数
 		function initTicker(tickerId, listClass) {
@@ -605,7 +615,11 @@ add_filter( 'content_save_pre', 'chinacongress_make_content_relative', 99 );
 add_filter( 'the_content', 'chinacongress_make_content_relative', 99 );
 
 
-// 4. 极重要修补：修复 Clever Fox 插件因判断 $theme->name === 'Avril' 导致子主题 (Avril Child) 下轮播图与核心组件丢失的 Bug
+// ==============================================================================
+// 兼容性修补、Customizer 配置继承与 Hook 替代逻辑
+// ==============================================================================
+
+// 1. 极重要修补：修复 Clever Fox 插件因判断 $theme->name === 'Avril' 导致子主题 (Avril Child) 下轮播图与核心组件丢失的 Bug
 function chinacongress_ensure_cleverfox_avril_loaded() {
     if ( defined( 'CLEVERFOX_PLUGIN_DIR' ) ) {
         if ( ! function_exists( 'cleverfox_avril_frontpage_sections' ) ) {
@@ -617,9 +631,8 @@ function chinacongress_ensure_cleverfox_avril_loaded() {
     }
 }
 add_action( 'plugins_loaded', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
-add_action( 'init', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
 
-// 5. Customizer 配置继承保底：解决 Clever Fox 升级后校验子主题配置导致轮播图/组件丢失的问题
+// 2. Customizer 配置继承保底：解决 Clever Fox 升级后校验子主题配置导致轮播图/组件丢失的问题
 function chinacongress_theme_mods_fallback( $mods ) {
     $parent_mods = get_option( 'theme_mods_avril' );
     if ( is_array( $parent_mods ) ) {
@@ -640,28 +653,12 @@ function chinacongress_theme_mods_fallback( $mods ) {
 }
 add_filter( 'option_theme_mods_avril-child', 'chinacongress_theme_mods_fallback', 99 );
 
-add_filter( 'theme_mod_slider', function( $val ) {
-    if ( empty( $val ) ) {
-        $pm = get_option( 'theme_mods_avril' );
-        return ! empty( $pm['slider'] ) ? $pm['slider'] : $val;
-    }
-    return $val;
-}, 99 );
-
-add_filter( 'theme_mod_features_contents', function( $val ) {
-    if ( empty( $val ) ) {
-        $pm = get_option( 'theme_mods_avril' );
-        return ! empty( $pm['features_contents'] ) ? $pm['features_contents'] : $val;
-    }
-    return $val;
-}, 99 );
-
-// 4. 重写顶栏 (Above Header) 逻辑：在子主题中强行将“法律顾问 / Counsel”绑定跳转至创世律师事务所 (https://chuangshilaw.com/)
+// 3. 重写顶栏 (Above Header) 逻辑：在子主题中强行将“法律顾问 / Counsel”绑定跳转至创世律师事务所 (https://chuangshilaw.com/)
 function chinacongress_above_header_override() {
     remove_action( 'avril_above_header', 'avril_above_header' );
     add_action( 'avril_above_header', 'chinacongress_above_header_custom' );
 }
-add_action( 'wp_head', 'chinacongress_above_header_override', 1 );
+add_action( 'init', 'chinacongress_above_header_override' );
 
 function chinacongress_above_header_custom() {
     $avril_hide_show_social_icon = get_theme_mod( 'hide_show_social_icon', '1' ); 
@@ -867,39 +864,22 @@ add_filter( 'manage_edit-post_sortable_columns', function( $columns ) {
 	return $columns;
 } );
 
-// 3. 在后台点击“快速编辑”时自动填入数据并为原生的“排序”框加上说明提示文字
-add_action( 'admin_footer-edit.php', function() {
+// 3. 在后台“快速编辑”的原生“排序”框旁注入说明提示文字 (纯 CSS 方案)
+add_action( 'admin_head-edit.php', function() {
 	global $current_screen;
 	if ( $current_screen && 'post' === $current_screen->post_type ) {
 		?>
-		<script>
-		jQuery(document).ready(function($) {
-			if (typeof inlineEditPost !== 'undefined') {
-				var $wp_inline_edit = inlineEditPost.edit;
-				inlineEditPost.edit = function( id ) {
-					$wp_inline_edit.apply( this, arguments );
-					var post_id = 0;
-					if ( typeof( id ) === 'object' ) post_id = parseInt( this.getId( id ) );
-					if ( post_id > 0 ) {
-						var $row = $('#post-' + post_id);
-						var menu_order = $row.find('.column-menu_order').text().trim();
-						var $edit_row = $('#edit-' + post_id);
-						var $input = $edit_row.find('input[name="menu_order"]');
-						if ($input.length) {
-							$input.val(menu_order || '0');
-							var $label = $input.closest('label');
-							if ($label.length) {
-								$label.find('.title').text('排序号');
-								if (!$edit_row.find('.menu-order-tip').length) {
-									$label.after('<div class="menu-order-tip" style="color:#666; font-size:12px; margin-top:4px; font-weight:normal;">（数字越小越靠前，支持负数如 -1，默认：0）</div>');
-								}
-							}
-						}
-					}
-				};
-			}
-		});
-		</script>
+		<style>
+		.inline-edit-row label:has(input[name="menu_order"])::after {
+			content: "（数字越小越靠前，支持负数如 -1，默认：0）";
+			color: #666;
+			font-size: 12px;
+			font-weight: normal;
+			margin-left: 8px;
+			display: inline-block;
+			vertical-align: middle;
+		}
+		</style>
 		<?php
 	}
 } );
