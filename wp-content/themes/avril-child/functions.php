@@ -872,18 +872,6 @@ add_action( 'admin_footer-edit.php', function() {
 	global $current_screen;
 	if ( $current_screen && 'post' === $current_screen->post_type ) {
 		?>
-		<style>
-		/* 纯 CSS 注入说明提示文字，保证在快速编辑弹出时瞬间显示 */
-		tr.inline-edit-post label:has(input[name="menu_order"]):after {
-			content: '（数字越小越靠前，支持负数如 -1，默认：0）';
-			color: #666;
-			font-size: 12px;
-			margin-left: 6px;
-			font-weight: normal;
-			display: inline-block;
-			vertical-align: middle;
-		}
-		</style>
 		<script>
 		jQuery(document).ready(function($) {
 			if (typeof inlineEditPost !== 'undefined') {
@@ -902,8 +890,8 @@ add_action( 'admin_footer-edit.php', function() {
 							var $label = $input.closest('label');
 							if ($label.length) {
 								$label.find('.title').text('排序号');
-								if (!$label.find('.menu-order-tip').length) {
-									$label.append('<span class="menu-order-tip" style="display:inline-block; color:#666; font-size:12px; margin-left:6px; vertical-align:middle; font-weight:normal;">（数字越小越靠前，支持负数如 -1，默认：0）</span>');
+								if (!$edit_row.find('.menu-order-tip').length) {
+									$label.after('<div class="menu-order-tip" style="color:#666; font-size:12px; margin-top:4px; font-weight:normal;">（数字越小越靠前，支持负数如 -1，默认：0）</div>');
 								}
 							}
 						}
