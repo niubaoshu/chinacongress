@@ -149,12 +149,13 @@ i.fa-usd:before {
 
 /* 左侧图片海报区域 */
 .category-post-card .category-post-thumb-wrap {
-    flex: 0 0 38% !important;
-    max-width: 38% !important;
+    flex: 0 0 25% !important;
+    max-width: 25% !important;
     position: relative !important;
     overflow: hidden !important;
     border-radius: 8px !important;
-    min-height: 180px !important;
+    min-height: 160px !important;
+    max-height: 210px !important;
     background: #f4f8fb !important;
 }
 
@@ -169,6 +170,7 @@ i.fa-usd:before {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+    object-position: center top !important;
     transition: transform 0.4s ease !important;
 }
 
@@ -194,7 +196,7 @@ i.fa-usd:before {
 
 /* 右侧文本内容区域 */
 .category-post-card .category-post-content-wrap {
-    flex: 1 1 62% !important;
+    flex: 1 1 75% !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
