@@ -41,7 +41,7 @@ echo "------------------------------------------"
 if [ "${TARGET}" = "localhost" ]; then
     echo "1. 正在将当前分支 [ ${CURRENT_BRANCH} ] 代码同步至本地 localhost ..."
     mkdir -p "${LOCAL_DEST}"
-    rsync -avz --no-o --no-g --delete --exclude='.git' \
+    rsync -avz --no-o --no-g --delete --exclude='.git' --exclude='*.md' \
       "${CHILD_THEME_SRC}/" \
       "${LOCAL_DEST}/"
     echo "✅ 本地 localhost 同步完成 (无需 root/sudo)！"
@@ -53,8 +53,8 @@ elif [ "${TARGET}" = "production" ] || [ "${TARGET}" = "remote" ]; then
         exit 1
     fi
 
-    echo "2. 正在将主线 main 分支代码部署到线上生产服务器 (Chinacongress) [排除 scripts 目录] ..."
-    rsync -avz --delete --exclude='.git' --exclude='scripts' \
+    echo "2. 正在将主线 main 分支代码部署到线上生产服务器 (Chinacongress) [排除 scripts 与 *.md] ..."
+    rsync -avz --delete --exclude='.git' --exclude='scripts' --exclude='*.md' \
       "${CHILD_THEME_SRC}/" \
       "${REMOTE_DEST}/"
     echo "✅ 线上生产环境部署完成！"
