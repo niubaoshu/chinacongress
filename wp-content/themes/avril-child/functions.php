@@ -631,6 +631,7 @@ function chinacongress_ensure_cleverfox_avril_loaded() {
     }
 }
 add_action( 'plugins_loaded', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
+add_action( 'init', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
 
 // 2. Customizer 配置继承保底：解决 Clever Fox 升级后校验子主题配置导致轮播图/组件丢失的问题
 function chinacongress_theme_mods_fallback( $mods ) {
@@ -653,12 +654,28 @@ function chinacongress_theme_mods_fallback( $mods ) {
 }
 add_filter( 'option_theme_mods_avril-child', 'chinacongress_theme_mods_fallback', 99 );
 
+add_filter( 'theme_mod_slider', function( $val ) {
+    if ( empty( $val ) ) {
+        $pm = get_option( 'theme_mods_avril' );
+        return ! empty( $pm['slider'] ) ? $pm['slider'] : $val;
+    }
+    return $val;
+}, 99 );
+
+add_filter( 'theme_mod_features_contents', function( $val ) {
+    if ( empty( $val ) ) {
+        $pm = get_option( 'theme_mods_avril' );
+        return ! empty( $pm['features_contents'] ) ? $pm['features_contents'] : $val;
+    }
+    return $val;
+}, 99 );
+
 // 3. 重写顶栏 (Above Header) 逻辑：在子主题中强行将“法律顾问 / Counsel”绑定跳转至创世律师事务所 (https://chuangshilaw.com/)
 function chinacongress_above_header_override() {
     remove_action( 'avril_above_header', 'avril_above_header' );
     add_action( 'avril_above_header', 'chinacongress_above_header_custom' );
 }
-add_action( 'init', 'chinacongress_above_header_override' );
+add_action( 'wp_head', 'chinacongress_above_header_override', 1 );
 
 function chinacongress_above_header_custom() {
     $avril_hide_show_social_icon = get_theme_mod( 'hide_show_social_icon', '1' ); 
