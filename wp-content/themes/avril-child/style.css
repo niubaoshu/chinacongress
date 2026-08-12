@@ -79,41 +79,50 @@ body {
 
 /* ==============================================================================
  * 面包屑导航 (Breadcrumb Area) 手机端以完整【模块】为单位且累计宽度达 60% 自动折行
- * 1. 模块完整性：white-space: nowrap 保证每个独立模块内部绝不拆字断行
+ * 匹配 Avril 主题实际 DOM 结构：.breadcrumb-list / a / li
+ * 1. 模块完整性：white-space: nowrap 保证 <a> 标签与独立模块内部绝不拆字断行
  * 2. 60% 宽度阈值：在移动端限制容器累计宽度 max-width: 60%，超过 60% 自动折行
  * ============================================================================== */
-.breadcrumb-area .breadcrumb-content .breadcrumb,
-.breadcrumb-area .breadcrumb,
-.breadcrumb-content ul.breadcrumb,
-ul.breadcrumb {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    align-items: center !important;
+.breadcrumb-area .breadcrumb-content .breadcrumb-list,
+.breadcrumb-area .breadcrumb-list,
+.breadcrumb-content .breadcrumb-list,
+ol.breadcrumb-list,
+ul.breadcrumb,
+.breadcrumb {
+    display: block !important;
+    text-align: center !important;
     padding: 0 !important;
     margin: 8px auto 0 auto !important;
     list-style: none !important;
 }
 
+.breadcrumb-list a,
+.breadcrumb-list li,
+.breadcrumb-area .breadcrumb-list a,
+.breadcrumb-area .breadcrumb-list li,
 .breadcrumb-area .breadcrumb li,
 .breadcrumb-area .breadcrumb-content li,
 .breadcrumb-item,
 .breadcrumb li {
-    display: inline-flex !important;
-    align-items: center !important;
-    white-space: nowrap !important; /* 核心：保证单个模块内部绝不拆字断行 */
+    display: inline-block !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important; /* 核心：保证单个 <a> 模块内部绝不拆字断行 */
     max-width: 100% !important;     /* 兜底：防止单个超长标题超出屏幕 */
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    margin-bottom: 4px !important;
+    margin: 3px 0 !important;
 }
 
 @media (max-width: 991px) {
-    .breadcrumb-area .breadcrumb-content .breadcrumb,
-    .breadcrumb-area .breadcrumb,
-    .breadcrumb-content ul.breadcrumb,
-    ul.breadcrumb {
+    .breadcrumb-area .breadcrumb-content .breadcrumb-list,
+    .breadcrumb-area .breadcrumb-list,
+    .breadcrumb-content .breadcrumb-list,
+    ol.breadcrumb-list,
+    ul.breadcrumb,
+    .breadcrumb {
         max-width: 60% !important;   /* 手机移动端：导航累计宽度超过屏幕 60% 即触发折行 */
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
 }
 
