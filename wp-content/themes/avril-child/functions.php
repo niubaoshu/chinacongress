@@ -945,3 +945,57 @@ function chinacongress_sort_category_sticky_posts_first( $orderby, $query ) {
 }
 add_filter( 'posts_orderby', 'chinacongress_sort_category_sticky_posts_first', 10, 2 );
 
+/**
+ * 自动在文章中智能插入可直接播放的 YouTube 高清视频窗口
+ * 规则：
+ * 1. 100% 保留原本正文中的 <a type="youtube"> 文本超链接不变；
+ * 2. 若文章正文中没有其他视频框，则将视频播放框插入到【文章正文最头部】；
+ * 3. 若文章正文中已有视频框（<iframe> 或 <video>），则将视频播放框插入到【现有视频框正下方】。
+ */
+add_filter( 'the_content', 'chinacongress_auto_embed_youtube_players', 20 );
+function chinacongress_auto_embed_youtube_players( $content ) {
+	if ( is_admin() || empty( $content ) || ! is_singular( 'post' ) ) {
+		return $content;
+	}
+
+	// 1. 搜寻正文中是否有 type="youtube" 的 <a> 链接标签
+	if ( ! preg_match_all( '/<a\s+[^>]*?type=[\'"]?youtube[\'"]?[^>]*?>.*?<\/a>/i', $content, $matches, PREG_SET_ORDER ) ) {
+		return $content;
+	}
+
+	// 2. 提取所有匹配到的 YouTube 视频 ID 并生成 16:9 响应式播放器 HTML 块
+	$video_boxes = array();
+	foreach ( $matches as $item ) {
+		$full_a_tag = $item[0];
+		if ( preg_match( '/href=[\'"]([^\'"]+)[\'"]/i', $full_a_tag, $href_match ) ) {
+			$url = $href_match[1];
+			if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $url, $yt_matches ) ) {
+				$video_id = $yt_matches[1];
+				$video_boxes[] = '<div class="cc-video-embed-wrap" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:10px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.1);">'
+							   . '<iframe src="https://www.youtube.com/embed/' . esc_attr( $video_id ) . '" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>'
+							   . '</div>';
+			}
+		}
+	}
+
+	if ( empty( $video_boxes ) ) {
+		return $content;
+	}
+
+	$combined_boxes = implode( "\n", $video_boxes );
+
+	// 3. 判断文章正文中是否已经存在视频框 (<iframe> 标签或 <figure class="...embed..."> 容器)
+	if ( preg_match( '/(<figure[^>]*class="[^"]*wp-block-embed[^"]*"[^>]*>.*?<\/figure>|<iframe[^>]*>.*?<\/iframe>|<video[^>]*>.*?<\/video>)/is', $content, $embed_match, PREG_OFFSET_CAPTURE ) ) {
+		// 情况 B：已有视频框，插入到第一个/现有视频框的正下方
+		$matched_str = $embed_match[0][0];
+		$matched_pos = $embed_match[0][1];
+		$insert_pos  = $matched_pos + strlen( $matched_str );
+
+		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
+	}
+
+	// 情况 A：文章正文中没有其他视频框，直接插入到【文章正文最头部】
+	return $combined_boxes . "\n" . $content;
+}
+
+
