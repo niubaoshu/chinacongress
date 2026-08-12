@@ -994,9 +994,9 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
 	}
 
-	// 4. 智能检测文章头部是否存在“副标题 (cc_title / cc_colon) / 大字号标题 (h1-h6) / 作者署名 / 导语”
-	// 允许头部带有 <style>、<script> 或 HTML 注释，精准定位出现的第一个副标题/标题元素
-	$subtitle_pattern = '/(<h[1-6][^>]*?>.*?<\/h[1-6]>|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|subtitle|post-subtitle|sub-title)[^\'"]*[\'"][^>]*?>.*?<\/div>|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-huge-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>)/is';
+	// 4. 通用智能检测全站所有文章最头部是否存在“副标题 / 大字号标题 / 导语 / 阶段章节标题”
+	// 通用匹配规则：HTML 标题 (h1-h6)、各类副标题 div 块 (cc_title/head_title/cc_colon/chapter/section 等)、大字号段落及 style="font-size:..." 放大样式
+	$subtitle_pattern = '/(<h[1-6][^>]*?>.*?<\/h[1-6]>|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|head_title|cc_strong|subtitle|post-subtitle|sub-title|title|heading|chapter|section)[^\'"]*[\'"][^>]*?>.*?<\/div>|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-huge-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>|<div[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/div>)/is';
 
 	if ( preg_match( $subtitle_pattern, $content, $sub_match, PREG_OFFSET_CAPTURE ) ) {
 		$matched_str = $sub_match[0][0];
