@@ -994,17 +994,19 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
 	}
 
-	// 4. 智能检测文章最头部是否存在“副标题 / 大字号标题 / 作者署名 / 导语”
-	// 匹配类型包括：h1-h6 标题标签、cc_title/cc_colon/cc_author/subtitle 等 div 块、Gutenberg 大字号段落、粗体标题行等
-	$subtitle_pattern = '/^(\s*(?:<!--.*?-->\s*)*(?:<h[1-6][^>]*?>.*?<\/h[1-6]>\s*|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|subtitle|post-subtitle|sub-title)[^\'"]*[\'"][^>]*?>.*?<\/div>\s*|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-huge-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>\s*|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>\s*|<p[^>]*?>\s*<strong[^>]*?>.*?<\/strong>\s*<\/p>\s*)+)/is';
+	// 4. 智能检测文章头部是否存在“副标题 (cc_title / cc_colon) / 大字号标题 (h1-h6) / 作者署名 / 导语”
+	// 允许头部带有 <style>、<script> 或 HTML 注释，精准定位出现的第一个副标题/标题元素
+	$subtitle_pattern = '/(<h[1-6][^>]*?>.*?<\/h[1-6]>|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|subtitle|post-subtitle|sub-title)[^\'"]*[\'"][^>]*?>.*?<\/div>|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-huge-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>)/is';
 
 	if ( preg_match( $subtitle_pattern, $content, $sub_match, PREG_OFFSET_CAPTURE ) ) {
-		// 情况 B：检测到文章头部存在大字号副标题/导语块，插入到副标题块的正下方
 		$matched_str = $sub_match[0][0];
 		$matched_pos = $sub_match[0][1];
-		$insert_pos  = $matched_pos + strlen( $matched_str );
 
-		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
+		// 只有当副标题元素位于文章前半部分 (前 3000 字符内) 时才认定为文章头部的副标题
+		if ( $matched_pos < 3000 ) {
+			$insert_pos = $matched_pos + strlen( $matched_str );
+			return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
+		}
 	}
 
 	// 情况 C：无其他视频也无头部副标题，插入到【文章正文最头部】
