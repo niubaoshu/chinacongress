@@ -78,33 +78,34 @@ body {
 }
 
 /* ==============================================================================
- * 面包屑导航 (Breadcrumb Area) 手机端以完整【模块】为单位自动折行优化
- * 当宽度不足以容纳一个完整模块（如“中国议会知识问答”）时，整个模块整块折行到下一行
+ * 面包屑导航 (Breadcrumb Area) 手机端以完整【模块】为单位自动折行与行宽均衡优化
+ * 1. 完整模块不断开：white-space: nowrap 保证每个模块独立完整
+ * 2. 多行宽度均衡：text-wrap: balance 使得折行时每一行的总宽度大致相等（行宽平衡）
  * ============================================================================== */
 .breadcrumb-area .breadcrumb-content .breadcrumb,
 .breadcrumb-area .breadcrumb,
 .breadcrumb-content ul.breadcrumb,
 ul.breadcrumb {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-    align-items: center !important;
+    display: block !important;
+    text-align: center !important;
+    text-wrap: balance !important;      /* 核心：折行时让各行总宽度尽量均衡相等 */
     padding: 0 !important;
-    margin: 8px 0 0 0 !important;
+    margin: 8px auto 0 auto !important;
     list-style: none !important;
+    max-width: 100% !important;
 }
 
 .breadcrumb-area .breadcrumb li,
 .breadcrumb-area .breadcrumb-content li,
 .breadcrumb-item,
 .breadcrumb li {
-    display: inline-flex !important;
-    align-items: center !important;
-    white-space: nowrap !important; /* 核心：每个独立模块内部不中途断开 */
-    max-width: 100% !important;     /* 防止极长标题超出手机可视宽 */
+    display: inline-block !important;   /* 参与 inline 文本流以触发 text-wrap: balance 均衡 */
+    vertical-align: middle !important;
+    white-space: nowrap !important;     /* 核心：保证单个模块内部绝不拆分断行 */
+    max-width: 100% !important;         /* 兜底：防止极长标题超出手机可视宽 */
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    margin-bottom: 4px !important;
+    margin: 3px 2px !important;
 }
 
 /* 修复顶部社交图标在 FontAwesome 5 框架下的显示问题 */
