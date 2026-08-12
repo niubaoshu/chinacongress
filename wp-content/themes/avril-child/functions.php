@@ -994,12 +994,12 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
 	}
 
-	// 4. 智能检测文章最头部是否存在“副标题 (cc_title / cc_colon) / 作者署名 (cc_author) / 大字号导语”
-	// 匹配类型包括：h1-h6 标题标签、cc_title/cc_colon/cc_author/subtitle 等 div 块、大字号/导语段落
-	$subtitle_pattern = '/^(\s*(?:<!--.*?-->\s*)*(?:<h[1-6][^>]*?>.*?<\/h[1-6]>\s*|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|subtitle|post-subtitle|sub-title)[^\'"]*[\'"][^>]*?>.*?<\/div>\s*|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>\s*|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>\s*)+)/is';
+	// 4. 智能检测文章最头部是否存在“副标题 / 大字号标题 / 作者署名 / 导语”
+	// 匹配类型包括：h1-h6 标题标签、cc_title/cc_colon/cc_author/subtitle 等 div 块、Gutenberg 大字号段落、粗体标题行等
+	$subtitle_pattern = '/^(\s*(?:<!--.*?-->\s*)*(?:<h[1-6][^>]*?>.*?<\/h[1-6]>\s*|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|subtitle|post-subtitle|sub-title)[^\'"]*[\'"][^>]*?>.*?<\/div>\s*|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-huge-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>\s*|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>\s*|<p[^>]*?>\s*<strong[^>]*?>.*?<\/strong>\s*<\/p>\s*)+)/is';
 
 	if ( preg_match( $subtitle_pattern, $content, $sub_match, PREG_OFFSET_CAPTURE ) ) {
-		// 情况 B：检测到文章头部存在副标题/作者署名块，插入到副标题块的正下方
+		// 情况 B：检测到文章头部存在大字号副标题/导语块，插入到副标题块的正下方
 		$matched_str = $sub_match[0][0];
 		$matched_pos = $sub_match[0][1];
 		$insert_pos  = $matched_pos + strlen( $matched_str );
