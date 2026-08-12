@@ -78,10 +78,12 @@ body {
 }
 
 /* ==============================================================================
- * 面包屑导航 (Breadcrumb Area) 手机端以完整【模块】为单位且累计宽度达 60% 自动折行
+ * 面包屑导航 (Breadcrumb Area) 手机端以完整【模块】为单位自动折行优化
  * 匹配 Avril 主题实际 DOM 结构：.breadcrumb-list / a / li
- * 1. 模块完整性：white-space: nowrap 保证 <a> 标签与独立模块内部绝不拆字断行
- * 2. 60% 宽度阈值：在移动端限制容器累计宽度 max-width: 60%，超过 60% 自动折行
+ * 核心逻辑：
+ * 1. 容器开启 flex-wrap: wrap 允许自然折行
+ * 2. 每一个 <a> 链接模块与 li 节点设置 white-space: nowrap，保证内部绝不拆字断行
+ * 3. 不做文本省略截断（无 overflow:hidden / text-overflow:ellipsis），确保完整模块整体换行
  * ============================================================================== */
 .breadcrumb-area .breadcrumb-content .breadcrumb-list,
 .breadcrumb-area .breadcrumb-list,
@@ -89,11 +91,14 @@ body {
 ol.breadcrumb-list,
 ul.breadcrumb,
 .breadcrumb {
-    display: block !important;
-    text-align: center !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
     padding: 0 !important;
     margin: 8px auto 0 auto !important;
     list-style: none !important;
+    max-width: 100% !important;
 }
 
 .breadcrumb-list a,
@@ -104,26 +109,10 @@ ul.breadcrumb,
 .breadcrumb-area .breadcrumb-content li,
 .breadcrumb-item,
 .breadcrumb li {
-    display: inline-block !important;
-    vertical-align: middle !important;
+    display: inline-flex !important;
+    align-items: center !important;
     white-space: nowrap !important; /* 核心：保证单个 <a> 模块内部绝不拆字断行 */
-    max-width: 100% !important;     /* 兜底：防止单个超长标题超出屏幕 */
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    margin: 3px 0 !important;
-}
-
-@media (max-width: 991px) {
-    .breadcrumb-area .breadcrumb-content .breadcrumb-list,
-    .breadcrumb-area .breadcrumb-list,
-    .breadcrumb-content .breadcrumb-list,
-    ol.breadcrumb-list,
-    ul.breadcrumb,
-    .breadcrumb {
-        max-width: 60% !important;   /* 手机移动端：导航累计宽度超过屏幕 60% 即触发折行 */
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
+    margin: 2px 4px !important;
 }
 
 /* 修复顶部社交图标在 FontAwesome 5 框架下的显示问题 */
