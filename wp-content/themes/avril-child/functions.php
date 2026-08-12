@@ -969,7 +969,7 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 		$full_a_tag = $item[0];
 		if ( preg_match( '/href=[\'"]([^\'"]+)[\'"]/i', $full_a_tag, $href_match ) ) {
 			$url = $href_match[1];
-			if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $url, $yt_matches ) ) {
+			if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i', $url, $yt_matches ) ) {
 				$video_id = $yt_matches[1];
 				$video_boxes[] = '<div class="cc-video-embed-wrap" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:10px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.1);">'
 							   . '<iframe src="https://www.youtube.com/embed/' . esc_attr( $video_id ) . '" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>'
@@ -986,7 +986,7 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 
 	// 3. 判断文章正文中是否已经存在视频框 (<iframe> 标签或 <figure class="...embed..."> 容器)
 	if ( preg_match( '/(<figure[^>]*class="[^"]*wp-block-embed[^"]*"[^>]*>.*?<\/figure>|<iframe[^>]*>.*?<\/iframe>|<video[^>]*>.*?<\/video>)/is', $content, $embed_match, PREG_OFFSET_CAPTURE ) ) {
-		// 情况 B：已有视频框，插入到第一个/现有视频框的正下方
+		// 情况 A：已有视频框，插入到第一个/现有视频框的正下方
 		$matched_str = $embed_match[0][0];
 		$matched_pos = $embed_match[0][1];
 		$insert_pos  = $matched_pos + strlen( $matched_str );
@@ -994,7 +994,20 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
 	}
 
-	// 情况 A：文章正文中没有其他视频框，直接插入到【文章正文最头部】
+	// 4. 智能检测文章最头部是否存在“副标题 (cc_title / cc_colon) / 作者署名 (cc_author) / 大字号导语”
+	// 匹配类型包括：h1-h6 标题标签、cc_title/cc_colon/cc_author/subtitle 等 div 块、大字号/导语段落
+	$subtitle_pattern = '/^(\s*(?:<!--.*?-->\s*)*(?:<h[1-6][^>]*?>.*?<\/h[1-6]>\s*|<div[^>]*class=[\'"][^\'"]*(?:cc_title|cc_colon|cc_author|subtitle|post-subtitle|sub-title)[^\'"]*[\'"][^>]*?>.*?<\/div>\s*|<p[^>]*class=[\'"][^\'"]*(?:has-large-font-size|has-medium-font-size|subtitle|lead)[^\'"]*[\'"][^>]*?>.*?<\/p>\s*|<p[^>]*style=[\'"][^\'"]*font-size[^\'"]*[\'"][^>]*?>.*?<\/p>\s*)+)/is';
+
+	if ( preg_match( $subtitle_pattern, $content, $sub_match, PREG_OFFSET_CAPTURE ) ) {
+		// 情况 B：检测到文章头部存在副标题/作者署名块，插入到副标题块的正下方
+		$matched_str = $sub_match[0][0];
+		$matched_pos = $sub_match[0][1];
+		$insert_pos  = $matched_pos + strlen( $matched_str );
+
+		return substr_replace( $content, "\n" . $combined_boxes . "\n", $insert_pos, 0 );
+	}
+
+	// 情况 C：无其他视频也无头部副标题，插入到【文章正文最头部】
 	return $combined_boxes . "\n" . $content;
 }
 
