@@ -62,10 +62,10 @@ body {
     margin-top: 20px !important;
 }
 
-/* 让导航栏下方面包屑 (Breadcrumb Area) 的背景图片上下/左右100%完美居中对齐 */
+/* 让导航栏下方面包屑 (Breadcrumb Area) 的背景图片 100% 完整显示整张全图 (零裁切) */
 .breadcrumb-area {
     background-position: center center !important;
-    background-size: cover !important;
+    background-size: 100% 100% !important;
     background-repeat: no-repeat !important;
     background-attachment: scroll !important;
 }
