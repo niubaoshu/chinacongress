@@ -529,9 +529,25 @@ function chinacongress_get_first_image_url( $post_id = null ) {
         $url = '/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
     }
 
-    // 确保返回完整绝对路径（带 https:// 域名），符合 Open Graph & Twitter Cards 社交平台抓取标准
-    if ( $url && ! preg_match( '~^(?:f|ht)tps?://~i', $url ) ) {
-        $url = site_url( '/' . ltrim( $url, '/' ) );
+    // 确保返回完整绝对路径（带 https:// 域名），并对路径中的中文字符进行 rawurlencode 编码
+    if ( $url ) {
+        if ( ! preg_match( '~^(?:f|ht)tps?://~i', $url ) ) {
+            $url = site_url( '/' . ltrim( $url, '/' ) );
+        }
+        $parts = parse_url( $url );
+        if ( $parts && isset( $parts['path'] ) ) {
+            $path_segments = explode( '/', $parts['path'] );
+            foreach ( $path_segments as &$segment ) {
+                $segment = rawurlencode( rawurldecode( $segment ) );
+            }
+            $parts['path'] = implode( '/', $path_segments );
+            $scheme = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
+            $host   = isset( $parts['host'] ) ? $parts['host'] : '';
+            $port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
+            $path   = isset( $parts['path'] ) ? $parts['path'] : '';
+            $query  = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+            $url    = $scheme . $host . $port . $path . $query;
+        }
     }
 
     return $url;
@@ -572,6 +588,7 @@ function chinacongress_add_social_og_tags() {
         echo '<meta property="og:description" content="' . $description . '" />' . "\n";
         echo '<meta property="og:url" content="' . $url . '" />' . "\n";
         echo '<meta property="og:image" content="' . $image_url . '" />' . "\n";
+        echo '<meta property="og:image:secure_url" content="' . $image_url . '" />' . "\n";
         echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
         echo '<meta name="twitter:title" content="' . $title . '" />' . "\n";
         echo '<meta name="twitter:description" content="' . $description . '" />' . "\n";
