@@ -492,40 +492,49 @@ function chinacongress_get_first_image_url( $post_id = null ) {
         $post_id = get_the_ID();
     }
 
+    $url = '';
+
     // 1. 优先检查：是否手动设置了特色图片 (Featured Image)
     if ( has_post_thumbnail( $post_id ) ) {
         $thumb_id = get_post_thumbnail_id( $post_id );
         $img_src  = wp_get_attachment_image_src( $thumb_id, 'full' );
         if ( ! empty( $img_src[0] ) ) {
-            return $img_src[0];
+            $url = $img_src[0];
         }
     }
 
-    $post = get_post( $post_id );
-    if ( $post && ! empty( $post->post_content ) ) {
-        // 2. 次级检查：用正则表达式在文章正文中搜寻第一张 <img src="..."> 图片
-        preg_match_all( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $matches );
-        if ( ! empty( $matches[1][0] ) ) {
-            return $matches[1][0];
-        }
-
-        // 3. 视频检查：若无静态图片，检查是否嵌入了 YouTube 视频，自动提取 YouTube 标准高清封面 (100% 存在且不报 404 错)
-        if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_matches ) ) {
-            if ( ! empty( $yt_matches[1] ) ) {
-                return 'https://img.youtube.com/vi/' . $yt_matches[1] . '/hqdefault.jpg';
-            }
-        }
-
-        // 4. 视频检查：若有 <video poster="..."> 海报封面
-        if ( preg_match( '/<video.+?poster=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $v_matches ) ) {
-            if ( ! empty( $v_matches[1] ) ) {
-                return $v_matches[1];
+    if ( empty( $url ) ) {
+        $post = get_post( $post_id );
+        if ( $post && ! empty( $post->post_content ) ) {
+            // 2. 次级检查：用正则表达式在文章正文中搜寻第一张 <img src="..."> 图片
+            preg_match_all( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $matches );
+            if ( ! empty( $matches[1][0] ) ) {
+                $url = $matches[1][0];
+            } elseif ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_matches ) ) {
+                // 3. 视频检查：若无静态图片，检查是否嵌入了 YouTube 视频，自动提取 YouTube 标准高清封面 (100% 存在且不报 404 错)
+                if ( ! empty( $yt_matches[1] ) ) {
+                    $url = 'https://img.youtube.com/vi/' . $yt_matches[1] . '/hqdefault.jpg';
+                }
+            } elseif ( preg_match( '/<video.+?poster=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $v_matches ) ) {
+                // 4. 视频检查：若有 <video poster="..."> 海报封面
+                if ( ! empty( $v_matches[1] ) ) {
+                    $url = $v_matches[1];
+                }
             }
         }
     }
 
     // 5. 兜底保护：若正文无图无视频，自动返回中国议会官方 Banner Logo
-    return '/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
+    if ( empty( $url ) ) {
+        $url = '/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
+    }
+
+    // 确保返回完整绝对路径（带 https:// 域名），符合 Open Graph & Twitter Cards 社交平台抓取标准
+    if ( $url && ! preg_match( '~^(?:f|ht)tps?://~i', $url ) ) {
+        $url = site_url( '/' . ltrim( $url, '/' ) );
+    }
+
+    return $url;
 }
 
 // 过滤 post_thumbnail_html，使前台列表无特色图片时自动展示正文第一张图/视频封面
