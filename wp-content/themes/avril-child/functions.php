@@ -1042,7 +1042,7 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 /**
  * 文章页面 (is_single) 面包屑导航栏不显示导航信息末尾的文章标题
  */
-add_action( 'template_redirect', 'chinacongress_remove_single_breadcrumb_post_title' );
+add_action( 'wp', 'chinacongress_remove_single_breadcrumb_post_title' );
 function chinacongress_remove_single_breadcrumb_post_title() {
 	if ( is_single() ) {
 		ob_start( function( $buffer ) {
