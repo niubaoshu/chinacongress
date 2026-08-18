@@ -1039,4 +1039,18 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 	return $combined_boxes . "\n" . $content;
 }
 
+/**
+ * 文章页面 (is_single) 面包屑导航栏不显示导航信息末尾的文章标题
+ */
+add_action( 'template_redirect', 'chinacongress_remove_single_breadcrumb_post_title' );
+function chinacongress_remove_single_breadcrumb_post_title() {
+	if ( is_single() ) {
+		ob_start( function( $buffer ) {
+			$pattern = '/(<ol[^>]*class="[^"]*breadcrumb-list[^"]*"[^>]*>.*?<\/a>)(?:&nbsp;?&gt;?&nbsp;?|&gt;|&nbsp;|\s|>)*<li[^>]*class="[^"]*active[^"]*"[^>]*>.*?<\/li>/is';
+			return preg_replace( $pattern, '$1', $buffer );
+		} );
+	}
+}
+
+
 

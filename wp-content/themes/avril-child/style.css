@@ -115,6 +115,12 @@ ul.breadcrumb,
     margin: 2px 4px !important;
 }
 
+/* 文章页面 (is_single) 面包屑导航栏：隐藏末尾文章标题 */
+.single .breadcrumb-list li.active,
+.single-post .breadcrumb-list li.active {
+    display: none !important;
+}
+
 /* 修复顶部社交图标在 FontAwesome 5 框架下的显示问题 */
 .widget_social_widget li a i.fa,
 .widget_social_widget li a i {
