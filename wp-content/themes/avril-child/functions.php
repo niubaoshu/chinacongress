@@ -572,13 +572,145 @@ function chinacongress_auto_first_image_html( $html, $post_id, $post_thumbnail_i
 }
 add_filter( 'post_thumbnail_html', 'chinacongress_auto_first_image_html', 10, 5 );
 
+// 注册全站社交分享 (Open Graph / Twitter Cards) 1200x628 标准大图尺寸
+add_action( 'after_setup_theme', function() {
+    add_image_size( 'social-og', 1200, 628, true );
+} );
+
+/**
+ * 获取符合社交平台 (X/Twitter, Facebook) 比例标准的 OG 图片数据 (包含 URL, Width, Height)
+ * 支持动态检测长宽比 (目标 ~ 1.91:1) 及自动居中裁切生成衍生图
+ *
+ * @param int|null $post_id
+ * @return array 包含 url, width, height 的数组
+ */
+function chinacongress_get_og_image_data( $post_id = null ) {
+    if ( ! $post_id ) {
+        $post_id = get_the_ID();
+    }
+
+    $raw_url = '';
+
+    // 1. 优先获取特色图片 (Featured Image) 的 social-og 尺寸或 full 尺寸
+    if ( has_post_thumbnail( $post_id ) ) {
+        $thumb_id = get_post_thumbnail_id( $post_id );
+        $img_src  = wp_get_attachment_image_src( $thumb_id, 'social-og' );
+        if ( empty( $img_src[0] ) ) {
+            $img_src = wp_get_attachment_image_src( $thumb_id, 'full' );
+        }
+        if ( ! empty( $img_src[0] ) ) {
+            $raw_url = $img_src[0];
+        }
+    }
+
+    // 2. 若无特色图片，回退提取正文第一张图
+    if ( empty( $raw_url ) ) {
+        $raw_url = chinacongress_get_first_image_url( $post_id );
+    }
+
+    $upload_dir = wp_upload_dir();
+    $img_url    = $raw_url;
+    $width      = 0;
+    $height     = 0;
+
+    // 尝试解析本地文件路径并检测长宽比
+    if ( ! empty( $raw_url ) && strpos( $raw_url, $upload_dir['baseurl'] ) !== false ) {
+        $rel_path  = ltrim( str_replace( $upload_dir['baseurl'], '', $raw_url ), '/' );
+        $rel_path  = rawurldecode( strtok( $rel_path, '?' ) );
+        $file_path = $upload_dir['basedir'] . '/' . $rel_path;
+
+        if ( file_exists( $file_path ) ) {
+            $img_size = @getimagesize( $file_path );
+            if ( $img_size && ! empty( $img_size[0] ) && ! empty( $img_size[1] ) ) {
+                $orig_w = $img_size[0];
+                $orig_h = $img_size[1];
+                $ratio  = $orig_w / $orig_h;
+
+                // 目标黄金比例 1.91 : 1。若长宽比严重异常 ( > 2.2 或 < 0.8 ) 则发起自动裁切
+                if ( $ratio > 2.2 || $ratio < 0.8 ) {
+                    if ( $ratio > 2.2 ) {
+                        // 极度扁平 (例如 3.72:1)，按高度裁切宽度
+                        $crop_h   = $orig_h;
+                        $crop_w   = intval( $orig_h * 1.91 );
+                        $offset_x = intval( ( $orig_w - $crop_w ) / 2 );
+                        $offset_y = 0;
+                    } else {
+                        // 极度瘦长 (例如 0.5:1)，按宽度裁切高度
+                        $crop_w   = $orig_w;
+                        $crop_h   = intval( $orig_w / 1.91 );
+                        $offset_x = 0;
+                        $offset_y = intval( ( $orig_h - $crop_h ) / 2 );
+                    }
+
+                    // 检查裁切尺寸是否满足 X 平台大图卡片最窄标准 (300 x 157 px)
+                    if ( $crop_w >= 300 && $crop_h >= 157 ) {
+                        $path_info       = pathinfo( $file_path );
+                        $cropped_rel     = $path_info['dirname'] . '/' . $path_info['filename'] . '-ogcrop.' . $path_info['extension'];
+                        $cropped_url_rel = str_replace( $upload_dir['basedir'], '', $cropped_rel );
+
+                        if ( file_exists( $cropped_rel ) ) {
+                            $img_url = $upload_dir['baseurl'] . $cropped_url_rel;
+                            $width   = $crop_w;
+                            $height  = $crop_h;
+                        } else {
+                            $editor = wp_get_image_editor( $file_path );
+                            if ( ! is_wp_error( $editor ) ) {
+                                $editor->crop( $offset_x, $offset_y, $crop_w, $crop_h );
+                                $saved = $editor->save( $cropped_rel );
+                                if ( ! is_wp_error( $saved ) && ! empty( $saved['path'] ) ) {
+                                    $img_url = $upload_dir['baseurl'] . $cropped_url_rel;
+                                    $width   = $crop_w;
+                                    $height  = $crop_h;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ( ! $width ) {
+                    $width  = $orig_w;
+                    $height = $orig_h;
+                }
+            }
+        }
+    }
+
+    // 格式化输出 URL，进行 rawurlencode 转义
+    if ( $img_url ) {
+        if ( ! preg_match( '~^(?:f|ht)tps?://~i', $img_url ) ) {
+            $img_url = site_url( '/' . ltrim( $img_url, '/' ) );
+        }
+        $parts = parse_url( $img_url );
+        if ( $parts && isset( $parts['path'] ) ) {
+            $path_segments = explode( '/', $parts['path'] );
+            foreach ( $path_segments as &$segment ) {
+                $segment = rawurlencode( rawurldecode( $segment ) );
+            }
+            $parts['path'] = implode( '/', $path_segments );
+            $scheme  = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
+            $host    = isset( $parts['host'] ) ? $parts['host'] : '';
+            $port    = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
+            $path    = isset( $parts['path'] ) ? $parts['path'] : '';
+            $query   = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+            $img_url = $scheme . $host . $port . $path . $query;
+        }
+    }
+
+    return array(
+        'url'    => $img_url,
+        'width'  => $width,
+        'height' => $height,
+    );
+}
+
 // 自动在 <head> 输出符合全网社交平台标准的 Open Graph & Twitter Cards 宽屏大图元数据
 function chinacongress_add_social_og_tags() {
     if ( is_single() || is_page() ) {
         global $post;
         $title       = esc_attr( get_the_title() );
         $url         = esc_url( get_permalink() );
-        $image_url   = esc_url( chinacongress_get_first_image_url( $post->ID ) );
+        $og_data     = chinacongress_get_og_image_data( $post->ID );
+        $image_url   = esc_url( $og_data['url'] );
         $raw_desc    = wp_strip_all_tags( $post->post_content );
         $description = esc_attr( mb_strimwidth( preg_replace( '/\s+/', ' ', $raw_desc ), 0, 120, '...' ) );
 
@@ -589,6 +721,10 @@ function chinacongress_add_social_og_tags() {
         echo '<meta property="og:url" content="' . $url . '" />' . "\n";
         echo '<meta property="og:image" content="' . $image_url . '" />' . "\n";
         echo '<meta property="og:image:secure_url" content="' . $image_url . '" />' . "\n";
+        if ( ! empty( $og_data['width'] ) && ! empty( $og_data['height'] ) ) {
+            echo '<meta property="og:image:width" content="' . intval( $og_data['width'] ) . '" />' . "\n";
+            echo '<meta property="og:image:height" content="' . intval( $og_data['height'] ) . '" />' . "\n";
+        }
         echo '<meta name="twitter:card" content="summary_large_image" />' . "\n";
         echo '<meta name="twitter:title" content="' . $title . '" />' . "\n";
         echo '<meta name="twitter:description" content="' . $description . '" />' . "\n";
