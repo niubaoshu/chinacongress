@@ -368,7 +368,7 @@ function avril_lite_cta() {
 						<!-- 最新注册选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
 						<div class="cta-content mainland-members-container">
 							<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-								<span style="white-space: nowrap;">最新注册选民：</span>
+								<span style="white-space: nowrap;">近期新增：</span>
 								<span class="mainland-members-ticker" id="mainland_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
 									<ul class="mainland-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
 										<?php foreach ( $latest_members as $member ) : ?>
