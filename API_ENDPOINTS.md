@@ -66,7 +66,27 @@
 - **接口 URL**：`https://reg.congresscenter.org/api/public/latest_members.json`
 - **请求方式**：`GET`
 - **数据格式**：`JSON`
-- **响应示例**：
+- **响应示例 A（最新周期统计输出格式 - 2026-09-14 起）**：
+  ```json
+  {
+      "updated_at": "2026-09-14T09:30:01-07:00",
+      "members": [
+          {
+              "province": "本周",
+              "display_name": "020 位"
+          },
+          {
+              "province": "本月",
+              "display_name": "080 位"
+          },
+          {
+              "province": "本季",
+              "display_name": "342 位"
+          }
+      ]
+  }
+  ```
+- **响应示例 B（传统具体选民脱敏列表格式）**：
   ```json
   {
       "updated_at": "2026-08-02T22:12:22-07:00",
@@ -82,20 +102,12 @@
           {
               "province": "北京",
               "display_name": "***JT4"
-          },
-          {
-              "province": "北京",
-              "display_name": "***JWP"
-          },
-          {
-              "province": "湖南",
-              "display_name": "***FRQ"
           }
       ]
   }
   ```
 - **字段说明**：
   - `updated_at` *(string)*: 数据最后更新时间（ISO 8601 格式）。
-  - `members` *(array)*: 大陆院最新注册成员列表。
-    - `province` *(string)*: 成员所属省份/地区。
-    - `display_name` *(string)*: 成员脱敏显示名称。
+  - `members` *(array)*: 大陆院最新注册成员或统计数据列表。
+    - `province` *(string)*: 成员所属省份/地区（或统计周期说明，如“本周”、“本月”、“本季”）。
+    - `display_name` *(string)*: 成员脱敏显示名称（或统计周期注册人数，如“020 位”）。
