@@ -193,7 +193,7 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 }
 
 /**
- * 从远程 API (https://api.fdcusa.org/?token=8d9f3b7c2e6a) 自动同步海外院选民登记总人数与最新选民列表
+ * 从远程 API (https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a) 自动同步海外院选民登记总人数与最新选民列表
  *
  * @param bool $force 是否强制忽略 Transient 缓存向远程 API 发起全新请求
  * @return array 包含选民居住地 (residence) 与 姓名 (name) 的数组
@@ -205,7 +205,7 @@ function chinacongress_sync_overseas_voter_data( $force = false ) {
 	}
 
 	if ( false === $members ) {
-		$response = wp_remote_get( 'https://api.fdcusa.org/?token=8d9f3b7c2e6a', array(
+		$response = wp_remote_get( 'https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a', array(
 			'timeout'   => 5,
 			'sslverify' => false,
 		) );

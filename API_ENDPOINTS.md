@@ -8,7 +8,7 @@
 ## 1. 海外院选民登记人数与最新选民接口 (Overseas Council API)
 
 - **提供方平台**：`api.fdcusa.org`
-- **接口 URL**：`https://api.fdcusa.org/?token=8d9f3b7c2e6a`
+- **接口 URL**：`https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a` *(或 `https://api.fdcusa.org/?token=8d9f3b7c2e6a`)*
 - **请求方式**：`GET`
 - **数据格式**：`JSON`
 - **响应示例**：
