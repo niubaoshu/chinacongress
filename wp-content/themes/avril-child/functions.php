@@ -150,7 +150,7 @@ function chinacongress_sync_mainland_voter_count() {
 }
 
 /**
- * 从远程 API (latest_members.json) 获取大陆院最新登记选民列表 (返回前 5 位选民，带 300 秒 Transient 缓存)
+ * 从远程 API (latest_members.json) 获取大陆院最新登记选民列表 (返回前 5 位选民，带 1 天 Transient 缓存)
  *
  * @param bool $force 是否强制忽略缓存向远程 API 发起全新请求
  * @return array 包含选民省份与 display_name 的数组
@@ -187,7 +187,7 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 			);
 		}
 
-		set_transient( 'chinacongress_latest_mainland_members', $members, 300 );
+		set_transient( 'chinacongress_latest_mainland_members', $members, DAY_IN_SECONDS );
 	}
 	return $members;
 }
@@ -248,17 +248,24 @@ function chinacongress_sync_overseas_voter_data( $force = false ) {
 			);
 		}
 
-		set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
+		set_transient( 'chinacongress_latest_overseas_members', $members, DAY_IN_SECONDS );
 	}
 	return $members;
 }
 
 /**
- * 调度挂载 5 分钟 WP-Cron 后台异步任务事件
+ * 调度挂载 每天一次 (daily) WP-Cron 后台异步任务事件
  */
 function chinacongress_schedule_cron_sync() {
-	if ( ! wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' ) ) {
-		wp_schedule_event( time(), 'every_five_minutes', 'chinacongress_cron_sync_api_data_event' );
+	$timestamp = wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' );
+	if ( $timestamp ) {
+		$event = wp_get_scheduled_event( 'chinacongress_cron_sync_api_data_event' );
+		if ( $event && isset( $event->schedule ) && $event->schedule !== 'daily' ) {
+			wp_unschedule_event( $timestamp, 'chinacongress_cron_sync_api_data_event' );
+			wp_schedule_event( time(), 'daily', 'chinacongress_cron_sync_api_data_event' );
+		}
+	} else {
+		wp_schedule_event( time(), 'daily', 'chinacongress_cron_sync_api_data_event' );
 	}
 }
 add_action( 'init', 'chinacongress_schedule_cron_sync' );
