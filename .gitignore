@@ -8,7 +8,7 @@
 !README.md
 !API_ENDPOINTS.md
 !.agents/
-.agents/skills/*
+.agents/skills/
 !test/
 !test/index.html
 
