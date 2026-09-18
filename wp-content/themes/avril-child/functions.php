@@ -870,35 +870,31 @@ add_filter( 'get_the_archive_title', function ( $title ) {
     return $title;
 } );
 
-// 提升首页轮播图播放速度 50%：原生热更新配置，彻底消除 DOM 暴力销毁重建与首屏跳动闪烁
-function chinacongress_slider_speed_boost() {
+/**
+ * 首页轮播图原生热拦截：在 Clever Fox 初始化前自动注入 dots: true 与 4.5 秒播放速度
+ * 彻底消除先销毁后重建的暴力闪烁，同时完美呈现底部圆点指示器 (dots)
+ */
+function chinacongress_optimize_slider_init() {
     if ( is_front_page() || is_home() ) {
-        ?>
-        <script id="chinacongress-slider-speed">
-        jQuery(document).ready(function($) {
-            var $slider = $('.main-slider');
-            if ($slider.length) {
-                var updateSpeed = function() {
-                    var owl = $slider.data('owl.carousel');
-                    if (owl && owl.settings) {
-                        owl.settings.autoplayTimeout = 4500;
-                        owl.settings.smartSpeed = 500;
-                        $slider.trigger('stop.owl.autoplay');
-                        $slider.trigger('play.owl.autoplay', [4500]);
-                        return true;
+        $slider_patch = "
+        (function($) {
+            if (typeof $.fn.owlCarousel === 'function') {
+                var _origOwl = $.fn.owlCarousel;
+                $.fn.owlCarousel = function(options) {
+                    if (this.hasClass('main-slider') && typeof options === 'object') {
+                        options.dots = true;
+                        options.autoplay = true;
+                        options.autoplayTimeout = 4500;
+                        options.smartSpeed = 500;
                     }
-                    return false;
+                    return _origOwl.apply(this, arguments);
                 };
-                if (!updateSpeed()) {
-                    setTimeout(updateSpeed, 100);
-                }
             }
-        });
-        </script>
-        <?php
+        })(jQuery);";
+        wp_add_inline_script( 'owl-carousel', $slider_patch, 'after' );
     }
 }
-add_action( 'wp_footer', 'chinacongress_slider_speed_boost', 99 );
+add_action( 'wp_enqueue_scripts', 'chinacongress_optimize_slider_init', 999 );
 
 // ==============================================================================
 // 自动全站正文路径相对化：入库自动清洗 & 快速通道字符串替换
