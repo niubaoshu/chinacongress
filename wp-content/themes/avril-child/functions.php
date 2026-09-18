@@ -203,61 +203,60 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 
 /**
  * 从远程 API (https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a) 自动同步海外院选民登记总人数与最新选民列表
- *
- * @param bool $force 是否强制忽略 Transient 缓存向远程 API 发起全新请求
- * @return array 包含选民居住地 (residence) 与 姓名 (name) 的数组
+ * （仅供后台 WP-Cron 定时任务执行，写入数据库与 Transient 缓存，严禁前台 GET 请求直接调用）
  */
-function chinacongress_sync_overseas_voter_data( $force = false ) {
-	$members = false;
-	if ( ! $force ) {
-		$members = get_transient( 'chinacongress_latest_overseas_members' );
-	}
+function chinacongress_sync_overseas_voter_data() {
+	$response = wp_remote_get( 'https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a', array(
+		'timeout'   => 5,
+		'sslverify' => false,
+	) );
 
-	if ( false === $members ) {
-		$response = wp_remote_get( 'https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a', array(
-			'timeout'   => 5,
-			'sslverify' => false,
-		) );
+	if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
 
-		$members = array();
-		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-			$body = wp_remote_retrieve_body( $response );
-			$data = json_decode( $body, true );
-
-			if ( is_array( $data ) && ! empty( $data['success'] ) ) {
-				// 1. 同步选民总人数并写入 wp_options 数据库 (theme_mod: cta_description)
-				if ( isset( $data['total'] ) && is_numeric( $data['total'] ) ) {
-					$total = (int) $data['total'];
-					if ( $total > 0 ) {
-						set_theme_mod( 'cta_description', (string) $total );
-					}
+		if ( is_array( $data ) && ! empty( $data['success'] ) ) {
+			// 1. 同步选民总人数并写入 wp_options 数据库 (theme_mod: cta_description)
+			if ( isset( $data['total'] ) && is_numeric( $data['total'] ) ) {
+				$total = (int) $data['total'];
+				if ( $total > 0 ) {
+					set_theme_mod( 'cta_description', (string) $total );
 				}
+			}
 
-				// 2. 提取前 5 位选民作为走马灯数据
-				if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
-					$raw_list = array_slice( $data['data'], 0, 5 );
-					foreach ( $raw_list as $item ) {
-						$residence = ! empty( $item['residence'] ) ? trim( $item['residence'] ) : '海外';
-						$name      = ! empty( $item['name'] ) ? trim( $item['name'] ) : '***';
-						$members[] = array(
-							'residence' => $residence,
-							'name'      => $name,
-						);
-					}
+			// 2. 提取前 5 位选民写入 Transient 缓存 (有效期 300 秒) 作为走马灯数据
+			if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
+				$raw_list = array_slice( $data['data'], 0, 5 );
+				$members  = array();
+				foreach ( $raw_list as $item ) {
+					$residence = ! empty( $item['residence'] ) ? trim( $item['residence'] ) : '海外';
+					$name      = ! empty( $item['name'] ) ? trim( $item['name'] ) : '***';
+					$members[] = array(
+						'residence' => $residence,
+						'name'      => $name,
+					);
+				}
+				if ( ! empty( $members ) ) {
+					set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
 				}
 			}
 		}
+	}
+}
 
-		// API 离线时的默认安全兜底数据
-		if ( empty( $members ) ) {
-			$members = array(
-				array( 'residence' => '德国', 'name' => 'Z**' ),
-				array( 'residence' => '德国', 'name' => 'L**' ),
-				array( 'residence' => '其他', 'name' => '蒋**' ),
-			);
-		}
-
-		set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
+/**
+ * 获取海外院最新注册选民列表 (前台只读，从 Transient 缓存或兜底数据获取，零网络请求，零数据库写入)
+ *
+ * @return array 包含选民居住地 (residence) 与 姓名 (name) 的数组
+ */
+function chinacongress_get_latest_overseas_members() {
+	$members = get_transient( 'chinacongress_latest_overseas_members' );
+	if ( empty( $members ) || ! is_array( $members ) ) {
+		$members = array(
+			array( 'residence' => '德国', 'name' => 'Z**' ),
+			array( 'residence' => '德国', 'name' => 'L**' ),
+			array( 'residence' => '其他', 'name' => '蒋**' ),
+		);
 	}
 	return $members;
 }
@@ -307,7 +306,7 @@ add_action( 'chinacongress_cron_sync_api_data_event', 'chinacongress_execute_cro
  * WP-Cron 海外院定时任务执行体：每 5 分钟静默同步海外院总人数与选民列表
  */
 function chinacongress_execute_overseas_cron_sync() {
-	chinacongress_sync_overseas_voter_data( true );
+	chinacongress_sync_overseas_voter_data();
 }
 add_action( 'chinacongress_cron_sync_overseas_event', 'chinacongress_execute_overseas_cron_sync' );
 
@@ -317,11 +316,10 @@ function avril_lite_cta() {
 	$avril_cta_title         = get_theme_mod('cta_title', __('海外院选民注册人数： ', 'clever-fox'));
 	if ( false !== strpos( $avril_cta_title, '选民登记人数' ) ) {
 		$avril_cta_title = str_replace( '选民登记人数', '选民注册人数', $avril_cta_title );
-		set_theme_mod( 'cta_title', $avril_cta_title );
 	}
 
-	// 优先同步/拉取最新海外选民数据（如果 Transient 缓存更新则可获取最新数据）
-	$latest_overseas_members = chinacongress_sync_overseas_voter_data();
+	// 从本地 Transient 缓存获取最新海外选民名单 (纯只读，零网络开销，零数据库写入)
+	$latest_overseas_members = chinacongress_get_latest_overseas_members();
 
 	$renshu_overseas_val     = get_theme_mod('cta_description', '425');
 	$renshu_overseas         = is_numeric(trim($renshu_overseas_val)) ? (int)trim($renshu_overseas_val) : 425;
