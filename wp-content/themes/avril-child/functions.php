@@ -614,8 +614,86 @@ add_action( 'after_setup_theme', function() {
 } );
 
 /**
+ * 当图片长宽比严重异常 (< 0.8 或 > 2.2) 时，基于 1200x628 标准大图画布生成纯白留白居中图
+ * 避免裁剪丢失图片内容与文字，保留 100% 原始视觉信息
+ *
+ * @param string $file_path 原始图片本地绝对路径
+ * @return string|false 留白图路径或失败返回 false
+ */
+function chinacongress_generate_og_padded_image( $file_path ) {
+    if ( ! file_exists( $file_path ) || ! function_exists( 'imagecreatetruecolor' ) ) {
+        return false;
+    }
+
+    $path_info   = pathinfo( $file_path );
+    $padded_file = $path_info['dirname'] . '/' . $path_info['filename'] . '-ogpad.jpg';
+
+    // 若衍生图已存在，直接返回现有文件路径，避免重复生成
+    if ( file_exists( $padded_file ) && filesize( $padded_file ) > 0 ) {
+        return $padded_file;
+    }
+
+    $img_size = @getimagesize( $file_path );
+    if ( ! $img_size || empty( $img_size[0] ) || empty( $img_size[1] ) ) {
+        return false;
+    }
+
+    $orig_w = $img_size[0];
+    $orig_h = $img_size[1];
+
+    switch ( $img_size[2] ) {
+        case IMAGETYPE_JPEG:
+            $src_img = @imagecreatefromjpeg( $file_path );
+            break;
+        case IMAGETYPE_PNG:
+            $src_img = @imagecreatefrompng( $file_path );
+            break;
+        case IMAGETYPE_WEBP:
+            if ( function_exists( 'imagecreatefromwebp' ) ) {
+                $src_img = @imagecreatefromwebp( $file_path );
+            } else {
+                $src_img = false;
+            }
+            break;
+        case IMAGETYPE_GIF:
+            $src_img = @imagecreatefromgif( $file_path );
+            break;
+        default:
+            $src_img = false;
+            break;
+    }
+
+    if ( ! $src_img ) {
+        return false;
+    }
+
+    $scale = min( 1200 / $orig_w, 628 / $orig_h );
+    $dst_w = (int) round( $orig_w * $scale );
+    $dst_h = (int) round( $orig_h * $scale );
+    $dst_x = (int) round( ( 1200 - $dst_w ) / 2 );
+    $dst_y = (int) round( ( 628 - $dst_h ) / 2 );
+
+    $canvas = imagecreatetruecolor( 1200, 628 );
+    if ( ! $canvas ) {
+        imagedestroy( $src_img );
+        return false;
+    }
+
+    $white = imagecolorallocate( $canvas, 255, 255, 255 );
+    imagefill( $canvas, 0, 0, $white );
+    imagecopyresampled( $canvas, $src_img, $dst_x, $dst_y, 0, 0, $dst_w, $dst_h, $orig_w, $orig_h );
+
+    $saved = imagejpeg( $canvas, $padded_file, 90 );
+
+    imagedestroy( $src_img );
+    imagedestroy( $canvas );
+
+    return ( $saved && file_exists( $padded_file ) ) ? $padded_file : false;
+}
+
+/**
  * 获取符合社交平台 (X/Twitter, Facebook) 比例标准的 OG 图片数据 (包含 URL, Width, Height)
- * 支持动态检测长宽比 (目标 ~ 1.91:1) 及自动居中裁切生成衍生图
+ * 支持 1200x628 标准留白居中衍生图、post_meta 缓存与后台预生成
  *
  * @param int|null $post_id
  * @return array 包含 url, width, height 的数组
@@ -624,10 +702,19 @@ function chinacongress_get_og_image_data( $post_id = null ) {
     if ( ! $post_id ) {
         $post_id = get_the_ID();
     }
+    if ( ! $post_id ) {
+        return array( 'url' => '', 'width' => 0, 'height' => 0 );
+    }
+
+    // 1. 优先读取 post_meta 缓存，0ms 瞬时响应，避免前台重复解析与磁盘 I/O
+    $cached = get_post_meta( $post_id, '_chinacongress_og_image_data', true );
+    if ( is_array( $cached ) && ! empty( $cached['url'] ) ) {
+        return $cached;
+    }
 
     $raw_url = '';
 
-    // 1. 优先获取特色图片 (Featured Image) 的 social-og 尺寸或 full 尺寸
+    // 2. 优先获取特色图片 (Featured Image) 的 social-og 尺寸或 full 尺寸
     if ( has_post_thumbnail( $post_id ) ) {
         $thumb_id = get_post_thumbnail_id( $post_id );
         $img_src  = wp_get_attachment_image_src( $thumb_id, 'social-og' );
@@ -639,7 +726,7 @@ function chinacongress_get_og_image_data( $post_id = null ) {
         }
     }
 
-    // 2. 若无特色图片，回退提取正文第一张图
+    // 3. 若无特色图片，回退提取正文第一张图
     if ( empty( $raw_url ) ) {
         $raw_url = chinacongress_get_first_image_url( $post_id );
     }
@@ -662,43 +749,22 @@ function chinacongress_get_og_image_data( $post_id = null ) {
                 $orig_h = $img_size[1];
                 $ratio  = $orig_w / $orig_h;
 
-                // 目标黄金比例 1.91 : 1。若长宽比严重异常 ( > 2.2 或 < 0.8 ) 则发起自动裁切
+                // 目标黄金比例 1.91 : 1。若长宽比严重异常 ( > 2.2 或 < 0.8 ) 则生成留白居中图
                 if ( $ratio > 2.2 || $ratio < 0.8 ) {
-                    if ( $ratio > 2.2 ) {
-                        // 极度扁平 (例如 3.72:1)，按高度裁切宽度
-                        $crop_h   = $orig_h;
-                        $crop_w   = intval( $orig_h * 1.91 );
-                        $offset_x = intval( ( $orig_w - $crop_w ) / 2 );
-                        $offset_y = 0;
+                    $path_info      = pathinfo( $file_path );
+                    $padded_rel     = $path_info['dirname'] . '/' . $path_info['filename'] . '-ogpad.jpg';
+                    $padded_url_rel = str_replace( $upload_dir['basedir'], '', $padded_rel );
+
+                    if ( file_exists( $padded_rel ) ) {
+                        $img_url = $upload_dir['baseurl'] . $padded_url_rel;
+                        $width   = 1200;
+                        $height  = 628;
                     } else {
-                        // 极度瘦长 (例如 0.5:1)，按宽度裁切高度
-                        $crop_w   = $orig_w;
-                        $crop_h   = intval( $orig_w / 1.91 );
-                        $offset_x = 0;
-                        $offset_y = intval( ( $orig_h - $crop_h ) / 2 );
-                    }
-
-                    // 检查裁切尺寸是否满足 X 平台大图卡片最窄标准 (300 x 157 px)
-                    if ( $crop_w >= 300 && $crop_h >= 157 ) {
-                        $path_info       = pathinfo( $file_path );
-                        $cropped_rel     = $path_info['dirname'] . '/' . $path_info['filename'] . '-ogcrop.' . $path_info['extension'];
-                        $cropped_url_rel = str_replace( $upload_dir['basedir'], '', $cropped_rel );
-
-                        if ( file_exists( $cropped_rel ) ) {
-                            $img_url = $upload_dir['baseurl'] . $cropped_url_rel;
-                            $width   = $crop_w;
-                            $height  = $crop_h;
-                        } else {
-                            $editor = wp_get_image_editor( $file_path );
-                            if ( ! is_wp_error( $editor ) ) {
-                                $editor->crop( $offset_x, $offset_y, $crop_w, $crop_h );
-                                $saved = $editor->save( $cropped_rel );
-                                if ( ! is_wp_error( $saved ) && ! empty( $saved['path'] ) ) {
-                                    $img_url = $upload_dir['baseurl'] . $cropped_url_rel;
-                                    $width   = $crop_w;
-                                    $height  = $crop_h;
-                                }
-                            }
+                        $generated = chinacongress_generate_og_padded_image( $file_path );
+                        if ( $generated ) {
+                            $img_url = $upload_dir['baseurl'] . $padded_url_rel;
+                            $width   = 1200;
+                            $height  = 628;
                         }
                     }
                 }
@@ -732,12 +798,38 @@ function chinacongress_get_og_image_data( $post_id = null ) {
         }
     }
 
-    return array(
+    $og_data = array(
         'url'    => $img_url,
         'width'  => $width,
         'height' => $height,
     );
+
+    // 缓存至 post_meta，保证后续前台读取微秒级返回
+    if ( ! empty( $img_url ) ) {
+        update_post_meta( $post_id, '_chinacongress_og_image_data', $og_data );
+    }
+
+    return $og_data;
 }
+
+/**
+ * 文章保存或更新时，后台预计算/预生成社交分享大图及缓存
+ *
+ * @param int     $post_id
+ * @param WP_Post $post
+ */
+function chinacongress_pregenerate_og_image( $post_id, $post ) {
+    if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
+        return;
+    }
+    if ( ! is_object( $post ) || ! in_array( $post->post_type, array( 'post', 'page' ), true ) ) {
+        return;
+    }
+
+    delete_post_meta( $post_id, '_chinacongress_og_image_data' );
+    chinacongress_get_og_image_data( $post_id );
+}
+add_action( 'save_post', 'chinacongress_pregenerate_og_image', 10, 2 );
 
 // 自动在 <head> 输出符合全网社交平台标准的 Open Graph & Twitter Cards 宽屏大图元数据
 function chinacongress_add_social_og_tags() {
