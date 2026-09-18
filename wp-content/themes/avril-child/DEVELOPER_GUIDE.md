@@ -147,23 +147,26 @@ function chinacongress_auto_first_image_html( $html, $post_id, $post_thumbnail_i
 ### 1. Transient 临时缓存 API
 WordPress 提供的内存/数据库缓存机制：
 ```php
-// 设置带 1 天（86400秒）过期的缓存
+// 大陆院：设置带 1 天（86400秒）过期的缓存
 set_transient( 'chinacongress_latest_mainland_members', $members, DAY_IN_SECONDS );
 
-// 读取缓存
-$members = get_transient( 'chinacongress_latest_mainland_members' );
+// 海外院：设置带 5 分钟（300秒）过期的缓存
+set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
 ```
 
 ### 2. WP-Cron 后台异步同步机制
-为了达到**首屏 0 毫秒延时**，数据同步工作不在访客请求页面时触发，而是由 WP-Cron 在后台**每天一次（daily）**静默执行，前台所有访客一律只从本地数据库高速直读缓存：
+为了达到**首屏 0 毫秒延时**，数据同步工作不在访客请求页面时触发，而是由 WP-Cron 在后台静默执行，前台所有访客一律只从本地数据库高速直读缓存：
+- **大陆院数据**：每天一次（`daily`）静默同步；
+- **海外院数据**：每 5 分钟一次（`every_five_minutes`）静默同步。
 
 ```text
-[服务器后台 WP-Cron] ──每天一次 (daily) 触发──► 请求第三方外部 API (reg.congresscenter.org / api.fdcusa.org)
-                                              │
-                                              ▼
-                                      写入数据库 / Transient 缓存 (有效期 1 天)
-                                              │
-[前台访客访问] ◄────── 0 毫秒直接从本地读取 ────┘
+[服务器后台 WP-Cron] ──每天一次 (daily) 触发──────► 请求大陆院 API (reg.congresscenter.org)
+                     ──每 5 分钟 (5 min) 触发────► 请求海外院 API (api.fdcusa.org)
+                                                  │
+                                                  ▼
+                                          写入数据库 / Transient 缓存
+                                                  │
+[前台访客访问] ◄──────── 0 毫秒直接从本地读取 ──────┘
 ```
 
 ---
@@ -174,8 +177,8 @@ $members = get_transient( 'chinacongress_latest_mainland_members' );
 
 1. **双选民登记卡片与走马灯 (`avril_lite_cta()`)**
    - 首页并排显示“海外院选民注册人数”与“大陆院选民注册人数”。
-   - 居中展示“近期新增：”，带 3.5 秒平滑渐变（Fade & Slide）向上无缝走马灯展示最新周期注册人数（如本周/本月/本季）。
-   - 数据每 24 小时后台静默同步一次，零阻塞前台。
+   - 居中展示海外院“最新注册选民：”，带 3.5 秒平滑渐变（Fade & Slide）向上无缝走马灯。
+   - 大陆院数据每 24 小时后台静默同步一次；海外院数据每 5 分钟后台静默同步一次，零阻塞前台。
 
 2. **智能副标题视频提前嵌入引擎 (`chinacongress_auto_embed_youtube_players()`)**
    - 针对正文中包含 `type="youtube"` 隐藏链接的文章，自动提取视频 ID 并生成 16:9 响应式播放器。

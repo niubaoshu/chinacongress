@@ -122,6 +122,21 @@ add_action( 'customize_register', 'avril_child_customize_register' );
 // ==============================================================================
 
 /**
+ * 注册自定义 5 分钟 (300 秒) WP-Cron 定时任务时间间隔
+ *
+ * @param array $schedules 已存在的 Cron 时间间隔数组
+ * @return array 增加 5 分钟间隔后的数组
+ */
+function chinacongress_add_five_minute_cron_interval( $schedules ) {
+	$schedules['every_five_minutes'] = array(
+		'interval' => 300,
+		'display'  => __( 'Every 5 Minutes', 'avril-child' ),
+	);
+	return $schedules;
+}
+add_filter( 'cron_schedules', 'chinacongress_add_five_minute_cron_interval' );
+
+/**
  * 自动从远程 API (registration_count.json) 同步大陆院选民登记总人数并写入 wp_options 数据库
  */
 function chinacongress_sync_mainland_voter_count() {
@@ -242,37 +257,59 @@ function chinacongress_sync_overseas_voter_data( $force = false ) {
 			);
 		}
 
-		set_transient( 'chinacongress_latest_overseas_members', $members, DAY_IN_SECONDS );
+		set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
 	}
 	return $members;
 }
 
 /**
- * 调度挂载 每天一次 (daily) WP-Cron 后台异步任务事件
+ * 调度挂载 WP-Cron 后台异步任务：
+ * 1. 大陆院选民数据：每天一次 (daily)
+ * 2. 海外院选民数据：每 5 分钟一次 (every_five_minutes)
  */
 function chinacongress_schedule_cron_sync() {
-	$timestamp = wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' );
-	if ( $timestamp ) {
-		$event = wp_get_scheduled_event( 'chinacongress_cron_sync_api_data_event' );
-		if ( $event && isset( $event->schedule ) && $event->schedule !== 'daily' ) {
-			wp_unschedule_event( $timestamp, 'chinacongress_cron_sync_api_data_event' );
+	// 1. 大陆院定时同步任务 (每天一次 daily)
+	$mainland_ts = wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' );
+	if ( $mainland_ts ) {
+		$mainland_event = wp_get_scheduled_event( 'chinacongress_cron_sync_api_data_event' );
+		if ( $mainland_event && isset( $mainland_event->schedule ) && $mainland_event->schedule !== 'daily' ) {
+			wp_unschedule_event( $mainland_ts, 'chinacongress_cron_sync_api_data_event' );
 			wp_schedule_event( time(), 'daily', 'chinacongress_cron_sync_api_data_event' );
 		}
 	} else {
 		wp_schedule_event( time(), 'daily', 'chinacongress_cron_sync_api_data_event' );
 	}
+
+	// 2. 海外院定时同步任务 (每 5 分钟一次 every_five_minutes)
+	$overseas_ts = wp_next_scheduled( 'chinacongress_cron_sync_overseas_event' );
+	if ( $overseas_ts ) {
+		$overseas_event = wp_get_scheduled_event( 'chinacongress_cron_sync_overseas_event' );
+		if ( $overseas_event && isset( $overseas_event->schedule ) && $overseas_event->schedule !== 'every_five_minutes' ) {
+			wp_unschedule_event( $overseas_ts, 'chinacongress_cron_sync_overseas_event' );
+			wp_schedule_event( time(), 'every_five_minutes', 'chinacongress_cron_sync_overseas_event' );
+		}
+	} else {
+		wp_schedule_event( time(), 'every_five_minutes', 'chinacongress_cron_sync_overseas_event' );
+	}
 }
 add_action( 'init', 'chinacongress_schedule_cron_sync' );
 
 /**
- * WP-Cron 定时任务执行体：静默同步选民总数与强刷最新选民列表 (包含大陆院与海外院)
+ * WP-Cron 大陆院定时任务执行体：每天一次静默同步大陆院总人数与选民列表
  */
 function chinacongress_execute_cron_sync() {
 	chinacongress_sync_mainland_voter_count();
 	chinacongress_get_latest_mainland_members( true );
-	chinacongress_sync_overseas_voter_data( true );
 }
 add_action( 'chinacongress_cron_sync_api_data_event', 'chinacongress_execute_cron_sync' );
+
+/**
+ * WP-Cron 海外院定时任务执行体：每 5 分钟静默同步海外院总人数与选民列表
+ */
+function chinacongress_execute_overseas_cron_sync() {
+	chinacongress_sync_overseas_voter_data( true );
+}
+add_action( 'chinacongress_cron_sync_overseas_event', 'chinacongress_execute_overseas_cron_sync' );
 
 // Dual Voter Registration Boxes (CTA Section) editable via Customizer
 function avril_lite_cta() {
