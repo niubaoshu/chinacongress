@@ -32,31 +32,12 @@
 					) 
 				);
 
-			// 解码 WordPress 自动生成的 HTML 实体字符（如将 &#8211; 还原为 - 或 –，将 &#038; 还原为 &）
+			// 社交分享摘要提取 (标题 + 140字以内导读，防止分享 URL 超长导致社交平台报错)
 			$clean_title = html_entity_decode( get_the_title(), ENT_QUOTES, 'UTF-8' );
-
-			// 1. 过滤 script 和 style 标签及其内部代码
-			$raw_content = get_the_content();
-			$no_scripts  = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $raw_content );
-
-			// 2. 将段落块标签转换为统一换行
-			$block_break = preg_replace( '/<\/(p|sentence|div|h[1-6]|li)>/i', "\n\n", $no_scripts );
-			$br_break    = preg_replace( '/<br\s*\/?>/i', "\n", $block_break );
-
-			// 3. 剥离所有 HTML 标签并解码 HTML 实体字符
-			$clean_text  = html_entity_decode( wp_strip_all_tags( $br_break ), ENT_QUOTES, 'UTF-8' );
-
-			// 4. 按行整理全文章节段落
-			$lines       = array_filter( array_map( 'trim', explode( "\n", $clean_text ) ) );
-			$full_paragraphs = implode( "\n\n", $lines );
-			
-			// 全文复制格式：【文章标题】 + 空一行 + 【各段落文本（段与段空一行）】 + 空一行 + 【文章链接】
-			$full_copy_text  = $clean_title . "\n\n" . $full_paragraphs . "\n\n文章链接：" . get_permalink();
-
-			// 社交分享 URL 安全提取前 3 个核心段落 (预防 Telegram / X 的 404 报错)
-			$safe_lines       = array_slice( $lines, 0, 3 );
-			$safe_paragraphs  = implode( "\n\n", $safe_lines );
-			$share_text       = $clean_title . "\n\n" . $safe_paragraphs;
+			$raw_excerpt = has_excerpt() ? get_the_excerpt() : wp_strip_all_tags( get_the_content() );
+			$clean_desc  = html_entity_decode( wp_strip_all_tags( $raw_excerpt ), ENT_QUOTES, 'UTF-8' );
+			$short_desc  = mb_strimwidth( preg_replace( '/\s+/', ' ', $clean_desc ), 0, 140, '...' );
+			$share_text  = $clean_title . ( ! empty( $short_desc ) ? "\n\n" . $short_desc : '' );
 			?>
 			<!-- 统一文章底部社交分享组件 (包含 Telegram, X, Facebook, WhatsApp & 📄 复制文本) -->
 			<div class="post-share-bar" style="margin-top: 35px; padding-top: 20px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -69,18 +50,62 @@
 			</div>
 
 			<script>
+			function chinacongressShowToast(msg) {
+				if (typeof window.isCopy === 'function') {
+					window.isCopy(msg);
+					return;
+				}
+				const el = document.createElement('div');
+				el.textContent = msg;
+				Object.assign(el.style, {
+					position: 'fixed',
+					top: '30%',
+					left: '50%',
+					transform: 'translateX(-50%)',
+					padding: '10px 22px',
+					background: 'rgba(0,0,0,0.85)',
+					color: '#fff',
+					borderRadius: '6px',
+					fontSize: '15px',
+					zIndex: '99999',
+					boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+					transition: 'opacity 0.25s ease'
+				});
+				document.body.appendChild(el);
+				setTimeout(function() {
+					el.style.opacity = '0';
+					setTimeout(function() { el.remove(); }, 250);
+				}, 2500);
+			}
+
 			function chinacongressCopyArticleText() {
-				const fullText = <?php echo json_encode( $full_copy_text, JSON_UNESCAPED_UNICODE ); ?>;
+				// 直接从浏览器 DOM 动态提取全文，零服务端二次重复输出，零网络传输冗余
+				const title = document.querySelector('.post-title')?.innerText?.trim() || document.title;
+				const contentEl = document.querySelector('.post-content');
+				let articleText = '';
+				if (contentEl) {
+					const clone = contentEl.cloneNode(true);
+					const shareBar = clone.querySelector('.post-share-bar');
+					if (shareBar) shareBar.remove();
+					const titleEl = clone.querySelector('.post-title');
+					if (titleEl) titleEl.remove();
+					const metaEl = clone.querySelector('.post-meta');
+					if (metaEl) metaEl.remove();
+					articleText = clone.innerText.trim();
+				}
+				const fullText = title + (articleText ? '\n\n' + articleText : '') + '\n\n文章链接：' + window.location.href;
+
 				if (navigator.clipboard && navigator.clipboard.writeText) {
 					navigator.clipboard.writeText(fullText).then(function() {
-						alert('文章全文与格式化段落已成功复制到剪贴板！');
-					}).catch(function(err) {
+						chinacongressShowToast('文章全文与链接已成功复制到剪贴板！');
+					}).catch(function() {
 						fallbackCopy(fullText);
 					});
 				} else {
 					fallbackCopy(fullText);
 				}
 			}
+
 			function fallbackCopy(text) {
 				const ta = document.createElement('textarea');
 				ta.value = text;
@@ -90,9 +115,9 @@
 				ta.select();
 				try {
 					document.execCommand('copy');
-					alert('文章全文与格式化段落已成功复制到剪贴板！');
+					chinacongressShowToast('文章全文与链接已成功复制到剪贴板！');
 				} catch (err) {
-					alert('复制失败，请手动选择复制。');
+					chinacongressShowToast('复制失败，请手动选择复制。');
 				}
 				document.body.removeChild(ta);
 			}

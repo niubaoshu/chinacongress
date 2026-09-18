@@ -1,6 +1,6 @@
 if (self !== top) { top.location.href = self.location.href; }
-const host = 'https://chinacongress.net';
 const local = window.location.origin;
+const host = window.cc_host || local;
 const theme = "avril-child";
 const sessid=new URLSearchParams(window.location.search).get("sessid");
 const cc = { local: local, host: host,
@@ -61,12 +61,15 @@ function getTagName(name) { return document.getElementsByTagName(name); }
 function getAttr(e, name) { return parseFloat(e.getAttribute(name), 10) || 1; }
 function createTag(tag) { return document.createElement(tag); }
 function orientation(style, matches, portrait, landscape) { Object.assign(style, matches? portrait:landscape); }
-function isCopy() {
+function isCopy(text) {
     const msg = createTag("div");
-    msg.innerHTML="复制成功";
-    Object.assign(msg.style,{ position:"fixed", top:"30%", left:"40%", transform:"translateX(-50%)", padding:"8px 16px", background:"rgba(0,0,0,.75)", color:"white", borderRadius:"4px", zIndex:"9999"});
+    msg.innerHTML = text || "复制成功";
+    Object.assign(msg.style, { position: "fixed", top: "30%", left: "50%", transform: "translateX(-50%)", padding: "10px 22px", background: "rgba(0,0,0,.85)", color: "white", borderRadius: "6px", fontSize: "15px", zIndex: "99999", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", transition: "opacity .3s ease" });
     document.body.appendChild(msg);
-    setTimeout(()=>msg.remove(),3000);
+    setTimeout(() => {
+        msg.style.opacity = "0";
+        setTimeout(() => msg.remove(), 300);
+    }, 2500);
 }
 function session(url) {
     const v = window.cc_assets_ver || "1.0.2";
