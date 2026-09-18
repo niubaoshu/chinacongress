@@ -870,32 +870,29 @@ add_filter( 'get_the_archive_title', function ( $title ) {
     return $title;
 } );
 
-// 提升首页轮播图播放速度 50% (播放间隔从 9 秒缩短至 4.5 秒，平滑过渡缩短至 0.5 秒)
+// 提升首页轮播图播放速度 50%：原生热更新配置，彻底消除 DOM 暴力销毁重建与首屏跳动闪烁
 function chinacongress_slider_speed_boost() {
     if ( is_front_page() || is_home() ) {
         ?>
         <script id="chinacongress-slider-speed">
         jQuery(document).ready(function($) {
-            setTimeout(function() {
-                var $slider = $('.main-slider');
-                if ($slider.length && typeof $slider.owlCarousel === 'function') {
-                    $slider.trigger('destroy.owl.carousel');
-                    $slider.owlCarousel({
-                        rtl: $("html").attr("dir") == 'rtl' ? true : false,
-                        items: 1,
-                        loop: true,
-                        dots: true,
-                        nav: true,
-                        navText: ['<i class="fa fa-arrow-left"></i>', '<i class="fa fa-arrow-right"></i>'],
-                        autoHeight: $("body").hasClass("aera-theme") || $("body").hasClass("avail-theme")|| $("body").hasClass("evion-theme") ? true : false,
-                        autoplay: true,
-                        autoplayTimeout: 4500,
-                        animateIn: $("body").hasClass("aera-theme") ? false : 'pulse',
-                        animateOut: $("body").hasClass("aera-theme") ? false : 'fadeOut',
-                        smartSpeed: 500
-                    });
+            var $slider = $('.main-slider');
+            if ($slider.length) {
+                var updateSpeed = function() {
+                    var owl = $slider.data('owl.carousel');
+                    if (owl && owl.settings) {
+                        owl.settings.autoplayTimeout = 4500;
+                        owl.settings.smartSpeed = 500;
+                        $slider.trigger('stop.owl.autoplay');
+                        $slider.trigger('play.owl.autoplay', [4500]);
+                        return true;
+                    }
+                    return false;
+                };
+                if (!updateSpeed()) {
+                    setTimeout(updateSpeed, 100);
                 }
-            }, 300);
+            }
         });
         </script>
         <?php
@@ -904,15 +901,19 @@ function chinacongress_slider_speed_boost() {
 add_action( 'wp_footer', 'chinacongress_slider_speed_boost', 99 );
 
 // ==============================================================================
-// 自动全站正文路径相对化：入库自动清洗 & 前台动态显示双重保险
+// 自动全站正文路径相对化：入库自动清洗 & 快速通道字符串替换
 // ==============================================================================
 
-// 1. 全站正文路径相对化：保存入库与前台展示统一通过单一定义函数清洗本站绝对域名
+// 1. 全站正文路径相对化：入库清洗与前台展示统一通过快速通道执行，避免无谓正则引擎开销
 function chinacongress_make_content_relative( $content ) {
-    if ( empty( $content ) ) {
+    if ( empty( $content ) || false === strpos( $content, 'chinacongress.net' ) ) {
         return $content;
     }
-    return preg_replace( '#https?://(www\.)?chinacongress\.net/#i', '/', $content );
+    return str_ireplace(
+        array( 'https://chinacongress.net/', 'http://chinacongress.net/', 'https://www.chinacongress.net/', 'http://www.chinacongress.net/' ),
+        '/',
+        $content
+    );
 }
 add_filter( 'content_save_pre', 'chinacongress_make_content_relative', 99 );
 add_filter( 'the_content', 'chinacongress_make_content_relative', 99 );
