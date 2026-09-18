@@ -28,10 +28,17 @@ if($hs_blog == '1') {
             <div class="av-columns-area wow fadeInUp">
 				<?php 	
 				$posts_per_page = absint( $blog_display_num ) > 0 ? absint( $blog_display_num ) : 2;
-				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => $posts_per_page, 'post__not_in' => get_option("sticky_posts") ); 	
-				$avril_wp_query = new WP_Query($avril_blog_args);
-				if($avril_wp_query && $avril_wp_query->have_posts()) :
-					while($avril_wp_query->have_posts()): $avril_wp_query->the_post(); 
+				$sticky_posts   = get_option( 'sticky_posts' );
+				$avril_blog_args = array(
+					'post_type'      => 'post',
+					'post_status'    => 'publish',
+					'posts_per_page' => $posts_per_page,
+					'post__not_in'   => ! empty( $sticky_posts ) && is_array( $sticky_posts ) ? $sticky_posts : array(),
+					'no_found_rows'  => true,
+				); 	
+				$avril_wp_query = new WP_Query( $avril_blog_args );
+				if ( $avril_wp_query && $avril_wp_query->have_posts() ) :
+					while ( $avril_wp_query->have_posts() ) : $avril_wp_query->the_post(); 
 						$categories = get_the_category();
 					?>
 					<div class="av-column-6 av-md-column-6 mb-4">
@@ -41,7 +48,7 @@ if($hs_blog == '1') {
 									<span class="category-badge"><?php echo esc_html( $categories[0]->name ); ?></span>
 								<?php endif; ?>
 								<a href="<?php echo esc_url( get_permalink() ); ?>" class="home-blog-thumb-link">
-									<img src="<?php echo esc_url( chinacongress_get_first_image_url( get_the_ID() ) ); ?>" alt="<?php echo esc_attr( get_the_title() ); ?>" class="home-blog-thumb-img" />
+									<img src="<?php echo esc_url( chinacongress_get_first_image_url( get_the_ID() ) ); ?>" alt="<?php echo esc_attr( get_the_title() ); ?>" class="home-blog-thumb-img" loading="lazy" />
 								</a>
 							</div>
 							<div class="home-blog-content">
@@ -58,7 +65,7 @@ if($hs_blog == '1') {
 								</div>
 								<div>
 									<a href="<?php echo esc_url( get_permalink() ); ?>" class="category-read-more-btn mt-2">
-										<?php _e( '阅读全文', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
+										<?php esc_html_e( '阅读全文', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
 									</a>
 								</div>
 							</div>
