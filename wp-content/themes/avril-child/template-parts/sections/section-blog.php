@@ -27,7 +27,8 @@ if($hs_blog == '1') {
             </div>
             <div class="av-columns-area wow fadeInUp">
 				<?php 	
-				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => 2, 'post__not_in' => get_option("sticky_posts") ); 	
+				$posts_per_page = absint( $blog_display_num ) > 0 ? absint( $blog_display_num ) : 2;
+				$avril_blog_args = array( 'post_type' => 'post', 'posts_per_page' => $posts_per_page, 'post__not_in' => get_option("sticky_posts") ); 	
 				$avril_wp_query = new WP_Query($avril_blog_args);
 				if($avril_wp_query && $avril_wp_query->have_posts()) :
 					while($avril_wp_query->have_posts()): $avril_wp_query->the_post(); 

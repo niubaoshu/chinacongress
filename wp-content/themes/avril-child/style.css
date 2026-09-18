@@ -238,7 +238,8 @@ i.fa-usd:before {
 
 /* 分类胶囊标签 (图片左上角) */
 .category-post-card .category-badge,
-.home-blog-card .category-badge {
+.home-blog-card .category-badge,
+.sidebar-blog-card .category-badge {
     position: absolute !important;
     top: 12px !important;
     left: 12px !important;
@@ -731,4 +732,147 @@ i.fa-usd:before {
     }
 }
 
+/* ==============================================================================
+ * 文章正文侧边栏：最新发布模块 (Sidebar Latest Posts Cards)
+ * ============================================================================== */
 
+.widget_sidebar_latest_posts {
+    margin-top: 35px !important;
+    margin-bottom: 25px !important;
+}
+
+.widget_sidebar_latest_posts .widget-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #1d2327 !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 18px !important;
+    border-bottom: 2px solid #eef2f6 !important;
+    position: relative !important;
+}
+
+.widget_sidebar_latest_posts .widget-title::after {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    bottom: -2px !important;
+    width: 36px !important;
+    height: 2px !important;
+    background: #3a75a1 !important;
+}
+
+.sidebar-latest-posts-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+}
+
+.sidebar-blog-card {
+    background: #ffffff !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #eef2f6 !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.sidebar-blog-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 20px rgba(58, 117, 161, 0.14) !important;
+    border-color: rgba(58, 117, 161, 0.3) !important;
+}
+
+.sidebar-blog-card .sidebar-blog-thumb-wrap {
+    position: relative !important;
+    width: 100% !important;
+    height: 150px !important;
+    overflow: hidden !important;
+    background: #f4f8fb !important;
+}
+
+.sidebar-blog-card .sidebar-blog-thumb-link {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.sidebar-blog-card .sidebar-blog-thumb-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center center !important;
+    transition: transform 0.4s ease !important;
+}
+
+.sidebar-blog-card:hover .sidebar-blog-thumb-img {
+    transform: scale(1.06) !important;
+}
+
+.sidebar-blog-card .sidebar-blog-content {
+    padding: 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
+}
+
+.sidebar-blog-card .sidebar-blog-meta {
+    font-size: 12px !important;
+    color: #6c757d !important;
+    margin-bottom: 6px !important;
+}
+
+.sidebar-blog-card .sidebar-blog-meta i {
+    color: #3a75a1 !important;
+    margin-right: 4px !important;
+}
+
+.sidebar-blog-card .sidebar-blog-title {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    margin: 0 0 8px 0 !important;
+}
+
+.sidebar-blog-card .sidebar-blog-title a {
+    color: #1d2327 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.sidebar-blog-card .sidebar-blog-title a:hover {
+    color: #3a75a1 !important;
+}
+
+.sidebar-blog-card .sidebar-blog-excerpt {
+    font-size: 13px !important;
+    color: #495057 !important;
+    line-height: 1.5 !important;
+    margin-bottom: 10px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+}
+
+.sidebar-blog-card .sidebar-blog-action {
+    margin-top: auto !important;
+    padding-top: 4px !important;
+}
+
+.sidebar-blog-card .sidebar-blog-read-more {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #3a75a1 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    transition: color 0.2s ease, transform 0.2s ease !important;
+}
+
+.sidebar-blog-card .sidebar-blog-read-more:hover {
+    color: #2b5a7e !important;
+    transform: translateX(3px) !important;
+}
