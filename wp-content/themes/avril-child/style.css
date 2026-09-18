@@ -876,3 +876,31 @@ i.fa-usd:before {
     color: #2b5a7e !important;
     transform: translateX(3px) !important;
 }
+
+/* ==========================================================================
+   Header Logo 可点击区域修复 (自适应列宽消除右侧遮挡，绝不缩小 Logo 原始大小)
+   ========================================================================== */
+.navbar-area .av-column-2 {
+    flex: 0 0 auto !important;
+    max-width: none !important;
+    width: auto !important;
+    z-index: 10 !important;
+}
+
+.navbar-area .av-column-10 {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+    width: auto !important;
+}
+
+.navbar-area .logo {
+    display: block !important;
+    width: auto !important;
+}
+
+.navbar-area .custom-logo-link {
+    display: block !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
