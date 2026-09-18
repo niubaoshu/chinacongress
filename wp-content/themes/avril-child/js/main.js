@@ -80,16 +80,23 @@ function cc_content(opt, isload, url, cc_args) {
         else if (cc_args != null) { window[func](...cc_args); }
     }
 }
+const loaded_resources = new Set();
 function lnCSS(url) {
+    const fullUrl = session(url);
+    if (loaded_resources.has(fullUrl)) return;
+    loaded_resources.add(fullUrl);
     const css = createTag("link");
-    Object.assign(css, { rel: 'stylesheet', href: session(url) });
+    Object.assign(css, { rel: 'stylesheet', href: fullUrl });
     css.onload = () => { cc_content("css", true, url, null); };
     css.onerror = () => { cc_content("css", false, url, null); };
     document.head.appendChild(css);
 }
 function lnJS(url, cc_args) {
+    const fullUrl = session(url);
+    if (loaded_resources.has(fullUrl)) return;
+    loaded_resources.add(fullUrl);
     const js = createTag("script");
-    Object.assign(js, { type: 'text/javascript', src: session(url), referrerpolicy: 'no-referrer', fetchpriority:'high', charset: 'UTF-8', async: false });
+    Object.assign(js, { type: 'text/javascript', src: fullUrl, referrerpolicy: 'no-referrer', fetchpriority:'high', charset: 'UTF-8', async: false });
     js.onload = () => { cc_content("js", true, url, cc_args); };
     js.onerror = () => { cc_content("js", false, url, null); };
     document.head.appendChild(js);
@@ -101,7 +108,7 @@ const cc_args = [cc.links, (typeof resp !== "undefined")? resp : null];
         lnCSS(`${cc.cssdir}/${url}`);
     }
     for (const [name, url] of Object.entries(cc.js_modules)) {
-        if (!getID(name)) continue;
+        if (name === 'cc_base' || !getID(name)) continue;
         lnJS(`${cc.jsdir}/${url}`, cc_args);
     }
     if (cc?.js_modules?.cc_base != null) {

@@ -50,14 +50,6 @@ function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
 
-/**
- * 为前端动态加载脚本 (main.js) 提供统一的静态资源版本号，避免毫秒时间戳导致的浏览器缓存击穿
- */
-add_action( 'wp_head', function() {
-    $child_css_file = get_stylesheet_directory() . '/style.css';
-    $version        = file_exists( $child_css_file ) ? (string) filemtime( $child_css_file ) : '1.0.2';
-    echo '<script>window.cc_assets_ver = ' . json_encode( $version ) . ';</script>' . "\n";
-}, 1 );
 
 /**
  * 2. 引入子主题安全覆盖模板片段 (Section Blog & Section Features)
@@ -560,9 +552,9 @@ function chinacongress_get_first_image_url( $post_id = null ) {
         }
     }
 
-    // 5. 兜底保护：若正文无图无视频，自动返回中国议会官方 Banner Logo
+    // 5. 兜底保护：若正文无图无视频，自动返回中国议会官方 1024x480 高清横版 Banner Logo (确保 X/FB 大图卡片完美展示)
     if ( empty( $url ) ) {
-        $url = '/wp-content/uploads/2026/03/logo-e1768719012316-1536x413-1-150x150.jpg';
+        $url = '/wp-content/uploads/2026/01/logo-1024x480.jpg';
     }
 
     // 确保返回完整绝对路径（带 https:// 域名），并对路径中的中文字符进行 rawurlencode 编码
