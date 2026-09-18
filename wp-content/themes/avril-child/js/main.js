@@ -68,7 +68,10 @@ function isCopy() {
     document.body.appendChild(msg);
     setTimeout(()=>msg.remove(),3000);
 }
-function session(url) { return url + '?sessid=' + cc.session + "&t=" + (window.cc_assets_ver || Date.now()); }
+function session(url) {
+    const v = window.cc_assets_ver || "1.0.2";
+    return url + (cc.session ? "?sessid=" + encodeURIComponent(cc.session) + "&v=" + v : "?v=" + v);
+}
 function cc_content(opt, isload, url, cc_args) {
     if (!isload || opt=="css") return;
     const func = new URL(url, location.href).pathname.split('/').pop().replace(/\.js$/, "");

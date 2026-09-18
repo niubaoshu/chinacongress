@@ -51,6 +51,15 @@ function avril_child_enqueue_styles() {
 }
 
 /**
+ * 为前端动态加载脚本 (main.js) 提供统一的静态资源版本号，避免毫秒时间戳导致的浏览器缓存击穿
+ */
+add_action( 'wp_head', function() {
+    $child_css_file = get_stylesheet_directory() . '/style.css';
+    $version        = file_exists( $child_css_file ) ? (string) filemtime( $child_css_file ) : '1.0.2';
+    echo '<script>window.cc_assets_ver = ' . json_encode( $version ) . ';</script>' . "\n";
+}, 1 );
+
+/**
  * 2. 引入子主题安全覆盖模板片段 (Section Blog & Section Features)
  */
 require_once get_stylesheet_directory() . '/template-parts/sections/section-blog.php';
