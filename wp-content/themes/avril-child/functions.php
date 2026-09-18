@@ -122,21 +122,6 @@ add_action( 'customize_register', 'avril_child_customize_register' );
 // ==============================================================================
 
 /**
- * 注册自定义 5 分钟 (300 秒) WP-Cron 定时任务时间间隔
- *
- * @param array $schedules 已存在的 Cron 时间间隔数组
- * @return array 增加 5 分钟间隔后的数组
- */
-function chinacongress_add_five_minute_cron_interval( $schedules ) {
-	$schedules['every_five_minutes'] = array(
-		'interval' => 300,
-		'display'  => __( 'Every 5 Minutes', 'avril-child' ),
-	);
-	return $schedules;
-}
-add_filter( 'cron_schedules', 'chinacongress_add_five_minute_cron_interval' );
-
-/**
  * 自动从远程 API (registration_count.json) 同步大陆院选民登记总人数并写入 wp_options 数据库
  */
 function chinacongress_sync_mainland_voter_count() {
