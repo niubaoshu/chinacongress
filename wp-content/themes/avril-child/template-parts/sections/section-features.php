@@ -50,7 +50,14 @@ if ( $avril_hs_feature == '1' ) {
 							$img_url = $avril_repeater_image;
 						} elseif ( ! empty( $avril_repeater_link ) && $avril_repeater_link !== '#' ) {
 							$full_link = ( 0 === strpos( $avril_repeater_link, '/' ) ) ? home_url( $avril_repeater_link ) : $avril_repeater_link;
-							$post_id   = url_to_postid( $full_link );
+							// 快速提取本站 /archives/{id} 或 ?p={id} 链接中的文章 ID，避免调用高开销的 url_to_postid
+							$post_id = 0;
+							if ( preg_match( '#(?:/archives/|\?p=)(\d+)#i', $avril_repeater_link, $id_matches ) ) {
+								$post_id = absint( $id_matches[1] );
+							} else {
+								$post_id = url_to_postid( $full_link );
+							}
+
 							if ( $post_id ) {
 								$img_url = chinacongress_get_first_image_url( $post_id );
 							}
@@ -64,7 +71,7 @@ if ( $avril_hs_feature == '1' ) {
 						<div class="feature-card-item">
 							<div class="feature-card-thumb">
 								<a href="<?php echo esc_url( $avril_repeater_link ); ?>">
-									<img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $avril_repeater_title ); ?>" class="feature-card-img" />
+									<img src="<?php echo esc_url( $img_url ); ?>" alt="<?php echo esc_attr( $avril_repeater_title ); ?>" class="feature-card-img" loading="lazy" />
 								</a>
 							</div>
 							<div class="feature-card-content">
@@ -78,7 +85,7 @@ if ( $avril_hs_feature == '1' ) {
 								</div>
 								<div>
 									<a href="<?php echo esc_url( $avril_repeater_link ); ?>" class="category-read-more-btn mt-2">
-										<?php _e( '查看详情', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
+										<?php esc_html_e( '查看详情', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
 									</a>
 								</div>
 							</div>
