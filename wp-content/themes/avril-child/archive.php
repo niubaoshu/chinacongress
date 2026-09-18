@@ -12,7 +12,7 @@ get_header();
 <section id="post-section" class="post-section av-py-default blog-page">
 	<div class="av-container">
 		<div class="av-columns-area wow fadeInUp">
-				<div id="av-primary-content" class="<?php esc_attr(avril_post_layout()); ?>  wow fadeInUp">
+				<div id="av-primary-content" class="<?php echo esc_attr( avril_post_layout() ); ?> wow fadeInUp">
 			
 				<?php if( have_posts() ): ?>
 				

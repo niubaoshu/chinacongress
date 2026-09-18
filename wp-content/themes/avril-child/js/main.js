@@ -41,9 +41,7 @@ const cc = { local: local, host: host,
         title: 'YouTube： 中国议会'
       }
     ],
-    css_modules: {
-        cc_main: "main.css",
-    },
+    css_modules: {},
     js_modules: {
         cc_base: "cc_base.js",
         cc_video: "cc_video.js",
@@ -63,7 +61,7 @@ function createTag(tag) { return document.createElement(tag); }
 function orientation(style, matches, portrait, landscape) { Object.assign(style, matches? portrait:landscape); }
 function isCopy(text) {
     const msg = createTag("div");
-    msg.innerHTML = text || "复制成功";
+    msg.textContent = text || "复制成功";
     Object.assign(msg.style, { position: "fixed", top: "30%", left: "50%", transform: "translateX(-50%)", padding: "10px 22px", background: "rgba(0,0,0,.85)", color: "white", borderRadius: "6px", fontSize: "15px", zIndex: "99999", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", transition: "opacity .3s ease" });
     document.body.appendChild(msg);
     setTimeout(() => {

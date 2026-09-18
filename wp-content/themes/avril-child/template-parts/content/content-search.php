@@ -23,7 +23,7 @@ $excerpt       = chinacongress_get_clean_excerpt( 140, $post_id );
 			<span class="category-badge"><?php echo $category_name; ?></span>
 		<?php endif; ?>
 		<a href="<?php echo $permalink; ?>" class="category-post-thumb-link">
-			<img src="<?php echo $thumb_url; ?>" alt="<?php echo esc_attr( $title ); ?>" class="category-post-thumb-img" />
+			<img src="<?php echo $thumb_url; ?>" alt="<?php echo esc_attr( $title ); ?>" class="category-post-thumb-img" loading="lazy" />
 		</a>
 	</div>
 

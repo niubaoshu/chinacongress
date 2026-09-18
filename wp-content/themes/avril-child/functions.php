@@ -48,6 +48,10 @@ function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), $child_css_ver );
     // 加载子主题自带的永久 FontAwesome 4.6.3 字体图标库（解决 CDN 丢失问题）
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
+    // 加载二次开发排版增强样式表 (main.css)，原生 Enqueue 避免客户端 JS 异步插入导致的 FOUC 样式跳动
+    $custom_css_file = get_stylesheet_directory() . '/css/main.css';
+    $custom_css_ver  = file_exists( $custom_css_file ) ? filemtime( $custom_css_file ) : $child_css_ver;
+    wp_enqueue_style( 'avril-child-custom', get_stylesheet_directory_uri() . '/css/main.css', array( 'avril-child-style' ), $custom_css_ver );
 }
 
 
@@ -534,10 +538,11 @@ function chinacongress_get_first_image_url( $post_id = null ) {
     if ( empty( $url ) ) {
         $post = get_post( $post_id );
         if ( $post && ! empty( $post->post_content ) ) {
-            // 2. 次级检查：用正则表达式在文章正文中搜寻第一张 <img src="..."> 图片
-            preg_match_all( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $matches );
-            if ( ! empty( $matches[1][0] ) ) {
-                $url = $matches[1][0];
+            // 2. 次级检查：用正则表达式在文章正文中搜寻第一张 <img src="..."> 图片（单次匹配，零全文扫描开销）
+            if ( false !== stripos( $post->post_content, '<img' ) && preg_match( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $matches ) ) {
+                if ( ! empty( $matches[1] ) ) {
+                    $url = $matches[1];
+                }
             } elseif ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_matches ) ) {
                 // 3. 视频检查：若无静态图片，检查是否嵌入了 YouTube 视频，自动提取 YouTube 标准高清封面 (100% 存在且不报 404 错)
                 if ( ! empty( $yt_matches[1] ) ) {
@@ -930,7 +935,6 @@ function chinacongress_ensure_cleverfox_avril_loaded() {
         }
     }
 }
-add_action( 'plugins_loaded', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
 add_action( 'init', 'chinacongress_ensure_cleverfox_avril_loaded', 1 );
 
 // 2. Customizer 配置继承保底：解决 Clever Fox 升级后校验子主题配置导致轮播图/组件丢失的问题
@@ -1233,7 +1237,7 @@ add_filter( 'posts_orderby', 'chinacongress_sort_category_sticky_posts_first', 1
  */
 add_filter( 'the_content', 'chinacongress_auto_embed_youtube_players', 20 );
 function chinacongress_auto_embed_youtube_players( $content ) {
-	if ( is_admin() || empty( $content ) || ! is_singular( 'post' ) ) {
+	if ( is_admin() || empty( $content ) || ! is_singular( 'post' ) || false === stripos( $content, 'youtube' ) ) {
 		return $content;
 	}
 

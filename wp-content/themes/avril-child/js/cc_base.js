@@ -81,7 +81,7 @@ function cc_base() {
     }
     for (const e of getTagName("video")) {
         let link = e.getAttribute("src");
-        if (!(/^https?:\/\//.test(link))) {
+        if (link && !(/^https?:\/\//.test(link))) {
             if (link.startsWith("/")) {
                 e.src = cc.host + link;
                 cc.player.push(e);
@@ -92,7 +92,7 @@ function cc_base() {
     }
     for (const e of getTagName("img")) {
         let link = e.getAttribute("src");
-        if (!(/^https?:\/\//.test(link))) {
+        if (link && !(/^https?:\/\//.test(link))) {
             if (link.startsWith("/")) { link = cc.host + link; }
         }
         let type = e.getAttribute("type");
