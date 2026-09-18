@@ -147,23 +147,23 @@ function chinacongress_auto_first_image_html( $html, $post_id, $post_thumbnail_i
 ### 1. Transient 临时缓存 API
 WordPress 提供的内存/数据库缓存机制：
 ```php
-// 设置带 300 秒（5分钟）过期的缓存
-set_transient( 'chinacongress_latest_mainland_members', $members, 300 );
+// 设置带 1 天（86400秒）过期的缓存
+set_transient( 'chinacongress_latest_mainland_members', $members, DAY_IN_SECONDS );
 
 // 读取缓存
 $members = get_transient( 'chinacongress_latest_mainland_members' );
 ```
 
 ### 2. WP-Cron 后台异步同步机制
-为了达到**首屏 0 毫秒延时**，数据同步工作不在访客请求页面时触发，而是由 WP-Cron 在后台每 5 分钟静默执行：
+为了达到**首屏 0 毫秒延时**，数据同步工作不在访客请求页面时触发，而是由 WP-Cron 在后台**每天一次（daily）**静默执行，前台所有访客一律只从本地数据库高速直读缓存：
 
 ```text
-[服务器后台 WP-Cron] ──每 5 分钟触发──► 请求 https://reg.congresscenter.org/api/...
-                                             │
-                                             ▼
-                                     写入数据库 / Transient 缓存
-                                             │
-[前台访客访问] ◄────── 0 毫秒直接读取 ──────┘
+[服务器后台 WP-Cron] ──每天一次 (daily) 触发──► 请求第三方外部 API (reg.congresscenter.org / api.fdcusa.org)
+                                              │
+                                              ▼
+                                      写入数据库 / Transient 缓存 (有效期 1 天)
+                                              │
+[前台访客访问] ◄────── 0 毫秒直接从本地读取 ────┘
 ```
 
 ---
@@ -173,18 +173,31 @@ $members = get_transient( 'chinacongress_latest_mainland_members' );
 新开发者在阅读代码时，应重点理解以下核心业务功能在 `functions.php` 中的实现：
 
 1. **双选民登记卡片与走马灯 (`avril_lite_cta()`)**
-   - 首页并排显示“海外院选民登记人数”与“大陆院选民登记人数”。
-   - 居中展示“最新登记选民：”，带 3.5 秒平滑渐变（Fade & Slide）向上无缝走马灯。
+   - 首页并排显示“海外院选民注册人数”与“大陆院选民注册人数”。
+   - 居中展示“近期新增：”，带 3.5 秒平滑渐变（Fade & Slide）向上无缝走马灯展示最新周期注册人数（如本周/本月/本季）。
+   - 数据每 24 小时后台静默同步一次，零阻塞前台。
 
-2. **智能媒体抓取引擎 (`chinacongress_get_first_image_url()`)**
+2. **智能副标题视频提前嵌入引擎 (`chinacongress_auto_embed_youtube_players()`)**
+   - 针对正文中包含 `type="youtube"` 隐藏链接的文章，自动提取视频 ID 并生成 16:9 响应式播放器。
+   - **智能副标题识别**：自动穿透正文顶部的 `<style>`/`<script>`/注释代码块，精准识别首个大字号副标题（`<h1>`~`<h6>`、`div.cc_title`、`div.cc_colon`、`p.has-large-font-size` 等），并将视频播放框**精准插入在副标题正下方**；若无副标题则置于文章最开头。
+   - 完美兼容带有 `?si=...` 查询参数的 `youtu.be` 移动分享链接。
+
+3. **文章末尾人员落款与社交图标引擎 (`cc_annotation.js` + `resp`)**
+   - 文章底部通过 `<div id="annotation">` 占位，结合文章正文末尾内联的 `resp = [...]` JSON 数据。
+   - 由前端模块 `js/cc_annotation.js` 统一解析并自动渲染编辑/上传作者社交主页与官方社交平台圆形图标。
+
+4. **智能媒体抓取引擎 (`chinacongress_get_first_image_url()`)**
    - 提取顺序：文章特色图片 (Featured Image) ➔ 正文第一张 `<img src>` ➔ YouTube 1280x720 封面 ➔ `<video poster>` ➔ 规则 Logo 兜底。
 
-3. **社交分享与全文章节一键复制 (`content-page.php`)**
+5. **社交分享与全文章节一键复制 (`content-page.php`)**
    - 整合 Telegram, X (Twitter), Facebook, WhatsApp 分享。
    - 使用 Web Clipboard API 结合纯文本格式化输出，实现“一键复制全文与段落”。
 
-4. **全站路径相对化清洗 (`chinacongress_make_content_relative()`)**
+6. **全站路径相对化清洗 (`chinacongress_make_content_relative()`)**
    - 在文章保存入库 (`content_save_pre`) 及前台渲染 (`the_content`) 时，自动将硬编码的绝对域名转为相对路径 `/`，保障迁移与多环境部署安全。
+
+7. **公投选举“敬请期待”静态页面 (`/test/index.html`)**
+   - 独立现代玻璃拟态静态单页，承接首页公投选举系统测试入口，零改动 WordPress 首页代码。
 
 ---
 
