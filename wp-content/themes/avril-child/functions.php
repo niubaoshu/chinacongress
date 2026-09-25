@@ -1313,7 +1313,7 @@ function chinacongress_cloudflare_edge_cache_headers() {
 	if ( is_admin() || is_user_logged_in() || is_search() || is_preview() || is_customize_preview() ) {
 		return;
 	}
-	if ( isset( $_SERVER['REQUEST_METHOD'] ) && $_SERVER['REQUEST_METHOD'] !== 'GET' ) {
+	if ( isset( $_SERVER['REQUEST_METHOD'] ) && ! in_array( $_SERVER['REQUEST_METHOD'], array( 'GET', 'HEAD' ), true ) ) {
 		return;
 	}
 	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
