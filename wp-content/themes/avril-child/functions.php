@@ -1296,3 +1296,65 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 	return $combined_boxes . "\n" . $content;
 }
 
+// ==============================================================================
+// Cloudflare CDN 深度协同优化模块 (Edge Cache, Early Hints & Preconnect)
+// ==============================================================================
+
+/**
+ * 1. 智能注入 Cloudflare CDN 边缘缓存响应头 (Edge Cache-Control) 与 Early Hints Link 头
+ * 仅对未登录的普通访客在公开前台 GET 页面输出 s-maxage，解放源站 PHP & MySQL 算力
+ */
+function chinacongress_cloudflare_edge_cache_headers() {
+	if ( headers_sent() ) {
+		return;
+	}
+
+	// 安全防御检查：排除后台、登录页、XML-RPC、REST 请求、搜索页、预览页面及非 GET 请求
+	if ( is_admin() || is_user_logged_in() || is_search() || is_preview() || is_customize_preview() ) {
+		return;
+	}
+	if ( isset( $_SERVER['REQUEST_METHOD'] ) && $_SERVER['REQUEST_METHOD'] !== 'GET' ) {
+		return;
+	}
+	if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+		return;
+	}
+
+	// 检查是否有 WordPress 用户认证 Cookie 或评论者 Cookie
+	if ( ! empty( $_COOKIE ) ) {
+		foreach ( $_COOKIE as $cookie_key => $cookie_val ) {
+			if ( strpos( $cookie_key, 'wordpress_logged_in_' ) === 0 || strpos( $cookie_key, 'comment_author_' ) === 0 ) {
+				return;
+			}
+		}
+	}
+
+	// 仅对普通访客在纯静态展示内容页面发出 Cloudflare 边缘缓存指令
+	// s-maxage=3600: Cloudflare 边缘节点缓存该页面 1 小时 (源站 1 小时内 0 负载)
+	// max-age=60: 访客本地浏览器仅缓存 1 分钟 (确保前台近实时感知更新)
+	// stale-while-revalidate=600: 缓存过期时，Cloudflare 秒出旧副本并在后台静默异步刷新
+	header( 'Cache-Control: public, max-age=60, s-maxage=3600, stale-while-revalidate=600' );
+
+	// 2. HTTP 103 Early Hints 支持：提前向 Cloudflare 推送关键静态资产 Link 响应头
+	$style_url = get_stylesheet_directory_uri() . '/style.css';
+	$fa_url    = get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css';
+	header( 'Link: <' . esc_url_raw( $style_url ) . '>; rel=preload; as=style', false );
+	header( 'Link: <' . esc_url_raw( $fa_url ) . '>; rel=preload; as=style', false );
+}
+add_action( 'template_redirect', 'chinacongress_cloudflare_edge_cache_headers', 999 );
+
+/**
+ * 3. 页面头部注入核心外部资源 DNS 预解析与预连接 (DNS-Prefetch & Preconnect)
+ * 加快 YouTube 视频封面/播放器以及静态字体的 TLS 握手速度
+ */
+function chinacongress_cloudflare_preconnect_tags() {
+	echo "\n<!-- ChinaCongress Cloudflare Preconnect & DNS-Prefetch -->\n";
+	echo '<link rel="dns-prefetch" href="//img.youtube.com">' . "\n";
+	echo '<link rel="preconnect" href="https://img.youtube.com" crossorigin>' . "\n";
+	echo '<link rel="dns-prefetch" href="//www.youtube.com">' . "\n";
+	echo '<link rel="preconnect" href="https://www.youtube.com" crossorigin>' . "\n";
+	echo "<!-- End Cloudflare Preconnect -->\n";
+}
+add_action( 'wp_head', 'chinacongress_cloudflare_preconnect_tags', 1 );
+
+
