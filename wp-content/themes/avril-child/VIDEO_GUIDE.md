@@ -87,18 +87,18 @@
 
 ---
 
-### 🚀 现在：彻底告别土办法，只需简单“三步换新”
+### 🚀 现在：只需简单替换即可升级
 
 主题底层现已**彻底移除了旧全屏霸屏逻辑**，换成了正文流式居中播放器。**您再也不需要写任何 `setTimeout` 或空容器了！**
 
-#### 🛑 旧写法（不再需要）：
+#### 🛑 以前的写法（不再需要）：
 ```html
-<!-- 旧做法 1：开头的空 div，写死了 260px 宽度 -->
+<!-- 以前做法 1：开头的空 div，写死了 260px 宽度 -->
 <div id="videoplay" style="margin:0 auto;width:260px !important;height:auto;display:flex;justify-content:center;background:url('...') center center / cover no-repeat;"></div>
 
 ...正文内容...
 
-<!-- 旧做法 2：底部的 setTimeout 延迟注入脚本 -->
+<!-- 以前做法 2：底部的 setTimeout 延迟注入脚本 -->
 <script>
 setTimeout(function() {
     document.getElementById("videoplay").innerHTML = '<video controls style="width:260px !important; height:auto" src="/wp-content/uploads/2026/09/demo.mp4"></video>';
@@ -106,7 +106,8 @@ setTimeout(function() {
 </script>
 ```
 
-#### ✅ 新写法（二选一，替换开头的空 div 即可）：
+#### ✅ 升级替换说明：
+将之前写法中 `id="videoplay"` 的 `div` 替换为以下任意一种新写法：
 
 * **方式 1：极简短代码（⭐ 最推荐）**
   ```text
@@ -118,6 +119,13 @@ setTimeout(function() {
   <video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"></video>
   ```
 
-*(两种方式均可，并在文章底部直接**删除**那段 `<script>setTimeout(...)</script>`)*
+底部的以下脚本**不再需要，直接删除即可**：
+```html
+<script>
+setTimeout(function() {
+    document.getElementById("videoplay").innerHTML = '<video controls style="width:260px !important; height:auto" src="/wp-content/uploads/2026/09/demo.mp4"></video>';
+}, 500);
+</script>
+```
 
 
