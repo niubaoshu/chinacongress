@@ -1357,4 +1357,99 @@ function chinacongress_cloudflare_preconnect_tags() {
 }
 add_action( 'wp_head', 'chinacongress_cloudflare_preconnect_tags', 1 );
 
+/**
+ * 4. 站内活动短视频支持 (Video Player for Activity Short Videos <15MB/<3min)
+ * -----------------------------------------------------------------------------
+ * 注册极简短代码 [cc_video src="..." caption="..."]，支持文章中插入短视频并可选显示说明文字。
+ */
+function chinacongress_shortcode_cc_video( $atts ) {
+	$a = shortcode_atts( array(
+		'src'     => '',
+		'caption' => '',
+	), $atts, 'cc_video' );
+
+	if ( empty( $a['src'] ) ) {
+		return '';
+	}
+
+	$src = esc_url( $a['src'] );
+	$caption_html = '';
+	if ( ! empty( $a['caption'] ) ) {
+		$caption_html = '<div class="cc_video_caption">' . esc_html( $a['caption'] ) . '</div>';
+	}
+
+	return '<div class="cc_video_container"><video src="' . $src . '" controls playsinline preload="metadata"></video>' . $caption_html . '</div>';
+}
+add_shortcode( 'cc_video', 'chinacongress_shortcode_cc_video' );
+
+/**
+ * 全站短视频自动包装与互斥播放守护脚本
+ * 无论使用短代码、自定义 HTML 还是原生视频区块，自动实现：
+ * 1. 站内相对链接自动补齐为绝对路径；
+ * 2. 多视频互斥播放（播放一个时自动暂停其他视频）；
+ * 3. 自动识别 caption 属性渲染说明文字。
+ */
+function chinacongress_video_player_footer_script() {
+	if ( is_admin() ) {
+		return;
+	}
+	?>
+	<script id="cc-video-player-init">
+	(function() {
+		function initVideos() {
+			var videos = document.querySelectorAll('video');
+			if (!videos || videos.length === 0) return;
+
+			videos.forEach(function(video) {
+				// 相对路径站内视频补全
+				var src = video.getAttribute('src');
+				if (src && !(/^https?:\/\//i.test(src)) && src.startsWith('/')) {
+					video.src = window.location.origin + src;
+				}
+
+				// 确保有基础控制条
+				video.controls = true;
+				video.playsInline = true;
+
+				// 互斥播放：当一个视频播放时，暂停其他正在播放的视频
+				if (!video.dataset.ccMutualInit) {
+					video.dataset.ccMutualInit = "1";
+					video.addEventListener('play', function() {
+						document.querySelectorAll('video').forEach(function(other) {
+							if (other !== video && !other.paused) {
+								other.pause();
+							}
+						});
+					});
+				}
+
+				// 自动包装与 caption 处理（若未包装）
+				if (!video.parentElement.classList.contains('cc_video_container') && !video.parentElement.classList.contains('wp-block-video')) {
+					var container = document.createElement('div');
+					container.className = 'cc_video_container';
+					video.parentNode.insertBefore(container, video);
+					container.appendChild(video);
+
+					var caption = video.getAttribute('caption');
+					if (caption && !container.querySelector('.cc_video_caption')) {
+						var capDiv = document.createElement('div');
+						capDiv.className = 'cc_video_caption';
+						capDiv.textContent = caption;
+						container.appendChild(capDiv);
+					}
+				}
+			});
+		}
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initVideos);
+		} else {
+			initVideos();
+		}
+	})();
+	</script>
+	<?php
+}
+add_action( 'wp_footer', 'chinacongress_video_player_footer_script', 99 );
+
 

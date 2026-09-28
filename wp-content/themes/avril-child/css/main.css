@@ -124,3 +124,35 @@ oc {
     display:inline-block;
     width:99%;
 }
+
+/* 站内活动短视频排版（650px 居中自适应） */
+.cc_video_container {
+    margin: 25px auto 35px auto;
+    max-width: 650px;
+    width: 100%;
+    text-align: center;
+}
+.cc_video_container video,
+.entry-content video,
+.post-content video,
+article video {
+    display: block;
+    margin: 0 auto;
+    max-width: 650px;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: #000;
+}
+.cc_video_caption {
+    margin: 10px auto 25px auto;
+    display: block;
+    max-width: 650px;
+    width: 100%;
+    text-indent: 2em;
+    text-align: left;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 40, 0.85);
+}

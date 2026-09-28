@@ -1,28 +1,63 @@
-function cc_video () {
-    const media = [];
-    const ratio = 1080 / 1934;
-    if (window.innerWidth >= window.innerHeight) {
-        media.width = window.innerWidth;
-        media.height = window.innerHeight;
-    } else {
-        media.width = window.innerWidth;
-        media.height = window.innerWidth * ratio;
-    };
-    function onePeopleOneVote(video) {
-        Object.assign(video, { controls: true, autoplay: true, loop: false, muted: false, playsInline: true, width: 1934, height: 1080 });
-        Object.assign(video.style, { position: "fixed", left: "0px", top: "0px", width: `${media.width}px`, height: `${media.height}px`, objectFit: "cover", zIndex: "999999" });
-        document.body.appendChild(video);
-        document.addEventListener("click", async () => {
-            await video.requestFullscreen();
-            video.muted = false;
-            video.play();
-        }, { once: true });
-        video.addEventListener("ended", async () => {
-            if (document.fullscreenElement) {
-                await document.exitFullscreen();
-            }
-            video.remove();
+function cc_video() {
+    function videoPlayItem(video) {
+        if (video.parentElement && video.parentElement.classList.contains("cc_video_container")) {
+            return;
+        }
+        const mainDiv = document.createElement("div");
+        mainDiv.className = "cc_video_container";
+        Object.assign(mainDiv.style, {
+            margin: "20px auto 30px auto",
+            maxWidth: "650px",
+            width: "100%",
+            textAlign: "center"
         });
+        Object.assign(video.style, {
+            margin: "0 auto",
+            display: "block",
+            maxWidth: "650px",
+            width: "100%",
+            height: "auto",
+            borderRadius: "6px"
+        });
+        video.parentNode.insertBefore(mainDiv, video);
+        mainDiv.appendChild(video);
+        video.controls = true;
+        video.playsInline = true;
+
+        video.addEventListener("play", () => {
+            const allVideos = document.getElementsByTagName("video");
+            for (const e of allVideos) {
+                if (e !== video && !e.paused) {
+                    e.pause();
+                }
+            }
+        });
+
+        const caption = video.getAttribute("caption");
+        if (caption) {
+            const captionDiv = document.createElement("div");
+            captionDiv.className = "cc_video_caption";
+            Object.assign(captionDiv.style, {
+                margin: "8px auto 25px auto",
+                display: "block",
+                maxWidth: "650px",
+                width: "100%",
+                textIndent: "2em",
+                textAlign: "left",
+                fontSize: "15px",
+                lineHeight: "1.6",
+                color: "rgba(0, 0, 40, 0.85)"
+            });
+            captionDiv.innerHTML = caption;
+            mainDiv.appendChild(captionDiv);
+        }
     }
-    onePeopleOneVote(cc.player[0]);
+
+    const videos = (typeof cc !== "undefined" && cc.player && cc.player.length > 0)
+        ? cc.player
+        : document.getElementsByTagName("video");
+
+    for (const v of Array.from(videos)) {
+        videoPlayItem(v);
+    }
 }

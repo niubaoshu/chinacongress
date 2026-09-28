@@ -79,16 +79,19 @@ function cc_base() {
         e.appendChild(node);
         e.appendChild(createTag("br"));
     }
+    let hasVideo = false;
     for (const e of getTagName("video")) {
         let link = e.getAttribute("src");
         if (link && !(/^https?:\/\//.test(link))) {
             if (link.startsWith("/")) {
                 e.src = cc.host + link;
-                cc.player.push(e);
-                lnJS(`${cc.jsdir}/${cc.js_modules.cc_video}`, null);
-                break;
             }
         }
+        cc.player.push(e);
+        hasVideo = true;
+    }
+    if (hasVideo) {
+        lnJS(`${cc.jsdir}/${cc.js_modules.cc_video}`, null);
     }
     for (const e of getTagName("img")) {
         let link = e.getAttribute("src");
