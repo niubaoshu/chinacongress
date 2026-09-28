@@ -15,6 +15,8 @@ public_html/ (Git 仓库根目录)
 └── wp-content/
     └── themes/
         └── avril-child/                # 二次开发子主题（Git 核心追踪项目）
+            ├── VIDEO_GUIDE.md          # 🎬 文章内嵌活动短视频使用与排版指南
+            ├── DEVELOPER_GUIDE.md      # 📖 WordPress 子主题开发架构与规范指南
             ├── functions.php           # 子主题核心逻辑、动态过滤器（相对路径清洗、顶栏重写等）
             ├── style.css               # 二次开发 CSS 响应式样式表
             ├── category.php            # 分类列表页专属模版（左图右字大图卡片布局）
