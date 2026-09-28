@@ -84,3 +84,51 @@
 3. **原生播放控件**：
    * 支持全屏、音量调节、快进快退、画中画（不同浏览器原生支持）。
 
+---
+
+## 🔄 给原“土办法（setTimeout + videoplay）”使用者的极简升级指南
+
+### 💡 为什么之前要用土办法？
+在 9月25日之前，由于历史旧脚本会在检测到 `<video>` 时强制全屏霸屏播放并在播完后销毁视频，编辑人员不得不采用一种极其聪明的临时土办法：
+1. 在开头放一个占位空容器 `<div id="videoplay"></div>`；
+2. 在文章底部写 `<script>setTimeout(function() { ...塞入video... }, 500);</script>`，试图用半秒延迟来“躲避”旧脚本。
+
+这导致了两个遗憾的问题：
+* 视频被写死了 `width: 260px !important`，在手机和电脑上像“邮票”一样窄小局促；
+* 访客打开页面时会有 0.5 秒的延迟闪烁。
+
+---
+
+### 🚀 现在：彻底告别土办法，只需简单“三步换新”
+
+主题底层现已**彻底移除了旧全屏霸屏逻辑**，换成了正文流式居中播放器。**您再也不需要写任何 `setTimeout` 或空容器了！**
+
+#### 🛑 旧写法（不再需要）：
+```html
+<!-- 旧做法 1：开头的空 div，写死了 260px 宽度 -->
+<div id="videoplay" style="margin:0 auto;width:260px !important;height:auto;display:flex;justify-content:center;background:url('...') center center / cover no-repeat;"></div>
+
+...正文内容...
+
+<!-- 旧做法 2：底部的 setTimeout 延迟注入脚本 -->
+<script>
+setTimeout(function() {
+    document.getElementById("videoplay").innerHTML = '<video controls style="width:260px !important; height:auto" src="/wp-content/uploads/2026/09/demo.mp4"></video>';
+}, 500);
+</script>
+```
+
+#### ✅ 新写法（只需 1 行，替换开头的空 div 即可）：
+```text
+[cc_video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"]
+```
+*(并在文章底部直接**删除**那段 `<script>setTimeout(...)</script>`)*
+
+---
+
+### 🎁 换成新方法后的 4 大好处
+1. **尺寸自适应**：从局促的 `260px` 自动升级为大方舒适的 `650px` 居中排版，手机竖屏自动贴合满宽；
+2. **零延迟加载**：没有 500ms 的空白闪烁，页面一打开视频播放器就平滑就绪；
+3. **互斥防串音**：一篇文章放多个视频，点播某一个，其他自动暂停；
+4. **编辑超简单**：纯文字短代码，不破坏编辑器富文本格式，日后维护一目了然。
+
