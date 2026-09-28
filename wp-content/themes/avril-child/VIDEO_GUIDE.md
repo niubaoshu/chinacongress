@@ -87,9 +87,7 @@
 
 ---
 
-### 🚀 现在：只需简单替换即可升级
-
-主题底层现已**彻底移除了旧全屏霸屏逻辑**，换成了正文流式居中播放器。**您再也不需要写任何 `setTimeout` 或空容器了！**
+### 🚀 以前视频嵌入的写法如何改成新的写法？
 
 #### 🛑 以前的写法（不再需要）：
 ```html
@@ -106,17 +104,17 @@ setTimeout(function() {
 </script>
 ```
 
-#### ✅ 升级替换说明：
+#### ✅ 新的写法替换说明：
 将之前写法中 `id="videoplay"` 的 `div` 替换为以下任意一种新写法：
 
-* **方式 1：极简短代码（⭐ 最推荐）**
-  ```text
-  [cc_video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"]
-  ```
-
-* **方式 2：纯 HTML 标签（如果您习惯手写 HTML）**
+* **方式 0：纯 HTML 标签**
   ```html
   <video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"></video>
+  ```
+
+* **方式 1：极简短代码**
+  ```text
+  [cc_video src="/wp-content/uploads/2025/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"]
   ```
 
 底部的以下脚本**不再需要，直接删除即可**：
