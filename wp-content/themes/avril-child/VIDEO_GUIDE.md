@@ -118,11 +118,19 @@ setTimeout(function() {
 </script>
 ```
 
-#### ✅ 新写法（只需 1 行，替换开头的空 div 即可）：
-```text
-[cc_video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"]
-```
-*(并在文章底部直接**删除**那段 `<script>setTimeout(...)</script>`)*
+#### ✅ 新写法（二选一，替换开头的空 div 即可）：
+
+* **方式 1：极简短代码（⭐ 最推荐）**
+  ```text
+  [cc_video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"]
+  ```
+
+* **方式 2：纯 HTML 标签（如果您习惯手写 HTML）**
+  ```html
+  <video src="/wp-content/uploads/2026/09/demo.mp4" caption="王丹博士华府抗议现场致辞片段"></video>
+  ```
+
+*(两种方式均可，并在文章底部直接**删除**那段 `<script>setTimeout(...)</script>`)*
 
 ---
 
