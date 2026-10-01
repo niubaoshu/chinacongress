@@ -17,6 +17,7 @@ Version: 1.0.0
  * 4. 分类/归档/搜索大图左图右文卡片 (Category & Archive Post Cards)
  * 5. 首页核心板块微调 (CTA Dual Box, Features Repeater, Blog Grid)
  * 6. 选民走马灯自适应与响应式媒体查询 (Voter Ticker Responsive Media Queries)
+ * 7. 文章排版与短视频组件 (Article Components & Short Video)
  * ============================================================================== */
 
 /* 1. 锁定全站统一强调色为标准蓝 (#3a75a1)，杜绝父主题更新恢复红色 */
@@ -132,7 +133,11 @@ ul.breadcrumb,
     display: none !important;
 }
 
-/* 修复顶部社交图标在 FontAwesome 5 框架下的显示问题 */
+/* ==============================================================================
+ * 3. 社交图标与 FontAwesome 4 / 5 / 6 兼容修补 (FontAwesome Compat)
+ * ============================================================================== */
+
+/* 顶部社交图标设置 */
 .widget_social_widget li a i.fa,
 .widget_social_widget li a i {
     font-family: "Font Awesome 5 Brands", "FontAwesome" !important;
@@ -140,46 +145,65 @@ ul.breadcrumb,
     display: inline-block !important;
 }
 
-.widget_social_widget li a i.fa-twitter:before {
-    content: "\f099" !important;
-}
+.widget_social_widget li a i.fa-twitter:before { content: "\f099" !important; }
+.widget_social_widget li a i.fa-youtube-play:before { content: "\f167" !important; }
+.widget_social_widget li a i.fa-facebook:before { content: "\f09a" !important; }
+.widget_social_widget li a i.fa-google-plus:before { content: "\f0d5" !important; }
 
-.widget_social_widget li a i.fa-youtube-play:before {
-    content: "\f167" !important;
-}
-
-.widget_social_widget li a i.fa-facebook:before {
-    content: "\f09a" !important;
-}
-
-.widget_social_widget li a i.fa-google-plus:before {
-    content: "\f0d5" !important;
-}
-
-/* 修复顶部 Contact Widget 图标（Email Us / Clock / USD）在 FontAwesome 5 框架下的显示问题 */
+/* 顶部联系小部件图标 (Email / Clock / USD) */
 .widget-contact i.fa-envelope-o:before,
-i.fa-envelope-o:before {
-    content: "\f0e0" !important;
-    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
-    font-weight: 900 !important;
-}
-
 .widget-contact i.fa-clock-o:before,
-i.fa-clock-o:before {
-    content: "\f017" !important;
+.widget-contact i.fa-usd:before,
+i.fa-envelope-o:before,
+i.fa-clock-o:before,
+i.fa-usd:before {
     font-family: "Font Awesome 5 Free", "FontAwesome" !important;
     font-weight: 900 !important;
+}
+.widget-contact i.fa-envelope-o:before, i.fa-envelope-o:before { content: "\f0e0" !important; }
+.widget-contact i.fa-clock-o:before, i.fa-clock-o:before { content: "\f017" !important; }
+.widget-contact i.fa-usd:before, i.fa-usd:before { content: "\f155" !important; }
+
+/* 全站常用矢量图标统一声明字体家族 (使用并集选择器消除数十处重复) */
+.fa-twitter:before,
+.fa-youtube-play:before,
+.fa-youtube:before,
+.fa-facebook:before,
+.fa-google-plus:before,
+.fa-book:before,
+.fa-envelope:before,
+.fa-search:before,
+.fa-user:before,
+.fa-bar-chart:before,
+.fa-connectdevelop:before,
+.fa-tachometer:before,
+.fa-bank:before,
+.fa-folder-open-o:before,
+.fa-users:before,
+.fa-angle-right:before,
+.fa-chevron-right:before {
+    font-family: 'FontAwesome' !important;
 }
 
-.widget-contact i.fa-usd:before,
-i.fa-usd:before {
-    content: "\f155" !important;
-    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
-    font-weight: 900 !important;
-}
+.fa-twitter:before { content: "\f099" !important; }
+.fa-youtube-play:before, .fa-youtube:before { content: "\f167" !important; }
+.fa-facebook:before { content: "\f09a" !important; }
+.fa-google-plus:before { content: "\f0d5" !important; }
+.fa-book:before { content: "\f02d" !important; }
+.fa-envelope:before { content: "\f003" !important; }
+.fa-search:before { content: "\f002" !important; }
+.fa-user:before { content: "\f007" !important; }
+.fa-bar-chart:before { content: "\f080" !important; }
+.fa-connectdevelop:before { content: "\f20e" !important; }
+.fa-tachometer:before { content: "\f0e4" !important; }
+.fa-bank:before { content: "\f19c" !important; }
+.fa-folder-open-o:before { content: "\f115" !important; }
+.fa-users:before { content: "\f0c0" !important; }
+.fa-angle-right:before { content: "\f105" !important; }
+.fa-chevron-right:before { content: "\f054" !important; }
 
 /* ==============================================================================
- * 分类列表 / 归档页面：左侧精美封面海报图片 + 右侧文章标题与摘要 (高颜值双栏布局)
+ * 4. 分类列表 / 归档页面：左侧精美封面海报图片 + 右侧文章标题与摘要 (高颜值双栏布局)
  * ============================================================================== */
 
 .category-post-card {
@@ -200,96 +224,6 @@ i.fa-usd:before {
     transform: translateY(-3px) !important;
     box-shadow: 0 10px 25px rgba(58, 117, 161, 0.12) !important;
     border-color: rgba(58, 117, 161, 0.3) !important;
-}
-
-/* ==============================================================================
- * FontAwesome 4 / 5 / 6 图标库向前兼容修补（解决 Clever Fox 插件升级图标丢失问题）
- * ============================================================================== */
-.fa-twitter:before {
-    content: "\f099" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-youtube-play:before,
-.fa-youtube:before {
-    content: "\f167" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-facebook:before {
-    content: "\f09a" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-google-plus:before {
-    content: "\f0d5" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-book:before {
-    content: "\f02d" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-envelope-o:before,
-.fa-envelope:before {
-    content: "\f003" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-usd:before {
-    content: "\f155" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-search:before {
-    content: "\f002" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-user:before {
-    content: "\f007" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-bar-chart:before {
-    content: "\f080" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-connectdevelop:before {
-    content: "\f20e" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-tachometer:before {
-    content: "\f0e4" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-bank:before {
-    content: "\f19c" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-folder-open-o:before {
-    content: "\f115" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-users:before {
-    content: "\f0c0" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-angle-right:before {
-    content: "\f105" !important;
-    font-family: 'FontAwesome' !important;
-}
-
-.fa-chevron-right:before {
-    content: "\f054" !important;
-    font-family: 'FontAwesome' !important;
 }
 
 /* 左侧图片海报区域 */
@@ -744,8 +678,18 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 轮播图 (Main Slider)：小圆点指示器 & 左右切换按钮图标 100% 居中
+ * 轮播图 (Main Slider)：深色沉稳占位底色、小圆点指示器 & 左右切换按钮图标 100% 居中
  * ============================================================================== */
+
+/* 0. 覆盖父主题默认深蓝底色 (#151635 / var(--sp-secondary))，杜绝首屏图片加载时蓝底闪烁 */
+#slider-section,
+.slider-wrapper,
+.main-slider,
+.main-slider .item,
+.main-slider .owl-item,
+.main-slider .owl-item .item {
+    background-color: #121417 !important;
+}
 
 /* 1. 左右切换按钮图标绝对居中 */
 .main-slider .owl-nav [class*="owl-"] {
@@ -964,4 +908,188 @@ i.fa-usd:before {
 .sidebar-blog-card .sidebar-blog-read-more:hover {
     color: #2b5a7e !important;
     transform: translateX(3px) !important;
+}
+
+/* ==============================================================================
+ * 7. 文章排版与短视频组件 (Article Components & Short Video)
+ * ============================================================================== */
+
+#appreciationCertificate {
+    font-family: var(--sp-font-sans-serif);
+    font-size: 16px;
+    display: none;
+    visibility: hidden;
+}
+
+#congress_library {
+    font-family: var(--sp-font-sans-serif);
+    font-size: 18px;
+    font-weight: 350;
+    display: none;
+    visibility: hidden;
+}
+
+#contact_details {
+    margin: 0;
+    padding: 20px 0;
+    border: 1px solid rgba(0, 0, 80, 0.4);
+    border-radius: 6px;
+    display: block;
+    line-height: 2;
+}
+
+#congress_qa_caption {
+    margin: 20px 0;
+    color: rgb(21, 163, 199);
+    font-size: 24px;
+    font-weight: 350;
+}
+
+#congress_qa_caption a,
+#congress_qa_caption a:link,
+#congress_qa_caption a:visited,
+#congress_qa_caption a:hover,
+#congress_qa_caption a:active,
+#congress_qa_caption a:focus {
+    color: inherit;
+    text-decoration: none;
+}
+
+#convener_title {
+    font-size: 22px;
+    font-weight: 350;
+    margin: 15px 20px 5px 20px;
+}
+
+.convener_bio {
+    font-size: 18px;
+    font-weight: 350;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    border-top: 2px solid rgba(0, 0, 80, 0.4);
+}
+
+#contact_title {
+    margin: 40px 0 5px 20px;
+    padding-left: 20px;
+    font-size: 20px;
+    font-weight: 350;
+    width: 100%;
+}
+
+.contact {
+    color: inherit;
+    text-decoration: none;
+}
+
+.contact:link,
+.contact:visited,
+.contact:hover,
+.contact:active,
+.contact:focus {
+    color: rgb(0, 0, 80);
+    text-decoration: none;
+}
+
+oc {
+    font-size: 18px;
+    font-weight: 350;
+    padding: 10px 0;
+    display: block;
+    text-indent: 2em;
+}
+
+.cc_title {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 15px 0;
+}
+
+.cc_author {
+    font-size: 18px;
+    font-weight: 350;
+    margin: 15px 0;
+}
+
+.cc_colon {
+    font-size: 18px;
+    font-weight: 350;
+    margin: 20px 0 0 0;
+}
+
+.cc_strong {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0;
+}
+
+.chapter {
+    margin: 30px 0 10px 0;
+    font-weight: bold;
+    font-size: 26px;
+    text-align: center;
+}
+
+.section {
+    margin: 30px 0 10px 0;
+    font-weight: bold;
+    font-size: 24px;
+    text-align: left;
+    color: rgb(20, 40, 110);
+}
+
+.article {
+    margin: 20px 0 10px 0;
+    font-weight: bold;
+    font-size: 20px;
+    text-align: left;
+}
+
+.signature {
+    margin: 20px 0 50px 0;
+    font-weight: bold;
+    font-size: 24px;
+    text-align: left;
+}
+
+.cc_image {
+    margin: 20px 0;
+    border: 1px solid rgb(225, 225, 225);
+    border-radius: 3px;
+    display: inline-block;
+    width: 99%;
+}
+
+/* 站内活动短视频排版（650px 居中自适应） */
+.cc_video_container {
+    margin: 25px auto 35px auto;
+    max-width: 650px;
+    width: 100%;
+    text-align: center;
+}
+
+.cc_video_container video,
+.entry-content video,
+.post-content video,
+article video {
+    display: block;
+    margin: 0 auto;
+    max-width: 650px;
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    background: #000;
+}
+
+.cc_video_caption {
+    margin: 10px auto 25px auto;
+    display: block;
+    max-width: 650px;
+    width: 100%;
+    text-indent: 2em;
+    text-align: left;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 40, 0.85);
 }

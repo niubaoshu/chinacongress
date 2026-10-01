@@ -48,10 +48,6 @@ function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), $child_css_ver );
     // 加载子主题自带的永久 FontAwesome 4.6.3 字体图标库（解决 CDN 丢失问题）
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
-    // 加载二次开发排版增强样式表 (main.css)，原生 Enqueue 避免客户端 JS 异步插入导致的 FOUC 样式跳动
-    $custom_css_file = get_stylesheet_directory() . '/css/main.css';
-    $custom_css_ver  = file_exists( $custom_css_file ) ? filemtime( $custom_css_file ) : $child_css_ver;
-    wp_enqueue_style( 'avril-child-custom', get_stylesheet_directory_uri() . '/css/main.css', array( 'avril-child-style' ), $custom_css_ver );
 }
 
 // 彻底移除父主题加载的无中文外部 Google 字体 (Poppins)，消除额外网络连接与字体排版冲突
@@ -1349,12 +1345,23 @@ function chinacongress_cloudflare_edge_cache_headers() {
 	$fa_url    = get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css';
 	header( 'Link: <' . esc_url_raw( $style_url ) . '>; rel=preload; as=style', false );
 	header( 'Link: <' . esc_url_raw( $fa_url ) . '>; rel=preload; as=style', false );
+
+	// 首页首屏首张轮播大图 (Hero Banner Image) 注入 Early Link 响应头
+	if ( is_front_page() || is_home() ) {
+		$slider_mod = get_theme_mod( 'slider' );
+		if ( ! empty( $slider_mod ) ) {
+			$slider_items = json_decode( $slider_mod );
+			if ( ! empty( $slider_items ) && is_array( $slider_items ) && ! empty( $slider_items[0]->image_url ) ) {
+				header( 'Link: <' . esc_url_raw( $slider_items[0]->image_url ) . '>; rel=preload; as=image', false );
+			}
+		}
+	}
 }
 add_action( 'template_redirect', 'chinacongress_cloudflare_edge_cache_headers', 999 );
 
 /**
  * 3. 页面头部注入核心外部资源 DNS 预解析与预连接 (DNS-Prefetch & Preconnect)
- * 加快 YouTube 视频封面/播放器以及静态字体的 TLS 握手速度
+ * 加快 YouTube 视频封面/播放器以及静态字体的 TLS 握手速度，并预加载首屏大图
  */
 function chinacongress_cloudflare_preconnect_tags() {
 	echo "\n<!-- ChinaCongress Cloudflare Preconnect & DNS-Prefetch -->\n";
@@ -1362,6 +1369,17 @@ function chinacongress_cloudflare_preconnect_tags() {
 	echo '<link rel="preconnect" href="https://img.youtube.com" crossorigin>' . "\n";
 	echo '<link rel="dns-prefetch" href="//www.youtube.com">' . "\n";
 	echo '<link rel="preconnect" href="https://www.youtube.com" crossorigin>' . "\n";
+
+	// 首页首屏首张轮播大图 HTML 高优先级预加载
+	if ( is_front_page() || is_home() ) {
+		$slider_mod = get_theme_mod( 'slider' );
+		if ( ! empty( $slider_mod ) ) {
+			$slider_items = json_decode( $slider_mod );
+			if ( ! empty( $slider_items ) && is_array( $slider_items ) && ! empty( $slider_items[0]->image_url ) ) {
+				echo '<link rel="preload" as="image" href="' . esc_url( $slider_items[0]->image_url ) . '" fetchpriority="high">' . "\n";
+			}
+		}
+	}
 	echo "<!-- End Cloudflare Preconnect -->\n";
 }
 add_action( 'wp_head', 'chinacongress_cloudflare_preconnect_tags', 1 );
