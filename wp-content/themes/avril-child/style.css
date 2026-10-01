@@ -13,14 +13,20 @@ Version: 1.0.0
  * ------------------------------------------------------------------------------
  * 1. 全局品牌色与 CSS 变量覆盖 (Brand Colors & CSS Variables)
  * 2. 基础排版与正文标题间距 (Typography & Post Layout Spacing)
- * 3. 社交图标与 FontAwesome 4.6.3 / 5 兼容修复 (FontAwesome Compat)
- * 4. 分类/归档/搜索大图左图右文卡片 (Category & Archive Post Cards)
- * 5. 首页核心板块微调 (CTA Dual Box, Features Repeater, Blog Grid)
- * 6. 选民走马灯自适应与响应式媒体查询 (Voter Ticker Responsive Media Queries)
- * 7. 文章排版与短视频组件 (Article Components & Short Video)
+ * 3. 矢量图标字体库兼容声明 (FontAwesome Compat)
+ * 4. 卡片图文通用基础与复用样式 (Card Shared Layout & Typography)
+ * 5. 分类/归档/搜索大图左图右文卡片 (Category & Archive Post Cards)
+ * 6. 首页最新发布卡片 (Home Blog Cards)
+ * 7. 首页推荐内容 (Home Features Cards)
+ * 8. 统一首页各区块标题字号与修饰短线 (Heading Defaults)
+ * 9. 轮播图 (Main Slider) 占位底色与指示器
+ * 10. 选民走马灯自适应与响应式媒体查询 (Voter Ticker Responsive)
+ * 11. 文章正文侧边栏：最新发布模块 (Sidebar Latest Posts Cards)
+ * 12. 文章落款与社交图标区域 (Article Annotation & Social Icons)
+ * 13. 文章排版与短视频组件 (Article Components & Short Video)
  * ============================================================================== */
 
-/* 1. 锁定全站统一强调色为标准蓝 (#3a75a1)，杜绝父主题更新恢复红色 */
+/* 1. 锁定全站统一强调色为标准蓝 (#3a75a1) 与现代系统字体栈 */
 :root {
     --sp-primary: #3a75a1 !important;
     --sp-primary-dark: #2b5a7e !important;
@@ -29,53 +35,37 @@ Version: 1.0.0
     --sp-font-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "WenQuanYi Micro Hei", sans-serif !important;
 }
 
-/* 强行推开并覆盖全局按钮与强调元素为标准蓝色 */
-.wp-block-search .wp-block-search__button,
-.av-btn-primary,
-.av-btn-primary:hover,
-.av-btn-primary:focus {
-    background-color: #3a75a1 !important;
-    border-color: #3a75a1 !important;
+/* 覆盖 Gutenberg 搜索按钮为主题强调色 */
+.wp-block-search .wp-block-search__button {
+    background-color: var(--sp-primary) !important;
+    border-color: var(--sp-primary) !important;
 }
 
-span.primary-color,
-.primary-color {
-    color: #3a75a1 !important;
-}
-
-/* 全局恢复标准清晰平滑抗锯齿，统一步调并使用现代系统字体栈 */
+/* 全局恢复标准清晰平滑抗锯齿与全局字号 */
 html,
 body {
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
     text-rendering: optimizeLegibility !important;
-    font-family: var(--sp-font-sans-serif);
 }
 
-/* 全局 body 字体大小设置为 18px */
 body {
     font-size: 18px !important;
 }
 
 /* 文章正文标题 (h5.post-title) 底部与下方首个元素的间距 */
-.single .post-content h5.post-title,
-.single-post h5.post-title,
 .post-content h5.post-title {
-    display: block !important;
     margin-bottom: 25px !important;
     padding-bottom: 5px !important;
 }
 
-/* 强行推开标题紧接着的图片/段落/元素 */
-.single .post-content h5.post-title+*,
-.post-content h5.post-title+figure,
-.post-content h5.post-title+p {
+.post-content h5.post-title+* {
     margin-top: 20px !important;
 }
 
-/* 让导航栏下方面包屑 (Breadcrumb Area) 的背景图片 100% 完整显示整张全图 (零裁切) */
+/* 面包屑区域 (Breadcrumb Area) 背景图 100% 完整显示 */
 .breadcrumb-area {
-    background-position: center center !important;
+    background-position: center !important;
     background-size: 100% 100% !important;
     background-repeat: no-repeat !important;
     background-attachment: scroll !important;
@@ -88,42 +78,20 @@ body {
     justify-content: center !important;
 }
 
-/* ==============================================================================
- * 面包屑导航 (Breadcrumb Area) 手机端以完整【模块】为单位自动折行优化
- * 匹配 Avril 主题实际 DOM 结构：.breadcrumb-list / a / li
- * 核心逻辑：
- * 1. 容器开启 flex-wrap: wrap 允许自然折行
- * 2. 每一个 <a> 链接模块与 li 节点设置 white-space: nowrap，保证内部绝不拆字断行
- * 3. 不做文本省略截断（无 overflow:hidden / text-overflow:ellipsis），确保完整模块整体换行
- * ============================================================================== */
-.breadcrumb-area .breadcrumb-content .breadcrumb-list,
-.breadcrumb-area .breadcrumb-list,
-.breadcrumb-content .breadcrumb-list,
-ol.breadcrumb-list,
-ul.breadcrumb,
-.breadcrumb {
+/* 面包屑导航手机端以完整模块为单位自动折行优化 */
+.breadcrumb-list {
     display: flex !important;
     flex-wrap: wrap !important;
     justify-content: center !important;
     align-items: center !important;
-    padding: 0 !important;
-    margin: 8px auto 0 auto !important;
-    list-style: none !important;
+    margin: 8px auto 0 !important;
     max-width: 100% !important;
 }
 
-.breadcrumb-list a,
-.breadcrumb-list li,
-.breadcrumb-area .breadcrumb-list a,
-.breadcrumb-area .breadcrumb-list li,
-.breadcrumb-area .breadcrumb li,
-.breadcrumb-area .breadcrumb-content li,
-.breadcrumb-item,
-.breadcrumb li {
+.breadcrumb-list li {
     display: inline-flex !important;
     align-items: center !important;
     white-space: nowrap !important;
-    /* 核心：保证单个 <a> 模块内部绝不拆字断行 */
     margin: 2px 4px !important;
 }
 
@@ -134,132 +102,139 @@ ul.breadcrumb,
 }
 
 /* ==============================================================================
- * 3. 社交图标与 FontAwesome 4 / 5 / 6 兼容修补 (FontAwesome Compat)
+ * 3. 矢量图标字体库兼容声明 (统一定向至本地完整 FontAwesome 矢量字库)
  * ============================================================================== */
-
-/* 顶部社交图标设置 */
-.widget_social_widget li a i.fa,
-.widget_social_widget li a i {
-    font-family: "Font Awesome 5 Brands", "FontAwesome" !important;
-    font-weight: 400 !important;
-    display: inline-block !important;
-}
-
-.widget_social_widget li a i.fa-twitter:before { content: "\f099" !important; }
-.widget_social_widget li a i.fa-youtube-play:before { content: "\f167" !important; }
-.widget_social_widget li a i.fa-facebook:before { content: "\f09a" !important; }
-.widget_social_widget li a i.fa-google-plus:before { content: "\f0d5" !important; }
-
-/* 顶部联系小部件图标 (Email / Clock / USD) */
-.widget-contact i.fa-envelope-o:before,
-.widget-contact i.fa-clock-o:before,
-.widget-contact i.fa-usd:before,
-i.fa-envelope-o:before,
-i.fa-clock-o:before,
-i.fa-usd:before {
-    font-family: "Font Awesome 5 Free", "FontAwesome" !important;
-    font-weight: 900 !important;
-}
-.widget-contact i.fa-envelope-o:before, i.fa-envelope-o:before { content: "\f0e0" !important; }
-.widget-contact i.fa-clock-o:before, i.fa-clock-o:before { content: "\f017" !important; }
-.widget-contact i.fa-usd:before, i.fa-usd:before { content: "\f155" !important; }
-
-/* 全站常用矢量图标统一声明字体家族 (使用并集选择器消除数十处重复) */
-.fa-twitter:before,
-.fa-youtube-play:before,
-.fa-youtube:before,
-.fa-facebook:before,
-.fa-google-plus:before,
-.fa-book:before,
-.fa-envelope:before,
-.fa-search:before,
-.fa-user:before,
-.fa-bar-chart:before,
-.fa-connectdevelop:before,
-.fa-tachometer:before,
-.fa-bank:before,
-.fa-folder-open-o:before,
-.fa-users:before,
-.fa-angle-right:before,
-.fa-chevron-right:before {
+.fa,
+[class*=" fa-"],
+[class^="fa-"],
+.widget_social_widget li a i,
+.widget-contact i {
     font-family: 'FontAwesome' !important;
+    display: inline-block;
 }
-
-.fa-twitter:before { content: "\f099" !important; }
-.fa-youtube-play:before, .fa-youtube:before { content: "\f167" !important; }
-.fa-facebook:before { content: "\f09a" !important; }
-.fa-google-plus:before { content: "\f0d5" !important; }
-.fa-book:before { content: "\f02d" !important; }
-.fa-envelope:before { content: "\f003" !important; }
-.fa-search:before { content: "\f002" !important; }
-.fa-user:before { content: "\f007" !important; }
-.fa-bar-chart:before { content: "\f080" !important; }
-.fa-connectdevelop:before { content: "\f20e" !important; }
-.fa-tachometer:before { content: "\f0e4" !important; }
-.fa-bank:before { content: "\f19c" !important; }
-.fa-folder-open-o:before { content: "\f115" !important; }
-.fa-users:before { content: "\f0c0" !important; }
-.fa-angle-right:before { content: "\f105" !important; }
-.fa-chevron-right:before { content: "\f054" !important; }
 
 /* ==============================================================================
- * 4. 分类列表 / 归档页面：左侧精美封面海报图片 + 右侧文章标题与摘要 (高颜值双栏布局)
+ * 4. 卡片图文通用基础与复用样式 (Card Shared Layout & Typography)
  * ============================================================================== */
 
-.category-post-card {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: stretch !important;
-    gap: 24px !important;
+/* 统一卡片基础外观与悬停升起投影 (4处合并) */
+.category-post-card,
+.home-blog-card,
+.home-features .feature-card-item,
+.sidebar-blog-card {
     background: #ffffff !important;
     border-radius: 12px !important;
-    padding: 20px !important;
-    margin-bottom: 25px !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
     border: 1px solid #eef2f6 !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
 }
 
-.category-post-card:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 25px rgba(58, 117, 161, 0.12) !important;
+.category-post-card:hover,
+.home-blog-card:hover,
+.home-features .feature-card-item:hover,
+.sidebar-blog-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 28px rgba(58, 117, 161, 0.14) !important;
     border-color: rgba(58, 117, 161, 0.3) !important;
 }
 
-/* 左侧图片海报区域 */
-.category-post-card .category-post-thumb-wrap {
-    flex: 0 0 36% !important;
-    max-width: 36% !important;
+/* 统一缩略图包裹层通用样式 (4处合并) */
+.category-post-card .category-post-thumb-wrap,
+.home-blog-card .home-blog-thumb-wrap,
+.home-features .feature-card-thumb,
+.sidebar-blog-card .sidebar-blog-thumb-wrap {
     position: relative !important;
     overflow: hidden !important;
-    border-radius: 8px !important;
-    min-height: 180px !important;
     background: #f4f8fb !important;
 }
 
-.category-post-card .category-post-thumb-link {
+/* 统一缩略图超链接铺满 (4处合并) */
+.category-post-card .category-post-thumb-link,
+.home-blog-card .home-blog-thumb-link,
+.home-features .feature-card-thumb a,
+.sidebar-blog-card .sidebar-blog-thumb-link {
     display: block !important;
     width: 100% !important;
     height: 100% !important;
-    overflow: hidden !important;
 }
 
-.category-post-card .category-post-thumb-img {
+/* 统一缩略图自适应与平滑过渡 (4处合并) */
+.category-post-card .category-post-thumb-img,
+.home-blog-card .home-blog-thumb-img,
+.home-features .feature-card-img,
+.sidebar-blog-card .sidebar-blog-thumb-img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    object-position: center center !important;
     transition: transform 0.4s ease !important;
 }
 
-.category-post-card:hover .category-post-thumb-img {
+/* 统一卡片图片悬停微放大动效 (4处合并) */
+.category-post-card:hover .category-post-thumb-img,
+.home-blog-card:hover .home-blog-thumb-img,
+.home-features .feature-card-item:hover .feature-card-img,
+.sidebar-blog-card:hover .sidebar-blog-thumb-img {
     transform: scale(1.06) !important;
 }
 
+/* 统一卡片标题链接颜色与悬停效果 (4处合并) */
+.category-post-card .category-post-title a,
+.home-blog-card .home-blog-title a,
+.home-features .feature-card-title a,
+.sidebar-blog-card .sidebar-blog-title a {
+    color: #1d2327 !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+}
+
+.category-post-card .category-post-title a:hover,
+.home-blog-card .home-blog-title a:hover,
+.home-features .feature-card-title a:hover,
+.sidebar-blog-card .sidebar-blog-title a:hover {
+    color: #3a75a1 !important;
+}
+
+/* 统一发布日期小日历图标 (3处合并) */
+.category-post-card .category-post-meta i,
+.home-blog-card .home-blog-meta i,
+.sidebar-blog-card .sidebar-blog-meta i {
+    color: #3a75a1 !important;
+    margin-right: 4px !important;
+}
+
+/* 统一多行文本截断通用规则 (3处合并) */
+.home-features .feature-card-title,
+.home-features .feature-card-text,
+.sidebar-blog-card .sidebar-blog-excerpt {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+}
+
+/* 通用“阅读更多”胶囊按钮 */
+.category-read-more-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background-color: #3a75a1 !important;
+    color: #ffffff !important;
+    padding: 8px 18px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    transition: background-color 0.2s ease, transform 0.2s ease !important;
+    align-self: flex-start !important;
+}
+
+.category-read-more-btn:hover {
+    background-color: #2b5a7e !important;
+    color: #ffffff !important;
+    transform: translateX(3px) !important;
+}
+
 /* 分类胶囊标签 (图片左上角) */
-.category-post-card .category-badge,
-.home-blog-card .category-badge,
-.sidebar-blog-card .category-badge {
+.category-badge {
     position: absolute !important;
     top: 12px !important;
     left: 12px !important;
@@ -273,7 +248,26 @@ i.fa-usd:before {
     backdrop-filter: blur(4px) !important;
 }
 
-/* 右侧文本内容区域 */
+/* ==============================================================================
+ * 5. 分类列表 / 归档页面卡片 (Category Post Cards)
+ * ============================================================================== */
+
+.category-post-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    gap: 24px !important;
+    padding: 20px !important;
+    margin-bottom: 25px !important;
+}
+
+.category-post-card .category-post-thumb-wrap {
+    flex: 0 0 36% !important;
+    max-width: 36% !important;
+    border-radius: 8px !important;
+    min-height: 180px !important;
+}
+
 .category-post-card .category-post-content-wrap {
     flex: 1 1 64% !important;
     display: flex !important;
@@ -301,26 +295,11 @@ i.fa-usd:before {
     text-decoration: underline !important;
 }
 
-.category-post-card .category-post-meta i {
-    color: #3a75a1 !important;
-    margin-right: 4px !important;
-}
-
 .category-post-card .category-post-title {
     font-size: 20px !important;
     font-weight: 700 !important;
     line-height: 1.4 !important;
     margin-bottom: 12px !important;
-}
-
-.category-post-card .category-post-title a {
-    color: #1d2327 !important;
-    text-decoration: none !important;
-    transition: color 0.2s ease !important;
-}
-
-.category-post-card .category-post-title a:hover {
-    color: #3a75a1 !important;
 }
 
 .category-post-card .category-post-excerpt {
@@ -331,28 +310,6 @@ i.fa-usd:before {
     flex-grow: 1 !important;
 }
 
-.category-post-card .category-read-more-btn {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    background-color: #3a75a1 !important;
-    color: #ffffff !important;
-    padding: 8px 18px !important;
-    border-radius: 6px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
-    transition: background-color 0.2s ease, transform 0.2s ease !important;
-    align-self: flex-start !important;
-}
-
-.category-post-card .category-read-more-btn:hover {
-    background-color: #2b5a7e !important;
-    color: #ffffff !important;
-    transform: translateX(3px) !important;
-}
-
-/* 手机端响应式布局适配 */
 @media (max-width: 768px) {
     .category-post-card {
         flex-direction: column !important;
@@ -366,50 +323,19 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 首页最新发布 (Section Blog)：两列高颜值图文卡片布局
+ * 6. 首页最新发布 (Home Blog Cards)
  * ============================================================================== */
 
 .home-blog-card {
-    background: #ffffff !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid #eef2f6 !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
     height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
-}
-
-.home-blog-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 12px 28px rgba(58, 117, 161, 0.14) !important;
-    border-color: rgba(58, 117, 161, 0.3) !important;
+    overflow: hidden !important;
 }
 
 .home-blog-card .home-blog-thumb-wrap {
-    position: relative !important;
     width: 100% !important;
     height: 220px !important;
-    overflow: hidden !important;
-    background: #f4f8fb !important;
-}
-
-.home-blog-card .home-blog-thumb-link {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-.home-blog-card .home-blog-thumb-img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    transition: transform 0.4s ease !important;
-}
-
-.home-blog-card:hover .home-blog-thumb-img {
-    transform: scale(1.06) !important;
 }
 
 .home-blog-card .home-blog-content {
@@ -426,26 +352,11 @@ i.fa-usd:before {
     margin-bottom: 8px !important;
 }
 
-.home-blog-card .home-blog-meta i {
-    color: #3a75a1 !important;
-    margin-right: 4px !important;
-}
-
 .home-blog-card .home-blog-title {
     font-size: 19px !important;
     font-weight: 700 !important;
     line-height: 1.4 !important;
     margin-bottom: 10px !important;
-}
-
-.home-blog-card .home-blog-title a {
-    color: #1d2327 !important;
-    text-decoration: none !important;
-    transition: color 0.2s ease !important;
-}
-
-.home-blog-card .home-blog-title a:hover {
-    color: #3a75a1 !important;
 }
 
 .home-blog-card .home-blog-excerpt {
@@ -457,12 +368,10 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 首页推荐内容 (Section Features)：强行 100% 等高对齐海报卡片布局
+ * 7. 首页推荐内容 (Home Features Cards)
  * ============================================================================== */
 
 .home-features .features-area {
-    display: flex !important;
-    flex-wrap: wrap !important;
     align-items: stretch !important;
 }
 
@@ -472,47 +381,14 @@ i.fa-usd:before {
 }
 
 .home-features .feature-card-item {
-    background: #ffffff !important;
-    border-radius: 12px !important;
     overflow: hidden !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease !important;
     height: 100% !important;
-    width: 100% !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
-.home-features .feature-card-item:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15) !important;
-}
-
 .home-features .feature-card-thumb {
-    width: 100% !important;
     height: 180px !important;
-    min-height: 180px !important;
-    max-height: 180px !important;
-    overflow: hidden !important;
-    position: relative !important;
-    background: #f4f8fb !important;
-}
-
-.home-features .feature-card-thumb a {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-.home-features .feature-card-img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    transition: transform 0.4s ease !important;
-}
-
-.home-features .feature-card-item:hover .feature-card-img {
-    transform: scale(1.06) !important;
 }
 
 .home-features .feature-card-content {
@@ -528,21 +404,7 @@ i.fa-usd:before {
     font-weight: 700 !important;
     line-height: 1.4 !important;
     margin-bottom: 8px !important;
-    display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    height: auto !important;
-}
-
-.home-features .feature-card-title a {
-    color: #1d2327 !important;
-    text-decoration: none !important;
-    transition: color 0.2s ease !important;
-}
-
-.home-features .feature-card-title a:hover {
-    color: #3a75a1 !important;
 }
 
 .home-features .feature-card-text {
@@ -550,11 +412,7 @@ i.fa-usd:before {
     color: #495057 !important;
     line-height: 1.6 !important;
     margin-bottom: 12px !important;
-    display: -webkit-box !important;
     -webkit-line-clamp: 3 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    height: auto !important;
 }
 
 .home-features .feature-card-content .category-read-more-btn {
@@ -562,136 +420,29 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 文章落款与社交图标区域 (Clean Class-Based Layout)
+ * 8. 统一首页各区块标题字号与修饰短线 (Heading Defaults)
  * ============================================================================== */
 
-#annotation,
-.article-annotation {
-    padding-top: 20px !important;
-    margin-top: 80px !important;
-    margin-bottom: 50px !important;
-    border-top: 1px solid #999999 !important;
-    font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif !important;
-    font-style: italic !important;
-    font-size: 15px !important;
-}
-
-#annotation a,
-#annotation a span,
-.article-annotation a,
-.article-annotation a span,
-.post-share-bar a,
-.post-share-bar a span {
-    cursor: pointer !important;
-}
-
-.article-annotation .social-icons {
-    display: flex !important;
-    align-items: center !important;
-    gap: 20px !important;
-    margin-bottom: 20px !important;
-}
-
-#annotation a span,
-.article-annotation .social-icons a span {
-    display: inline-block !important;
-    width: 60px !important;
-    height: 60px !important;
-    border-radius: 50% !important;
-    border: 1px solid #e6e6e6 !important;
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-    cursor: pointer !important;
-}
-
-#annotation a:hover span,
-.article-annotation .social-icons a:hover span {
-    transform: scale(1.08) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-.article-annotation .social-icons .icon-telegram {
-    background-image: url("/wp-content/uploads/2026/07/图片-13.png") !important;
-}
-
-.article-annotation .social-icons .icon-x {
-    background-image: url("/wp-content/uploads/2026/07/x_logo.jpg") !important;
-}
-
-.article-annotation .social-icons .icon-tiktok {
-    background-image: url("/wp-content/uploads/2026/07/tiktok_logo.jpeg") !important;
-}
-
-.article-annotation .social-icons .icon-youtube {
-    background-image: url("/wp-content/uploads/2026/07/Youtube_logo.png") !important;
-}
-
-#annotation .credit-row,
-.article-annotation .credit-row {
-    margin-bottom: 6px !important;
-}
-
-#annotation .credit-row .label,
-.article-annotation .credit-row .label {
-    display: inline-block !important;
-    width: 60px !important;
-    text-align: right !important;
-    margin-right: 8px !important;
-}
-
-#annotation a,
-.article-annotation .credit-row a {
-    color: #3a75a1 !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
-    cursor: pointer !important;
-}
-
-#annotation a:hover,
-.article-annotation .credit-row a:hover {
-    text-decoration: underline !important;
-}
-
-/* ==============================================================================
- * 统一“选民注册”、“推荐内容”与“最新发布”标题字号大小一致
- * ============================================================================== */
-
-#service-section .heading-default h3,
-#features-section .heading-default h3,
-.home-service .heading-default h3,
-.home-features .heading-default h3,
 .heading-default h3 {
     font-size: 18px !important;
     font-weight: 700 !important;
     line-height: 1.4 !important;
 }
 
-#service-section .heading-default h3:before,
-#features-section .heading-default h3:before,
-.home-service .heading-default h3:before,
-.home-features .heading-default h3:before,
 .heading-default h3:before {
     width: 30px !important;
     left: -30px !important;
 }
 
 /* ==============================================================================
- * 轮播图 (Main Slider)：深色沉稳占位底色、小圆点指示器 & 左右切换按钮图标 100% 居中
+ * 9. 轮播图 (Main Slider)：占位底色、小圆点指示器 & 切换按钮居中
  * ============================================================================== */
 
-/* 0. 覆盖父主题默认深蓝底色 (#151635 / var(--sp-secondary))，杜绝首屏图片加载时蓝底闪烁 */
-#slider-section,
-.slider-wrapper,
 .main-slider,
-.main-slider .item,
-.main-slider .owl-item,
 .main-slider .owl-item .item {
     background-color: #121417 !important;
 }
 
-/* 1. 左右切换按钮图标绝对居中 */
 .main-slider .owl-nav [class*="owl-"] {
     display: inline-flex !important;
     align-items: center !important;
@@ -700,42 +451,25 @@ i.fa-usd:before {
     padding: 0 !important;
 }
 
-.main-slider .owl-nav .owl-prev i,
-.main-slider .owl-nav .owl-next i {
+.main-slider .owl-nav [class*="owl-"] i {
     margin: 0 !important;
     font-size: 12px !important;
     line-height: 1 !important;
-    display: block !important;
 }
 
-/* 2. 轮播图底部小圆点指示器 (Dots) */
 .main-slider .owl-dots {
     position: absolute !important;
     bottom: 140px !important;
     left: 0 !important;
     right: 0 !important;
     z-index: 20 !important;
-    text-align: center !important;
-    margin: 0 auto !important;
-}
-
-.main-slider .owl-dots .owl-dot {
-    display: inline-block !important;
-    outline: none !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
 }
 
 .main-slider .owl-dots .owl-dot span {
-    width: 10px !important;
-    height: 10px !important;
     margin: 0 5px !important;
     background: rgba(255, 255, 255, 0.5) !important;
-    display: inline-block !important;
-    border-radius: 50% !important;
-    transition: all 0.3s ease !important;
     border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.3s ease !important;
 }
 
 .main-slider .owl-dots .owl-dot.active span {
@@ -745,10 +479,10 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 大陆院与海外院最新登记选民走马灯 移动端自适应响应式规则
+ * 10. 选民走马灯移动端响应式 (Voter Ticker Responsive)
  * ============================================================================== */
-@media (max-width: 991px) {
 
+@media (max-width: 991px) {
     #cta-section-mainland .cta-wrapper,
     #cta-section-overseas .cta-wrapper {
         flex-wrap: wrap !important;
@@ -766,7 +500,7 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 文章正文侧边栏：最新发布模块 (Sidebar Latest Posts Cards)
+ * 11. 文章正文侧边栏：最新发布模块 (Sidebar Latest Posts Cards)
  * ============================================================================== */
 
 .widget_sidebar_latest_posts {
@@ -801,46 +535,14 @@ i.fa-usd:before {
 }
 
 .sidebar-blog-card {
-    background: #ffffff !important;
-    border-radius: 10px !important;
     overflow: hidden !important;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid #eef2f6 !important;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
     display: flex !important;
     flex-direction: column !important;
 }
 
-.sidebar-blog-card:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 8px 20px rgba(58, 117, 161, 0.14) !important;
-    border-color: rgba(58, 117, 161, 0.3) !important;
-}
-
 .sidebar-blog-card .sidebar-blog-thumb-wrap {
-    position: relative !important;
     width: 100% !important;
     height: 150px !important;
-    overflow: hidden !important;
-    background: #f4f8fb !important;
-}
-
-.sidebar-blog-card .sidebar-blog-thumb-link {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-.sidebar-blog-card .sidebar-blog-thumb-img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center center !important;
-    transition: transform 0.4s ease !important;
-}
-
-.sidebar-blog-card:hover .sidebar-blog-thumb-img {
-    transform: scale(1.06) !important;
 }
 
 .sidebar-blog-card .sidebar-blog-content {
@@ -856,11 +558,6 @@ i.fa-usd:before {
     margin-bottom: 6px !important;
 }
 
-.sidebar-blog-card .sidebar-blog-meta i {
-    color: #3a75a1 !important;
-    margin-right: 4px !important;
-}
-
 .sidebar-blog-card .sidebar-blog-title {
     font-size: 15px !important;
     font-weight: 700 !important;
@@ -868,25 +565,12 @@ i.fa-usd:before {
     margin: 0 0 8px 0 !important;
 }
 
-.sidebar-blog-card .sidebar-blog-title a {
-    color: #1d2327 !important;
-    text-decoration: none !important;
-    transition: color 0.2s ease !important;
-}
-
-.sidebar-blog-card .sidebar-blog-title a:hover {
-    color: #3a75a1 !important;
-}
-
 .sidebar-blog-card .sidebar-blog-excerpt {
     font-size: 13px !important;
     color: #495057 !important;
     line-height: 1.5 !important;
     margin-bottom: 10px !important;
-    display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
 }
 
 .sidebar-blog-card .sidebar-blog-action {
@@ -911,22 +595,82 @@ i.fa-usd:before {
 }
 
 /* ==============================================================================
- * 7. 文章排版与短视频组件 (Article Components & Short Video)
+ * 12. 文章落款与社交图标区域 (Article Annotation & Social Icons)
  * ============================================================================== */
 
-#appreciationCertificate {
-    font-family: var(--sp-font-sans-serif);
-    font-size: 16px;
-    display: none;
-    visibility: hidden;
+#annotation,
+.article-annotation {
+    padding-top: 20px !important;
+    margin-top: 80px !important;
+    margin-bottom: 50px !important;
+    border-top: 1px solid #999999 !important;
+    font-style: italic !important;
+    font-size: 15px !important;
 }
 
+.article-annotation .social-icons {
+    display: flex !important;
+    align-items: center !important;
+    gap: 20px !important;
+    margin-bottom: 20px !important;
+}
+
+#annotation a span,
+.article-annotation .social-icons a span {
+    display: inline-block !important;
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    border: 1px solid #e6e6e6 !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+#annotation a:hover span,
+.article-annotation .social-icons a:hover span {
+    transform: scale(1.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.article-annotation .social-icons .icon-telegram { background-image: url("/wp-content/uploads/2026/07/图片-13.png") !important; }
+.article-annotation .social-icons .icon-x { background-image: url("/wp-content/uploads/2026/07/x_logo.jpg") !important; }
+.article-annotation .social-icons .icon-tiktok { background-image: url("/wp-content/uploads/2026/07/tiktok_logo.jpeg") !important; }
+.article-annotation .social-icons .icon-youtube { background-image: url("/wp-content/uploads/2026/07/Youtube_logo.png") !important; }
+
+#annotation .credit-row,
+.article-annotation .credit-row {
+    margin-bottom: 6px !important;
+}
+
+#annotation .credit-row .label,
+.article-annotation .credit-row .label {
+    display: inline-block !important;
+    width: 60px !important;
+    text-align: right !important;
+    margin-right: 8px !important;
+}
+
+#annotation a,
+.article-annotation .credit-row a {
+    color: #3a75a1 !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+#annotation a:hover,
+.article-annotation .credit-row a:hover {
+    text-decoration: underline !important;
+}
+
+/* ==============================================================================
+ * 13. 文章排版与短视频组件 (Article Components & Short Video)
+ * ============================================================================== */
+
+#appreciationCertificate,
 #congress_library {
-    font-family: var(--sp-font-sans-serif);
-    font-size: 18px;
-    font-weight: 350;
     display: none;
-    visibility: hidden;
 }
 
 #contact_details {
@@ -934,7 +678,6 @@ i.fa-usd:before {
     padding: 20px 0;
     border: 1px solid rgba(0, 0, 80, 0.4);
     border-radius: 6px;
-    display: block;
     line-height: 2;
 }
 
@@ -945,12 +688,7 @@ i.fa-usd:before {
     font-weight: 350;
 }
 
-#congress_qa_caption a,
-#congress_qa_caption a:link,
-#congress_qa_caption a:visited,
-#congress_qa_caption a:hover,
-#congress_qa_caption a:active,
-#congress_qa_caption a:focus {
+#congress_qa_caption a {
     color: inherit;
     text-decoration: none;
 }
@@ -964,8 +702,7 @@ i.fa-usd:before {
 .convener_bio {
     font-size: 18px;
     font-weight: 350;
-    padding-top: 15px;
-    padding-bottom: 15px;
+    padding: 15px 0;
     border-top: 2px solid rgba(0, 0, 80, 0.4);
 }
 
@@ -974,19 +711,9 @@ i.fa-usd:before {
     padding-left: 20px;
     font-size: 20px;
     font-weight: 350;
-    width: 100%;
 }
 
 .contact {
-    color: inherit;
-    text-decoration: none;
-}
-
-.contact:link,
-.contact:visited,
-.contact:hover,
-.contact:active,
-.contact:focus {
     color: rgb(0, 0, 80);
     text-decoration: none;
 }
@@ -1034,7 +761,6 @@ oc {
     margin: 30px 0 10px 0;
     font-weight: bold;
     font-size: 24px;
-    text-align: left;
     color: rgb(20, 40, 110);
 }
 
@@ -1042,35 +768,30 @@ oc {
     margin: 20px 0 10px 0;
     font-weight: bold;
     font-size: 20px;
-    text-align: left;
 }
 
 .signature {
     margin: 20px 0 50px 0;
     font-weight: bold;
     font-size: 24px;
-    text-align: left;
 }
 
 .cc_image {
     margin: 20px 0;
     border: 1px solid rgb(225, 225, 225);
     border-radius: 3px;
-    display: inline-block;
-    width: 99%;
+    display: block;
+    max-width: 100%;
 }
 
 /* 站内活动短视频排版（650px 居中自适应） */
 .cc_video_container {
-    margin: 25px auto 35px auto;
+    margin: 25px auto 35px;
     max-width: 650px;
-    width: 100%;
     text-align: center;
 }
 
 .cc_video_container video,
-.entry-content video,
-.post-content video,
 article video {
     display: block;
     margin: 0 auto;
@@ -1083,12 +804,9 @@ article video {
 }
 
 .cc_video_caption {
-    margin: 10px auto 25px auto;
-    display: block;
+    margin: 10px auto 25px;
     max-width: 650px;
-    width: 100%;
     text-indent: 2em;
-    text-align: left;
     font-size: 15px;
     line-height: 1.6;
     color: rgba(0, 0, 40, 0.85);
