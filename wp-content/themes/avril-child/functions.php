@@ -54,6 +54,15 @@ function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-child-custom', get_stylesheet_directory_uri() . '/css/main.css', array( 'avril-child-style' ), $custom_css_ver );
 }
 
+// 彻底移除父主题加载的无中文外部 Google 字体 (Poppins)，消除额外网络连接与字体排版冲突
+add_action( 'after_setup_theme', function() {
+    remove_action( 'wp_enqueue_scripts', 'avril_scripts_styles' );
+}, 20 );
+add_action( 'wp_enqueue_scripts', function() {
+    wp_dequeue_style( 'avril-fonts' );
+    wp_deregister_style( 'avril-fonts' );
+}, 999 );
+
 
 /**
  * 2. 引入子主题安全覆盖模板片段 (Section Blog & Section Features)
