@@ -42,15 +42,11 @@ Version: 1.0.0
 }
 
 /* 全局恢复标准清晰平滑抗锯齿与全局字号 */
-html,
 body {
+    font-size: 18px !important;
     -webkit-font-smoothing: antialiased !important;
     -moz-osx-font-smoothing: grayscale !important;
     text-rendering: optimizeLegibility !important;
-}
-
-body {
-    font-size: 18px !important;
 }
 
 /* 文章正文标题 (h5.post-title) 底部与下方首个元素的间距 */
@@ -595,11 +591,10 @@ body {
 }
 
 /* ==============================================================================
- * 12. 文章落款与社交图标区域 (Article Annotation & Social Icons)
+ * 12. 文章落款与社交图标区域 (Article Annotation)
  * ============================================================================== */
 
-#annotation,
-.article-annotation {
+#annotation {
     padding-top: 20px !important;
     margin-top: 80px !important;
     margin-bottom: 50px !important;
@@ -608,60 +603,23 @@ body {
     font-size: 15px !important;
 }
 
-.article-annotation .social-icons {
-    display: flex !important;
-    align-items: center !important;
-    gap: 20px !important;
-    margin-bottom: 20px !important;
-}
-
-#annotation a span,
-.article-annotation .social-icons a span {
-    display: inline-block !important;
-    width: 60px !important;
-    height: 60px !important;
-    border-radius: 50% !important;
-    border: 1px solid #e6e6e6 !important;
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-}
-
-#annotation a:hover span,
-.article-annotation .social-icons a:hover span {
-    transform: scale(1.08) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-.article-annotation .social-icons .icon-telegram { background-image: url("/wp-content/uploads/2026/07/图片-13.png") !important; }
-.article-annotation .social-icons .icon-x { background-image: url("/wp-content/uploads/2026/07/x_logo.jpg") !important; }
-.article-annotation .social-icons .icon-tiktok { background-image: url("/wp-content/uploads/2026/07/tiktok_logo.jpeg") !important; }
-.article-annotation .social-icons .icon-youtube { background-image: url("/wp-content/uploads/2026/07/Youtube_logo.png") !important; }
-
-#annotation .credit-row,
-.article-annotation .credit-row {
-    margin-bottom: 6px !important;
-}
-
-#annotation .credit-row .label,
-.article-annotation .credit-row .label {
-    display: inline-block !important;
-    width: 60px !important;
-    text-align: right !important;
-    margin-right: 8px !important;
-}
-
-#annotation a,
-.article-annotation .credit-row a {
+#annotation a {
     color: #3a75a1 !important;
     font-weight: 600 !important;
     text-decoration: none !important;
 }
 
-#annotation a:hover,
-.article-annotation .credit-row a:hover {
+#annotation a:hover {
     text-decoration: underline !important;
+}
+
+#annotation a span {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+#annotation a:hover span {
+    transform: scale(1.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* ==============================================================================
@@ -685,7 +643,6 @@ body {
     margin: 20px 0;
     color: rgb(21, 163, 199);
     font-size: 24px;
-    font-weight: 350;
 }
 
 #congress_qa_caption a {
@@ -695,13 +652,11 @@ body {
 
 #convener_title {
     font-size: 22px;
-    font-weight: 350;
-    margin: 15px 20px 5px 20px;
+    margin: 15px 20px 5px;
 }
 
 .convener_bio {
     font-size: 18px;
-    font-weight: 350;
     padding: 15px 0;
     border-top: 2px solid rgba(0, 0, 80, 0.4);
 }
@@ -710,7 +665,6 @@ body {
     margin: 40px 0 5px 20px;
     padding-left: 20px;
     font-size: 20px;
-    font-weight: 350;
 }
 
 .contact {
@@ -720,7 +674,6 @@ body {
 
 oc {
     font-size: 18px;
-    font-weight: 350;
     padding: 10px 0;
     display: block;
     text-indent: 2em;
@@ -734,14 +687,12 @@ oc {
 
 .cc_author {
     font-size: 18px;
-    font-weight: 350;
     margin: 15px 0;
 }
 
 .cc_colon {
     font-size: 18px;
-    font-weight: 350;
-    margin: 20px 0 0 0;
+    margin: 20px 0 0;
 }
 
 .cc_strong {
@@ -751,28 +702,24 @@ oc {
 }
 
 .chapter {
-    margin: 30px 0 10px 0;
-    font-weight: bold;
+    margin: 30px 0 10px;
     font-size: 26px;
     text-align: center;
 }
 
 .section {
-    margin: 30px 0 10px 0;
-    font-weight: bold;
+    margin: 30px 0 10px;
     font-size: 24px;
     color: rgb(20, 40, 110);
 }
 
 .article {
-    margin: 20px 0 10px 0;
-    font-weight: bold;
+    margin: 20px 0 10px;
     font-size: 20px;
 }
 
 .signature {
-    margin: 20px 0 50px 0;
-    font-weight: bold;
+    margin: 20px 0 50px;
     font-size: 24px;
 }
 

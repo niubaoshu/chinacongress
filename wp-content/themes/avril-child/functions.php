@@ -38,15 +38,22 @@ add_action( 'init', function() {
 /**
  * 1. 加载父主题样式、子主题样式及 FontAwesome 4.6.3 本地矢量图标兜底库
  */
-add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
+add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 20 );
 function avril_child_enqueue_styles() {
-    // 加载父主题主样式表
+    // 1. 加载父主题主样式表 (确保排在子主题样式之前)
     wp_enqueue_style( 'avril-parent-style', get_template_directory_uri() . '/style.css' );
-    // 加载子主题主样式表（使用文件修改时间作为版本号，允许浏览器/CDN有效缓存）
+
+    // 2. 将父主题已自动注册的子主题 style.css ('avril-style') 关联依赖并赋予动态时间戳版本号，彻底消除重复发起的第二次 HTTP 请求
     $child_css_file = get_stylesheet_directory() . '/style.css';
     $child_css_ver  = file_exists( $child_css_file ) ? filemtime( $child_css_file ) : wp_get_theme()->get( 'Version' );
-    wp_enqueue_style( 'avril-child-style', get_stylesheet_directory_uri() . '/style.css', array( 'avril-parent-style' ), $child_css_ver );
-    // 加载子主题自带的永久 FontAwesome 4.6.3 字体图标库（解决 CDN 丢失问题）
+    if ( isset( wp_styles()->registered['avril-style'] ) ) {
+        if ( ! in_array( 'avril-parent-style', wp_styles()->registered['avril-style']->deps, true ) ) {
+            wp_styles()->registered['avril-style']->deps[] = 'avril-parent-style';
+        }
+        wp_styles()->registered['avril-style']->ver = $child_css_ver;
+    }
+
+    // 3. 加载子主题自带的永久 FontAwesome 4.6.3 字体图标库（解决 CDN 丢失问题）
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
 
