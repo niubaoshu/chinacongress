@@ -369,15 +369,26 @@ function avril_lite_cta() {
 // 动态智能提取文章第一张图 / 嵌入视频封面 / 规则兜底 & 全网社交分享 OG 卡片自动输出
 // ==============================================================================
 
-// 封装统一的纯文本摘要提取工具函数 (剥离 HTML 标签、多余换行缩紧、中文截断)
+// 封装统一的纯文本摘要提取工具函数 (带运行期内存缓存，剥离 HTML 标签、多余换行缩紧、中文截断)
 function chinacongress_get_clean_excerpt( $length = 140, $post_id = null ) {
-    $post = get_post( $post_id );
-    if ( ! $post || empty( $post->post_content ) ) {
-        return '';
-    }
-    $raw_content = wp_strip_all_tags( $post->post_content );
-    $clean_text  = preg_replace( '/\s+/', ' ', $raw_content );
-    return mb_strimwidth( trim( $clean_text ), 0, $length, '...' );
+	static $excerpt_cache = array();
+	$post_id = $post_id ?: get_the_ID();
+	if ( ! $post_id ) {
+		return '';
+	}
+	$cache_key = $post_id . '_' . $length;
+	if ( isset( $excerpt_cache[ $cache_key ] ) ) {
+		return $excerpt_cache[ $cache_key ];
+	}
+	$post = get_post( $post_id );
+	if ( ! $post || empty( $post->post_content ) ) {
+		return '';
+	}
+	$raw_content = wp_strip_all_tags( $post->post_content );
+	$clean_text  = preg_replace( '/\s+/', ' ', $raw_content );
+	$excerpt     = mb_strimwidth( trim( $clean_text ), 0, $length, '...' );
+	$excerpt_cache[ $cache_key ] = $excerpt;
+	return $excerpt;
 }
 
 /**
@@ -406,8 +417,15 @@ function chinacongress_normalize_media_url( $url ) {
 }
 
 function chinacongress_get_first_image_url( $post_id = null ) {
+	static $image_cache = array();
 	$post_id = $post_id ?: get_the_ID();
-	$url     = '';
+	if ( ! $post_id ) {
+		return '';
+	}
+	if ( isset( $image_cache[ $post_id ] ) ) {
+		return $image_cache[ $post_id ];
+	}
+	$url = '';
 
 	// 1. 优先特色图片
 	if ( has_post_thumbnail( $post_id ) ) {
@@ -436,7 +454,9 @@ function chinacongress_get_first_image_url( $post_id = null ) {
 		$url = '/wp-content/uploads/2026/01/logo-1024x480.jpg';
 	}
 
-	return chinacongress_normalize_media_url( $url );
+	$normalized = chinacongress_normalize_media_url( $url );
+	$image_cache[ $post_id ] = $normalized;
+	return $normalized;
 }
 
 // 过滤 post_thumbnail_html，使前台列表无特色图片时自动展示正文第一张图/视频封面
@@ -474,11 +494,16 @@ function chinacongress_get_og_image_data( $post_id = null ) {
 	}
 
 	$img_url = '';
+	$width   = 0;
+	$height  = 0;
+
 	if ( has_post_thumbnail( $post_id ) ) {
 		$thumb_id = get_post_thumbnail_id( $post_id );
 		$img_src  = wp_get_attachment_image_src( $thumb_id, 'social-og' ) ?: wp_get_attachment_image_src( $thumb_id, 'full' );
 		if ( ! empty( $img_src[0] ) ) {
 			$img_url = $img_src[0];
+			$width   = ! empty( $img_src[1] ) ? (int) $img_src[1] : 0;
+			$height  = ! empty( $img_src[2] ) ? (int) $img_src[2] : 0;
 		}
 	}
 	if ( empty( $img_url ) ) {
@@ -486,17 +511,18 @@ function chinacongress_get_og_image_data( $post_id = null ) {
 	}
 	$img_url = chinacongress_normalize_media_url( $img_url );
 
-	$width = 0;
-	$height = 0;
-	$upload_dir = wp_upload_dir();
-	if ( ! empty( $img_url ) && false !== strpos( $img_url, $upload_dir['baseurl'] ) ) {
-		$rel_path  = ltrim( str_replace( $upload_dir['baseurl'], '', $img_url ), '/' );
-		$file_path = $upload_dir['basedir'] . '/' . rawurldecode( strtok( $rel_path, '?' ) );
-		if ( file_exists( $file_path ) ) {
-			$sz = @getimagesize( $file_path );
-			if ( $sz && ! empty( $sz[0] ) && ! empty( $sz[1] ) ) {
-				$width  = $sz[0];
-				$height = $sz[1];
+	// 仅当未从媒体库获取到宽高时，才尝试读取本地文件尺寸兜底
+	if ( ( $width === 0 || $height === 0 ) && ! empty( $img_url ) ) {
+		$upload_dir = wp_upload_dir();
+		if ( false !== strpos( $img_url, $upload_dir['baseurl'] ) ) {
+			$rel_path  = ltrim( str_replace( $upload_dir['baseurl'], '', $img_url ), '/' );
+			$file_path = $upload_dir['basedir'] . '/' . rawurldecode( strtok( $rel_path, '?' ) );
+			if ( file_exists( $file_path ) ) {
+				$sz = @getimagesize( $file_path );
+				if ( $sz && ! empty( $sz[0] ) && ! empty( $sz[1] ) ) {
+					$width  = (int) $sz[0];
+					$height = (int) $sz[1];
+				}
 			}
 		}
 	}

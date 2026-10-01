@@ -24,6 +24,7 @@ Version: 1.0.0
  * 11. 文章正文侧边栏：最新发布模块 (Sidebar Latest Posts Cards)
  * 12. 文章落款与社交图标区域 (Article Annotation & Social Icons)
  * 13. 文章排版与短视频组件 (Article Components & Short Video)
+ * 14. 文章底部社交分享与一键复制组件 (Post Share Bar)
  * ============================================================================== */
 
 /* 1. 锁定全站统一强调色为标准蓝 (#3a75a1) 与现代系统字体栈 */
@@ -758,3 +759,49 @@ article video {
     line-height: 1.6;
     color: rgba(0, 0, 40, 0.85);
 }
+
+/* ==============================================================================
+ * 14. 文章底部社交分享与一键复制组件 (Post Share Bar)
+ * ============================================================================== */
+.post-share-bar {
+    margin-top: 35px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.post-share-bar .share-label {
+    font-weight: 700;
+    color: #444;
+    font-size: 15px;
+    margin-right: 5px;
+}
+
+.post-share-btn {
+    color: #ffffff !important;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.post-share-btn:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+    color: #ffffff !important;
+}
+
+.post-share-tg { background-color: #0088cc !important; }
+.post-share-x  { background-color: #000000 !important; }
+.post-share-fb { background-color: #1877f2 !important; }
+.post-share-wa { background-color: #25d366 !important; }
+.post-share-cp { background-color: #6c757d !important; }

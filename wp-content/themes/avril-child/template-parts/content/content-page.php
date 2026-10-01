@@ -40,13 +40,13 @@
 			$share_text  = $clean_title . ( ! empty( $short_desc ) ? "\n\n" . $short_desc : '' );
 			?>
 			<!-- 统一文章底部社交分享组件 (包含 Telegram, X, Facebook, WhatsApp & 📄 复制文本) -->
-			<div class="post-share-bar" style="margin-top: 35px; padding-top: 20px; border-top: 1px solid #eee; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-				<span style="font-weight: bold; color: #444; font-size: 15px; margin-right: 5px;">分享本文：</span>
-				<a href="https://t.me/share/url?url=<?php echo urlencode(get_permalink()); ?>&text=<?php echo urlencode($share_text); ?>" target="_blank" rel="noopener noreferrer" style="background: #0088cc; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">✈️ Telegram</a>
-				<a href="https://twitter.com/intent/tweet?url=<?php echo urlencode(get_permalink()); ?>&text=<?php echo urlencode($share_text); ?>" target="_blank" rel="noopener noreferrer" style="background: #000000; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">𝕏 Twitter</a>
-				<a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode(get_permalink()); ?>" target="_blank" rel="noopener noreferrer" style="background: #1877f2; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">📘 Facebook</a>
-				<a href="https://api.whatsapp.com/send?text=<?php echo urlencode($share_text . ' ' . get_permalink()); ?>" target="_blank" rel="noopener noreferrer" style="background: #25d366; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">🟢 WhatsApp</a>
-				<a href="javascript:void(0);" onclick="chinacongressCopyArticleText();" style="background: #6c757d; color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">📄 复制文本</a>
+			<div class="post-share-bar">
+				<span class="share-label">分享本文：</span>
+				<a href="https://t.me/share/url?url=<?php echo urlencode(get_permalink()); ?>&text=<?php echo urlencode($share_text); ?>" target="_blank" rel="noopener noreferrer" class="post-share-btn post-share-tg">✈️ Telegram</a>
+				<a href="https://twitter.com/intent/tweet?url=<?php echo urlencode(get_permalink()); ?>&text=<?php echo urlencode($share_text); ?>" target="_blank" rel="noopener noreferrer" class="post-share-btn post-share-x">𝕏 Twitter</a>
+				<a href="https://www.facebook.com/sharer/sharer.php?u=<?php echo urlencode(get_permalink()); ?>" target="_blank" rel="noopener noreferrer" class="post-share-btn post-share-fb">📘 Facebook</a>
+				<a href="https://api.whatsapp.com/send?text=<?php echo urlencode($share_text . ' ' . get_permalink()); ?>" target="_blank" rel="noopener noreferrer" class="post-share-btn post-share-wa">🟢 WhatsApp</a>
+				<a href="javascript:void(0);" onclick="chinacongressCopyArticleText();" class="post-share-btn post-share-cp">📄 复制文本</a>
 			</div>
 
 			<script>
