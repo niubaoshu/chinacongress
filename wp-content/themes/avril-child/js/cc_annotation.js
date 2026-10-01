@@ -47,7 +47,6 @@ function cc_annotation (socialLinks, credits) {
         else if (item?.uploader != null) display(3, root, num, item, item.uploader);
     }
     const annotation = getID("annotation");
-    Object.assign(annotation.style, { paddingTop: '20px', marginTop: '80px', marginBottom: '50px', borderTop: '1px solid #999', fontFamily: '"Microsoft YaHei", "Noto Sans CJK SC", sans-serif', fontStyle: 'italic', fontSize: '15px' });
     let wrapper;
     socials(annotation, socialLinks);
     for (const item of credits ?? []) {

@@ -596,31 +596,32 @@ body {
  * ============================================================================== */
 
 #annotation {
-    padding-top: 20px !important;
-    margin-top: 80px !important;
-    margin-bottom: 50px !important;
-    border-top: 1px solid #999999 !important;
-    font-style: italic !important;
-    font-size: 15px !important;
+    padding-top: 20px;
+    margin-top: 80px;
+    margin-bottom: 50px;
+    border-top: 1px solid #999999;
+    font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    font-style: italic;
+    font-size: 15px;
 }
 
 #annotation a {
-    color: #3a75a1 !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
+    color: #3a75a1;
+    font-weight: 600;
+    text-decoration: none;
 }
 
 #annotation a:hover {
-    text-decoration: underline !important;
+    text-decoration: underline;
 }
 
 #annotation a span {
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 #annotation a:hover span {
-    transform: scale(1.08) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transform: scale(1.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* ==============================================================================
@@ -638,6 +639,28 @@ body {
     border: 1px solid rgba(0, 0, 80, 0.4);
     border-radius: 6px;
     line-height: 2;
+}
+
+#contact_details button {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    padding: 3px 6px;
+    line-height: normal;
+    box-sizing: border-box;
+    color: rgb(166, 210, 255);
+    background: #ffffff;
+    font-size: 12px;
+    border: 1px solid rgba(166, 210, 255, 0.6);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#contact_details button:hover {
+    color: #ffffff;
+    background: rgba(166, 210, 255, 0.6);
 }
 
 #congress_qa_caption {
@@ -674,9 +697,11 @@ body {
 }
 
 oc {
-    font-size: 18px;
-    padding: 10px 0;
     display: block;
+    font-size: 18px;
+    line-height: 1.8;
+    text-align: justify;
+    padding: 10px 0;
     text-indent: 2em;
 }
 
@@ -702,24 +727,28 @@ oc {
     margin: 20px 0;
 }
 
-.chapter {
+.post-content .chapter,
+.entry-content .chapter {
     margin: 30px 0 10px;
     font-size: 26px;
     text-align: center;
 }
 
-.section {
+.post-content .section,
+.entry-content .section {
     margin: 30px 0 10px;
     font-size: 24px;
     color: rgb(20, 40, 110);
 }
 
-.article {
+.post-content .article,
+.entry-content .article {
     margin: 20px 0 10px;
     font-size: 20px;
 }
 
-.signature {
+.post-content .signature,
+.entry-content .signature {
     margin: 20px 0 50px;
     font-size: 24px;
 }

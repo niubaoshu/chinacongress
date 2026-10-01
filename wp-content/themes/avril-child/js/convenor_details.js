@@ -16,10 +16,7 @@ function convenor_details() {
         button.setAttribute("link", words.trim());
         Object.assign(bframe.style, { display: "block", textAlign: "right", width: '10%' });
         Object.assign(button, { innerHTML: "复制", title: opt + words });
-        Object.assign(button.style, { display: 'inline-block', width: 'auto', height: 'auto', minHeight: '0', padding: '3px 5px', lineHeight: 'normal', boxSizing: 'border-box', color: 'rgb(166, 210, 255)', background: "white", fontSize: '12px', border: '1px solid rgba(166, 210, 255, 0.6)', borderRadius: '3px' });
         button.addEventListener("click", function () { navigator.clipboard.writeText(this.getAttribute("link")); isCopy(); });
-        button.addEventListener("mouseover", function () { Object.assign(this.style, { color: 'white', background: "rgba(166, 210, 255, 0.3)" }); });
-        button.addEventListener("mouseout", function () { Object.assign(this.style, { color: 'rgb(166, 210, 255)', background: "white" }); });
         bframe.appendChild(button);
         elm.appendChild(bframe);
     }
