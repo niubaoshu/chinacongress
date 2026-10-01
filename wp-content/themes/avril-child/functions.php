@@ -50,14 +50,10 @@ function avril_child_enqueue_styles() {
     wp_enqueue_style( 'avril-child-fontawesome', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css', array(), '4.6.3' );
 }
 
-// 彻底移除父主题加载的无中文外部 Google 字体 (Poppins)，消除额外网络连接与字体排版冲突
-add_action( 'after_setup_theme', function() {
+// 彻底移除父主题加载的外部 Google 字体 (Poppins)
+add_action( 'init', function() {
     remove_action( 'wp_enqueue_scripts', 'avril_scripts_styles' );
-}, 20 );
-add_action( 'wp_enqueue_scripts', function() {
-    wp_dequeue_style( 'avril-fonts' );
-    wp_deregister_style( 'avril-fonts' );
-}, 999 );
+} );
 
 
 /**
@@ -138,228 +134,160 @@ function chinacongress_add_five_minute_cron_interval( $schedules ) {
 add_filter( 'cron_schedules', 'chinacongress_add_five_minute_cron_interval' );
 
 /**
- * 自动从远程 API (registration_count.json) 同步大陆院选民登记总人数并写入 wp_options 数据库
+ * 远程 JSON 请求通用辅助函数
+ */
+function chinacongress_fetch_json( $url ) {
+	$response = wp_remote_get( $url, array( 'timeout' => 5, 'sslverify' => false ) );
+	if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+		return json_decode( wp_remote_retrieve_body( $response ), true );
+	}
+	return null;
+}
+
+/**
+ * 自动从远程 API 同步大陆院选民登记总人数
  */
 function chinacongress_sync_mainland_voter_count() {
-	$response = wp_remote_get( 'https://reg.congresscenter.org/api/public/registration_count.json', array(
-		'timeout'   => 5,
-		'sslverify' => false,
-	) );
-
-	if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( is_array( $data ) && isset( $data['total'] ) && is_numeric( $data['total'] ) ) {
-			$total = (int) $data['total'];
-			if ( $total > 0 ) {
-				set_theme_mod( 'mainland_voter_count', (string) $total );
-			}
-		}
+	$data = chinacongress_fetch_json( 'https://reg.congresscenter.org/api/public/registration_count.json' );
+	if ( is_array( $data ) && ! empty( $data['total'] ) && is_numeric( $data['total'] ) ) {
+		set_theme_mod( 'mainland_voter_count', (string) (int) $data['total'] );
 	}
 }
 
 /**
- * 从远程 API (latest_members.json) 获取大陆院最新登记选民列表 (返回前 5 位选民，带 1 天 Transient 缓存)
- *
- * @param bool $force 是否强制忽略缓存向远程 API 发起全新请求
- * @return array 包含选民省份与 display_name 的数组
+ * 从远程 API 获取大陆院最新登记选民列表 (返回前 5 位选民，带 1 天 Transient 缓存)
  */
 function chinacongress_get_latest_mainland_members( $force = false ) {
-	$members = false;
-	if ( ! $force ) {
-		$members = get_transient( 'chinacongress_latest_mainland_members' );
-	}
-
+	$members = $force ? false : get_transient( 'chinacongress_latest_mainland_members' );
 	if ( false === $members ) {
-		$response = wp_remote_get( 'https://reg.congresscenter.org/api/public/latest_members.json', array(
-			'timeout'   => 5,
-			'sslverify' => false,
-		) );
-
-		$members = array();
-		if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-			$body = wp_remote_retrieve_body( $response );
-			$data = json_decode( $body, true );
-			if ( is_array( $data ) && isset( $data['members'] ) && is_array( $data['members'] ) ) {
-				$members = array_slice( $data['members'], 0, 5 );
-			}
-		}
-
-		// 远程 API 离线时的默认安全兜底数据
-		if ( empty( $members ) ) {
-			$members = array(
+		$data    = chinacongress_fetch_json( 'https://reg.congresscenter.org/api/public/latest_members.json' );
+		$members = ( is_array( $data ) && ! empty( $data['members'] ) && is_array( $data['members'] ) )
+			? array_slice( $data['members'], 0, 5 )
+			: array(
 				array( 'province' => '江蘇', 'display_name' => '***7E6' ),
 				array( 'province' => '廣東', 'display_name' => '***X9K' ),
 				array( 'province' => '北京', 'display_name' => '***JT4' ),
 				array( 'province' => '北京', 'display_name' => '***JWP' ),
 				array( 'province' => '湖南', 'display_name' => '***FRQ' ),
 			);
-		}
-
 		set_transient( 'chinacongress_latest_mainland_members', $members, DAY_IN_SECONDS );
 	}
 	return $members;
 }
 
 /**
- * 从远程 API (https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a) 自动同步海外院选民登记总人数与最新选民列表
- * （仅供后台 WP-Cron 定时任务执行，写入数据库与 Transient 缓存，严禁前台 GET 请求直接调用）
+ * 从远程 API 自动同步海外院选民登记总人数与最新选民列表 (供 WP-Cron 执行)
  */
 function chinacongress_sync_overseas_voter_data() {
-	$response = wp_remote_get( 'https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a', array(
-		'timeout'   => 5,
-		'sslverify' => false,
-	) );
-
-	if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( is_array( $data ) && ! empty( $data['success'] ) ) {
-			// 1. 同步选民总人数并写入 wp_options 数据库 (theme_mod: cta_description)
-			if ( isset( $data['total'] ) && is_numeric( $data['total'] ) ) {
-				$total = (int) $data['total'];
-				if ( $total > 0 ) {
-					set_theme_mod( 'cta_description', (string) $total );
-				}
-			}
-
-			// 2. 提取前 5 位选民写入 Transient 缓存 (有效期 300 秒) 作为走马灯数据
-			if ( isset( $data['data'] ) && is_array( $data['data'] ) ) {
-				$raw_list = array_slice( $data['data'], 0, 5 );
-				$members  = array();
-				foreach ( $raw_list as $item ) {
-					$residence = ! empty( $item['residence'] ) ? trim( $item['residence'] ) : '海外';
-					$name      = ! empty( $item['name'] ) ? trim( $item['name'] ) : '***';
-					$members[] = array(
-						'residence' => $residence,
-						'name'      => $name,
-					);
-				}
-				if ( ! empty( $members ) ) {
-					set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
-				}
+	$data = chinacongress_fetch_json( 'https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a' );
+	if ( is_array( $data ) && ! empty( $data['success'] ) ) {
+		if ( ! empty( $data['total'] ) && is_numeric( $data['total'] ) ) {
+			set_theme_mod( 'cta_description', (string) (int) $data['total'] );
+		}
+		if ( ! empty( $data['data'] ) && is_array( $data['data'] ) ) {
+			$members = array_map( function( $item ) {
+				return array(
+					'residence' => ! empty( $item['residence'] ) ? trim( $item['residence'] ) : '海外',
+					'name'      => ! empty( $item['name'] ) ? trim( $item['name'] ) : '***',
+				);
+			}, array_slice( $data['data'], 0, 5 ) );
+			if ( ! empty( $members ) ) {
+				set_transient( 'chinacongress_latest_overseas_members', $members, 300 );
 			}
 		}
 	}
 }
 
 /**
- * 获取海外院最新注册选民列表 (前台只读，从 Transient 缓存或兜底数据获取，零网络请求，零数据库写入)
- *
- * @return array 包含选民居住地 (residence) 与 姓名 (name) 的数组
+ * 获取海外院最新注册选民列表 (前台只读，从 Transient 缓存或兜底获取)
  */
 function chinacongress_get_latest_overseas_members() {
 	$members = get_transient( 'chinacongress_latest_overseas_members' );
-	if ( empty( $members ) || ! is_array( $members ) ) {
-		$members = array(
-			array( 'residence' => '德国', 'name' => 'Z**' ),
-			array( 'residence' => '德国', 'name' => 'L**' ),
-			array( 'residence' => '其他', 'name' => '蒋**' ),
-		);
-	}
-	return $members;
+	return ( ! empty( $members ) && is_array( $members ) ) ? $members : array(
+		array( 'residence' => '德国', 'name' => 'Z**' ),
+		array( 'residence' => '德国', 'name' => 'L**' ),
+		array( 'residence' => '其他', 'name' => '蒋**' ),
+	);
 }
 
 /**
- * 调度挂载 WP-Cron 后台异步任务：
- * 1. 大陆院选民数据：每天一次 (daily)
- * 2. 海外院选民数据：每 5 分钟一次 (every_five_minutes)
+ * 挂载 WP-Cron 定时任务
  */
 function chinacongress_schedule_cron_sync() {
-	// 1. 大陆院定时同步任务 (每天一次 daily)
-	$mainland_ts = wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' );
-	if ( $mainland_ts ) {
-		$mainland_event = wp_get_scheduled_event( 'chinacongress_cron_sync_api_data_event' );
-		if ( $mainland_event && isset( $mainland_event->schedule ) && $mainland_event->schedule !== 'daily' ) {
-			wp_unschedule_event( $mainland_ts, 'chinacongress_cron_sync_api_data_event' );
-			wp_schedule_event( time(), 'daily', 'chinacongress_cron_sync_api_data_event' );
-		}
-	} else {
+	if ( ! wp_next_scheduled( 'chinacongress_cron_sync_api_data_event' ) ) {
 		wp_schedule_event( time(), 'daily', 'chinacongress_cron_sync_api_data_event' );
 	}
-
-	// 2. 海外院定时同步任务 (每 5 分钟一次 every_five_minutes)
-	$overseas_ts = wp_next_scheduled( 'chinacongress_cron_sync_overseas_event' );
-	if ( $overseas_ts ) {
-		$overseas_event = wp_get_scheduled_event( 'chinacongress_cron_sync_overseas_event' );
-		if ( $overseas_event && isset( $overseas_event->schedule ) && $overseas_event->schedule !== 'every_five_minutes' ) {
-			wp_unschedule_event( $overseas_ts, 'chinacongress_cron_sync_overseas_event' );
-			wp_schedule_event( time(), 'every_five_minutes', 'chinacongress_cron_sync_overseas_event' );
-		}
-	} else {
+	if ( ! wp_next_scheduled( 'chinacongress_cron_sync_overseas_event' ) ) {
 		wp_schedule_event( time(), 'every_five_minutes', 'chinacongress_cron_sync_overseas_event' );
 	}
 }
 add_action( 'init', 'chinacongress_schedule_cron_sync' );
 
-/**
- * WP-Cron 大陆院定时任务执行体：每天一次静默同步大陆院总人数与选民列表
- */
 function chinacongress_execute_cron_sync() {
 	chinacongress_sync_mainland_voter_count();
 	chinacongress_get_latest_mainland_members( true );
 }
 add_action( 'chinacongress_cron_sync_api_data_event', 'chinacongress_execute_cron_sync' );
+add_action( 'chinacongress_cron_sync_overseas_event', 'chinacongress_sync_overseas_voter_data' );
 
 /**
- * WP-Cron 海外院定时任务执行体：每 5 分钟静默同步海外院总人数与选民列表
+ * 双选民注册卡片板块 (CTA Section)
  */
-function chinacongress_execute_overseas_cron_sync() {
-	chinacongress_sync_overseas_voter_data();
-}
-add_action( 'chinacongress_cron_sync_overseas_event', 'chinacongress_execute_overseas_cron_sync' );
-
-// Dual Voter Registration Boxes (CTA Section) editable via Customizer
 function avril_lite_cta() {
-	$avril_hs_cta            = get_theme_mod('hs_cta','1');	
-	$avril_cta_title         = get_theme_mod('cta_title', __('海外院选民注册人数： ', 'clever-fox'));
-	if ( false !== strpos( $avril_cta_title, '选民登记人数' ) ) {
-		$avril_cta_title = str_replace( '选民登记人数', '选民注册人数', $avril_cta_title );
+	if ( get_theme_mod( 'hs_cta', '1' ) != '1' ) {
+		return;
 	}
 
-	// 从本地 Transient 缓存获取最新海外选民名单 (纯只读，零网络开销，零数据库写入)
-	$latest_overseas_members = chinacongress_get_latest_overseas_members();
+	$overseas_title = str_replace( '选民登记人数', '选民注册人数', get_theme_mod( 'cta_title', __( '海外院选民注册人数： ', 'clever-fox' ) ) );
+	$overseas_count = (int) trim( get_theme_mod( 'cta_description', '425' ) );
+	$mainland_count = (int) trim( get_theme_mod( 'mainland_voter_count', '180' ) );
 
-	$renshu_overseas_val     = get_theme_mod('cta_description', '425');
-	$renshu_overseas         = is_numeric(trim($renshu_overseas_val)) ? (int)trim($renshu_overseas_val) : 425;
+	$cta_boxes = array(
+		array(
+			'id'          => 'overseas',
+			'title'       => $overseas_title,
+			'count'       => $overseas_count,
+			'btn_lbl'     => get_theme_mod( 'cta_btn_lbl1', __( '选民登记', 'clever-fox' ) ),
+			'btn_link'    => get_theme_mod( 'cta_btn_link1', 'https://reg.chinacongress.net/' ),
+			'ticker_lbl'  => '最新注册选民：',
+			'members'     => chinacongress_get_latest_overseas_members(),
+			'loc_key'     => 'residence',
+			'name_key'    => 'name',
+		),
+		array(
+			'id'          => 'mainland',
+			'title'       => '大陆院选民注册人数： ',
+			'count'       => $mainland_count,
+			'btn_lbl'     => '选民登记',
+			'btn_link'    => 'https://reg.congresscenter.org/',
+			'ticker_lbl'  => '近期新增：',
+			'members'     => chinacongress_get_latest_mainland_members(),
+			'loc_key'     => 'province',
+			'name_key'    => 'display_name',
+		),
+	);
 
-	$renshu_mainland_val     = get_theme_mod('mainland_voter_count', '180');
-	$renshu_mainland         = is_numeric(trim($renshu_mainland_val)) ? (int)trim($renshu_mainland_val) : 180;
+	foreach ( $cta_boxes as $box ) :
+	?>
+	<section id="cta-section-<?php echo esc_attr( $box['id'] ); ?>" class="cta-section cta-shadow-one av-mb-default home-cta">
+		<div class="av-container">
+			<div class="av-columns-area">
+				<div class="av-column-12">
+					<div class="cta-wrapper">
+						<div class="cta-content">
+							<h4><?php echo wp_kses_post( $box['title'] ); ?><span id="number_<?php echo esc_attr( $box['id'] ); ?>"><?php echo esc_html( $box['count'] ); ?></span></h4>
+						</div>
 
-	$avril_cta_btn_lbl1      = get_theme_mod('cta_btn_lbl1', __('选民登记', 'clever-fox'));
-	$avril_cta_btn_link1     = get_theme_mod('cta_btn_link1', 'https://reg.chinacongress.net/');
-
-	if($avril_hs_cta == '1') {	
-	?>	
-	 <!-- 1. 海外院选民注册框 -->
-	 <section id="cta-section-overseas" class="cta-section cta-shadow-one av-mb-default home-cta">
-        <div class="av-container">
-            <div class="av-columns-area">
-                <div class="av-column-12">
-                    <div class="cta-wrapper">
-                        <div class="cta-content">
-							<?php if ( ! empty( $avril_cta_title ) ) : ?>
-								<h4><?php echo wp_kses_post($avril_cta_title); ?>
-									<span id="number_overseas"><?php echo esc_html($renshu_overseas); ?></span>
-								</h4>
-							<?php endif; ?>
-                        </div>
-
-						<?php
-						if ( ! empty( $latest_overseas_members ) ) :
-						?>
-						<!-- 海外院最新注册选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
-						<div class="cta-content overseas-members-container">
+						<?php if ( ! empty( $box['members'] ) ) : ?>
+						<div class="cta-content <?php echo esc_attr( $box['id'] ); ?>-members-container">
 							<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-								<span style="white-space: nowrap;">最新注册选民：</span>
-								<span class="overseas-members-ticker" id="overseas_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
-									<ul class="overseas-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
-										<?php foreach ( $latest_overseas_members as $member ) : ?>
+								<span style="white-space: nowrap;"><?php echo esc_html( $box['ticker_lbl'] ); ?></span>
+								<span class="<?php echo esc_attr( $box['id'] ); ?>-members-ticker" id="<?php echo esc_attr( $box['id'] ); ?>_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
+									<ul class="<?php echo esc_attr( $box['id'] ); ?>-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
+										<?php foreach ( $box['members'] as $m ) : ?>
 											<li style="height: 36px; line-height: 36px; font-size: inherit; font-weight: inherit; color: inherit; white-space: nowrap;">
-												<span><?php echo esc_html( $member['residence'] ); ?></span>
-												<span style="margin-left: 6px;"><?php echo esc_html( $member['name'] ); ?></span>
+												<span><?php echo esc_html( $m[ $box['loc_key'] ] ); ?></span>
+												<span style="margin-left: 6px;"><?php echo esc_html( $m[ $box['name_key'] ] ); ?></span>
 											</li>
 										<?php endforeach; ?>
 									</ul>
@@ -368,145 +296,66 @@ function avril_lite_cta() {
 						</div>
 						<?php endif; ?>
 
-                        <div class="cta-btn-wrap text-av-right text-center">
-							<?php if ( ! empty( $avril_cta_btn_lbl1 ) ) : ?>
-								<a href="<?php echo esc_url($avril_cta_btn_link1); ?>" class="av-btn av-btn-primary" target="_blank"><?php echo esc_html($avril_cta_btn_lbl1); ?></a>
-							<?php endif;?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-	 <!-- 2. 大陆院选民注册框 -->
-	 <section id="cta-section-mainland" class="cta-section cta-shadow-one av-mb-default home-cta">
-        <div class="av-container">
-            <div class="av-columns-area">
-                <div class="av-column-12">
-                    <div class="cta-wrapper">
-                        <div class="cta-content">
-							<h4>大陆院选民注册人数： 
-								<span id="number_mainland"><?php echo esc_html($renshu_mainland); ?></span>
-							</h4>
-                        </div>
-
-						<?php
-						$latest_members = chinacongress_get_latest_mainland_members();
-						if ( ! empty( $latest_members ) ) :
-						?>
-						<!-- 最新注册选民 滚动走马灯 (样式完全匹配左侧 h4 标题，自适应响应式) -->
-						<div class="cta-content mainland-members-container">
-							<h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
-								<span style="white-space: nowrap;">近期新增：</span>
-								<span class="mainland-members-ticker" id="mainland_members_ticker" style="display: inline-block; min-width: 140px; height: 36px; overflow: hidden; position: relative; vertical-align: middle;">
-									<ul class="mainland-members-list" style="list-style: none; margin: 0; padding: 0; position: absolute; top: 0; left: 0; width: 100%; transition: top 0.4s ease-in-out, opacity 0.3s ease, transform 0.3s ease;">
-										<?php foreach ( $latest_members as $member ) : ?>
-											<li style="height: 36px; line-height: 36px; font-size: inherit; font-weight: inherit; color: inherit; white-space: nowrap;">
-												<span><?php echo esc_html( $member['province'] ); ?></span>
-												<span style="margin-left: 6px;"><?php echo esc_html( $member['display_name'] ); ?></span>
-											</li>
-										<?php endforeach; ?>
-									</ul>
-								</span>
-							</h4>
+						<div class="cta-btn-wrap text-av-right text-center">
+							<a href="<?php echo esc_url( $box['btn_link'] ); ?>" class="av-btn av-btn-primary" target="_blank"><?php echo esc_html( $box['btn_lbl'] ); ?></a>
 						</div>
-						<?php endif; ?>
-
-                        <div class="cta-btn-wrap text-av-right text-center">
-							<a href="https://reg.congresscenter.org/" class="av-btn av-btn-primary" target="_blank">选民登记</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+	<?php endforeach; ?>
 
 	<script>
 	(function() {
-		let duration = 1000;
-		
-		function animateNumber(element, start, end) {
-			let startTime = null;
-			function step(timestamp) {
-				if (!startTime) startTime = timestamp;
-				let progress = timestamp - startTime;
-				let percent = Math.min(progress / duration, 1);
-				let current = Math.floor(start + (end - start) * percent);
-				element.innerText = current;
-				if (percent < 1) {
-					requestAnimationFrame(step);
-				}
+		function animate(el, end) {
+			let start = 100, t0 = null, dur = 1000;
+			function step(t) {
+				if (!t0) t0 = t;
+				let p = Math.min((t - t0) / dur, 1);
+				el.innerText = Math.floor(start + (end - start) * p);
+				if (p < 1) requestAnimationFrame(step);
 			}
 			requestAnimationFrame(step);
 		}
-
-		function setupObserver(elemId, endVal) {
-			let animated = false;
-			let observer = new IntersectionObserver(entries => {
-				entries.forEach(entry => {
-					if (entry.isIntersecting && !animated) {
-						animated = true;
-						animateNumber(entry.target, 100, endVal);
-					}
-				});
+		function observe(id, val) {
+			let el = document.getElementById(id);
+			if (!el) return;
+			let io = new IntersectionObserver((entries, obs) => {
+				if (entries[0].isIntersecting) {
+					obs.disconnect();
+					animate(el, val);
+				}
 			}, { threshold: 0.5 });
-
-			let elem = document.getElementById(elemId);
-			if (elem) observer.observe(elem);
+			io.observe(el);
 		}
-
-		function runObservers() {
-			setupObserver("number_overseas", <?php echo $renshu_overseas; ?>);
-			setupObserver("number_mainland", <?php echo $renshu_mainland; ?>);
-		}
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', runObservers);
-		} else {
-			runObservers();
-		}
-
-		// 选民平滑渐变（Fade & Slide）无缝轮播通用初始化函数
 		function initTicker(tickerId, listClass) {
 			let ticker = document.getElementById(tickerId);
 			if (!ticker) return;
 			let list = ticker.querySelector('.' + listClass);
-			if (!list) return;
-			let items = list.querySelectorAll('li');
-			if (items.length <= 1) return;
-
-			let currentIndex = 0;
-			let isHovered = false;
-
-			ticker.addEventListener('mouseenter', function() { isHovered = true; });
-			ticker.addEventListener('mouseleave', function() { isHovered = false; });
-
-			setInterval(function() {
-				if (isHovered) return;
-
+			if (!list || list.children.length <= 1) return;
+			let idx = 0, hover = false;
+			ticker.onmouseenter = () => hover = true;
+			ticker.onmouseleave = () => hover = false;
+			setInterval(() => {
+				if (hover) return;
 				list.style.opacity = '0';
 				list.style.transform = 'translateY(-3px)';
-
-				setTimeout(function() {
-					currentIndex = (currentIndex + 1) % items.length;
-					let itemHeight = items[0].offsetHeight || 36;
-					list.style.top = -(currentIndex * itemHeight) + 'px';
+				setTimeout(() => {
+					idx = (idx + 1) % list.children.length;
+					list.style.top = -(idx * (list.children[0].offsetHeight || 36)) + 'px';
 					list.style.transform = 'translateY(3px)';
-
-					setTimeout(function() {
-						list.style.opacity = '1';
-						list.style.transform = 'translateY(0)';
-					}, 50);
+					setTimeout(() => { list.style.opacity = '1'; list.style.transform = 'translateY(0)'; }, 50);
 				}, 250);
 			}, 3500);
 		}
-
+		observe("number_overseas", <?php echo $overseas_count; ?>);
+		observe("number_mainland", <?php echo $mainland_count; ?>);
 		initTicker('mainland_members_ticker', 'mainland-members-list');
 		initTicker('overseas_members_ticker', 'overseas-members-list');
 	})();
 	</script>
-	<?php	
-	}
+	<?php
 }
 
 // ==============================================================================
@@ -524,294 +373,138 @@ function chinacongress_get_clean_excerpt( $length = 140, $post_id = null ) {
     return mb_strimwidth( trim( $clean_text ), 0, $length, '...' );
 }
 
+/**
+ * 规范化媒体 URL：自动补齐绝对域名，并对中文路径段进行安全编码
+ */
+function chinacongress_normalize_media_url( $url ) {
+	if ( empty( $url ) ) {
+		return '';
+	}
+	if ( ! preg_match( '~^(?:f|ht)tps?://~i', $url ) ) {
+		$url = site_url( '/' . ltrim( $url, '/' ) );
+	}
+	$parts = parse_url( $url );
+	if ( ! empty( $parts['path'] ) ) {
+		$segments = array_map( function( $seg ) {
+			return rawurlencode( rawurldecode( $seg ) );
+		}, explode( '/', $parts['path'] ) );
+		$parts['path'] = implode( '/', $segments );
+		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
+		$host   = isset( $parts['host'] ) ? $parts['host'] : '';
+		$port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
+		$query  = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
+		$url    = $scheme . $host . $port . $parts['path'] . $query;
+	}
+	return $url;
+}
+
 function chinacongress_get_first_image_url( $post_id = null ) {
-    if ( ! $post_id ) {
-        $post_id = get_the_ID();
-    }
+	$post_id = $post_id ?: get_the_ID();
+	$url     = '';
 
-    $url = '';
+	// 1. 优先特色图片
+	if ( has_post_thumbnail( $post_id ) ) {
+		$img_src = wp_get_attachment_image_src( get_post_thumbnail_id( $post_id ), 'full' );
+		if ( ! empty( $img_src[0] ) ) {
+			$url = $img_src[0];
+		}
+	}
 
-    // 1. 优先检查：是否手动设置了特色图片 (Featured Image)
-    if ( has_post_thumbnail( $post_id ) ) {
-        $thumb_id = get_post_thumbnail_id( $post_id );
-        $img_src  = wp_get_attachment_image_src( $thumb_id, 'full' );
-        if ( ! empty( $img_src[0] ) ) {
-            $url = $img_src[0];
-        }
-    }
+	// 2. 正文第一张图 / YouTube 封面 / video poster
+	if ( empty( $url ) ) {
+		$post = get_post( $post_id );
+		if ( $post && ! empty( $post->post_content ) ) {
+			if ( preg_match( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $m ) ) {
+				$url = $m[1];
+			} elseif ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_m ) ) {
+				$url = 'https://img.youtube.com/vi/' . $yt_m[1] . '/hqdefault.jpg';
+			} elseif ( preg_match( '/<video.+?poster=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $v_m ) ) {
+				$url = $v_m[1];
+			}
+		}
+	}
 
-    if ( empty( $url ) ) {
-        $post = get_post( $post_id );
-        if ( $post && ! empty( $post->post_content ) ) {
-            // 2. 次级检查：用正则表达式在文章正文中搜寻第一张 <img src="..."> 图片（单次匹配，零全文扫描开销）
-            if ( false !== stripos( $post->post_content, '<img' ) && preg_match( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $matches ) ) {
-                if ( ! empty( $matches[1] ) ) {
-                    $url = $matches[1];
-                }
-            } elseif ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_matches ) ) {
-                // 3. 视频检查：若无静态图片，检查是否嵌入了 YouTube 视频，自动提取 YouTube 标准高清封面 (100% 存在且不报 404 错)
-                if ( ! empty( $yt_matches[1] ) ) {
-                    $url = 'https://img.youtube.com/vi/' . $yt_matches[1] . '/hqdefault.jpg';
-                }
-            } elseif ( preg_match( '/<video.+?poster=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $v_matches ) ) {
-                // 4. 视频检查：若有 <video poster="..."> 海报封面
-                if ( ! empty( $v_matches[1] ) ) {
-                    $url = $v_matches[1];
-                }
-            }
-        }
-    }
+	// 3. 兜底官方横版 Banner Logo
+	if ( empty( $url ) ) {
+		$url = '/wp-content/uploads/2026/01/logo-1024x480.jpg';
+	}
 
-    // 5. 兜底保护：若正文无图无视频，自动返回中国议会官方 1024x480 高清横版 Banner Logo (确保 X/FB 大图卡片完美展示)
-    if ( empty( $url ) ) {
-        $url = '/wp-content/uploads/2026/01/logo-1024x480.jpg';
-    }
-
-    // 确保返回完整绝对路径（带 https:// 域名），并对路径中的中文字符进行 rawurlencode 编码
-    if ( $url ) {
-        if ( ! preg_match( '~^(?:f|ht)tps?://~i', $url ) ) {
-            $url = site_url( '/' . ltrim( $url, '/' ) );
-        }
-        $parts = parse_url( $url );
-        if ( $parts && isset( $parts['path'] ) ) {
-            $path_segments = explode( '/', $parts['path'] );
-            foreach ( $path_segments as &$segment ) {
-                $segment = rawurlencode( rawurldecode( $segment ) );
-            }
-            $parts['path'] = implode( '/', $path_segments );
-            $scheme = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
-            $host   = isset( $parts['host'] ) ? $parts['host'] : '';
-            $port   = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
-            $path   = isset( $parts['path'] ) ? $parts['path'] : '';
-            $query  = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
-            $url    = $scheme . $host . $port . $path . $query;
-        }
-    }
-
-    return $url;
+	return chinacongress_normalize_media_url( $url );
 }
 
 // 过滤 post_thumbnail_html，使前台列表无特色图片时自动展示正文第一张图/视频封面
 function chinacongress_auto_first_image_html( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
-    if ( ! empty( $html ) ) {
-        return $html;
-    }
-    
-    $first_img_url = chinacongress_get_first_image_url( $post_id );
-    if ( $first_img_url ) {
-        return sprintf(
-            '<img src="%s" class="attachment-full size-full wp-post-image auto-first-img" alt="%s" />',
-            esc_url( $first_img_url ),
-            esc_attr( get_the_title( $post_id ) )
-        );
-    }
-    
-    return $html;
+	if ( ! empty( $html ) ) {
+		return $html;
+	}
+	$first_img_url = chinacongress_get_first_image_url( $post_id );
+	return $first_img_url ? sprintf(
+		'<img src="%s" class="attachment-full size-full wp-post-image auto-first-img" alt="%s" />',
+		esc_url( $first_img_url ),
+		esc_attr( get_the_title( $post_id ) )
+	) : $html;
 }
 add_filter( 'post_thumbnail_html', 'chinacongress_auto_first_image_html', 10, 5 );
 
-// 注册全站社交分享 (Open Graph / Twitter Cards) 1200x628 标准大图尺寸
+// 注册全站社交分享 1200x628 标准大图尺寸
 add_action( 'after_setup_theme', function() {
-    add_image_size( 'social-og', 1200, 628, true );
+	add_image_size( 'social-og', 1200, 628, true );
 } );
 
 /**
- * 当图片长宽比严重异常 (< 0.8 或 > 2.2) 时，基于 1200x628 标准大图画布生成纯白留白居中图
- * 避免裁剪丢失图片内容与文字，保留 100% 原始视觉信息
- *
- * @param string $file_path 原始图片本地绝对路径
- * @return string|false 留白图路径或失败返回 false
- */
-function chinacongress_generate_og_padded_image( $file_path ) {
-    if ( ! file_exists( $file_path ) || ! function_exists( 'imagecreatetruecolor' ) ) {
-        return false;
-    }
-
-    $path_info   = pathinfo( $file_path );
-    $padded_file = $path_info['dirname'] . '/' . $path_info['filename'] . '-ogpad.jpg';
-
-    // 若衍生图已存在，直接返回现有文件路径，避免重复生成
-    if ( file_exists( $padded_file ) && filesize( $padded_file ) > 0 ) {
-        return $padded_file;
-    }
-
-    $img_size = @getimagesize( $file_path );
-    if ( ! $img_size || empty( $img_size[0] ) || empty( $img_size[1] ) ) {
-        return false;
-    }
-
-    $orig_w = $img_size[0];
-    $orig_h = $img_size[1];
-
-    switch ( $img_size[2] ) {
-        case IMAGETYPE_JPEG:
-            $src_img = @imagecreatefromjpeg( $file_path );
-            break;
-        case IMAGETYPE_PNG:
-            $src_img = @imagecreatefrompng( $file_path );
-            break;
-        case IMAGETYPE_WEBP:
-            if ( function_exists( 'imagecreatefromwebp' ) ) {
-                $src_img = @imagecreatefromwebp( $file_path );
-            } else {
-                $src_img = false;
-            }
-            break;
-        case IMAGETYPE_GIF:
-            $src_img = @imagecreatefromgif( $file_path );
-            break;
-        default:
-            $src_img = false;
-            break;
-    }
-
-    if ( ! $src_img ) {
-        return false;
-    }
-
-    $scale = min( 1200 / $orig_w, 628 / $orig_h );
-    $dst_w = (int) round( $orig_w * $scale );
-    $dst_h = (int) round( $orig_h * $scale );
-    $dst_x = (int) round( ( 1200 - $dst_w ) / 2 );
-    $dst_y = (int) round( ( 628 - $dst_h ) / 2 );
-
-    $canvas = imagecreatetruecolor( 1200, 628 );
-    if ( ! $canvas ) {
-        imagedestroy( $src_img );
-        return false;
-    }
-
-    $white = imagecolorallocate( $canvas, 255, 255, 255 );
-    imagefill( $canvas, 0, 0, $white );
-    imagecopyresampled( $canvas, $src_img, $dst_x, $dst_y, 0, 0, $dst_w, $dst_h, $orig_w, $orig_h );
-
-    $saved = imagejpeg( $canvas, $padded_file, 90 );
-
-    imagedestroy( $src_img );
-    imagedestroy( $canvas );
-
-    return ( $saved && file_exists( $padded_file ) ) ? $padded_file : false;
-}
-
-/**
  * 获取符合社交平台 (X/Twitter, Facebook) 比例标准的 OG 图片数据 (包含 URL, Width, Height)
- * 支持 1200x628 标准留白居中衍生图、post_meta 缓存与后台预生成
- *
- * @param int|null $post_id
- * @return array 包含 url, width, height 的数组
  */
 function chinacongress_get_og_image_data( $post_id = null ) {
-    if ( ! $post_id ) {
-        $post_id = get_the_ID();
-    }
-    if ( ! $post_id ) {
-        return array( 'url' => '', 'width' => 0, 'height' => 0 );
-    }
+	$post_id = $post_id ?: get_the_ID();
+	if ( ! $post_id ) {
+		return array( 'url' => '', 'width' => 0, 'height' => 0 );
+	}
 
-    // 1. 优先读取 post_meta 缓存，0ms 瞬时响应，避免前台重复解析与磁盘 I/O
-    $cached = get_post_meta( $post_id, '_chinacongress_og_image_data', true );
-    if ( is_array( $cached ) && ! empty( $cached['url'] ) ) {
-        return $cached;
-    }
+	// 1. 优先读取 post_meta 缓存
+	$cached = get_post_meta( $post_id, '_chinacongress_og_image_data', true );
+	if ( is_array( $cached ) && ! empty( $cached['url'] ) ) {
+		return $cached;
+	}
 
-    $raw_url = '';
+	$img_url = '';
+	if ( has_post_thumbnail( $post_id ) ) {
+		$thumb_id = get_post_thumbnail_id( $post_id );
+		$img_src  = wp_get_attachment_image_src( $thumb_id, 'social-og' ) ?: wp_get_attachment_image_src( $thumb_id, 'full' );
+		if ( ! empty( $img_src[0] ) ) {
+			$img_url = $img_src[0];
+		}
+	}
+	if ( empty( $img_url ) ) {
+		$img_url = chinacongress_get_first_image_url( $post_id );
+	}
+	$img_url = chinacongress_normalize_media_url( $img_url );
 
-    // 2. 优先获取特色图片 (Featured Image) 的 social-og 尺寸或 full 尺寸
-    if ( has_post_thumbnail( $post_id ) ) {
-        $thumb_id = get_post_thumbnail_id( $post_id );
-        $img_src  = wp_get_attachment_image_src( $thumb_id, 'social-og' );
-        if ( empty( $img_src[0] ) ) {
-            $img_src = wp_get_attachment_image_src( $thumb_id, 'full' );
-        }
-        if ( ! empty( $img_src[0] ) ) {
-            $raw_url = $img_src[0];
-        }
-    }
+	$width = 0;
+	$height = 0;
+	$upload_dir = wp_upload_dir();
+	if ( ! empty( $img_url ) && false !== strpos( $img_url, $upload_dir['baseurl'] ) ) {
+		$rel_path  = ltrim( str_replace( $upload_dir['baseurl'], '', $img_url ), '/' );
+		$file_path = $upload_dir['basedir'] . '/' . rawurldecode( strtok( $rel_path, '?' ) );
+		if ( file_exists( $file_path ) ) {
+			$sz = @getimagesize( $file_path );
+			if ( $sz && ! empty( $sz[0] ) && ! empty( $sz[1] ) ) {
+				$width  = $sz[0];
+				$height = $sz[1];
+			}
+		}
+	}
 
-    // 3. 若无特色图片，回退提取正文第一张图
-    if ( empty( $raw_url ) ) {
-        $raw_url = chinacongress_get_first_image_url( $post_id );
-    }
+	$og_data = array(
+		'url'    => $img_url,
+		'width'  => $width,
+		'height' => $height,
+	);
 
-    $upload_dir = wp_upload_dir();
-    $img_url    = $raw_url;
-    $width      = 0;
-    $height     = 0;
+	if ( ! empty( $img_url ) ) {
+		update_post_meta( $post_id, '_chinacongress_og_image_data', $og_data );
+	}
 
-    // 尝试解析本地文件路径并检测长宽比
-    if ( ! empty( $raw_url ) && strpos( $raw_url, $upload_dir['baseurl'] ) !== false ) {
-        $rel_path  = ltrim( str_replace( $upload_dir['baseurl'], '', $raw_url ), '/' );
-        $rel_path  = rawurldecode( strtok( $rel_path, '?' ) );
-        $file_path = $upload_dir['basedir'] . '/' . $rel_path;
-
-        if ( file_exists( $file_path ) ) {
-            $img_size = @getimagesize( $file_path );
-            if ( $img_size && ! empty( $img_size[0] ) && ! empty( $img_size[1] ) ) {
-                $orig_w = $img_size[0];
-                $orig_h = $img_size[1];
-                $ratio  = $orig_w / $orig_h;
-
-                // 目标黄金比例 1.91 : 1。若长宽比严重异常 ( > 2.2 或 < 0.8 ) 则生成留白居中图
-                if ( $ratio > 2.2 || $ratio < 0.8 ) {
-                    $path_info      = pathinfo( $file_path );
-                    $padded_rel     = $path_info['dirname'] . '/' . $path_info['filename'] . '-ogpad.jpg';
-                    $padded_url_rel = str_replace( $upload_dir['basedir'], '', $padded_rel );
-
-                    if ( file_exists( $padded_rel ) ) {
-                        $img_url = $upload_dir['baseurl'] . $padded_url_rel;
-                        $width   = 1200;
-                        $height  = 628;
-                    } else {
-                        $generated = chinacongress_generate_og_padded_image( $file_path );
-                        if ( $generated ) {
-                            $img_url = $upload_dir['baseurl'] . $padded_url_rel;
-                            $width   = 1200;
-                            $height  = 628;
-                        }
-                    }
-                }
-
-                if ( ! $width ) {
-                    $width  = $orig_w;
-                    $height = $orig_h;
-                }
-            }
-        }
-    }
-
-    // 格式化输出 URL，进行 rawurlencode 转义
-    if ( $img_url ) {
-        if ( ! preg_match( '~^(?:f|ht)tps?://~i', $img_url ) ) {
-            $img_url = site_url( '/' . ltrim( $img_url, '/' ) );
-        }
-        $parts = parse_url( $img_url );
-        if ( $parts && isset( $parts['path'] ) ) {
-            $path_segments = explode( '/', $parts['path'] );
-            foreach ( $path_segments as &$segment ) {
-                $segment = rawurlencode( rawurldecode( $segment ) );
-            }
-            $parts['path'] = implode( '/', $path_segments );
-            $scheme  = isset( $parts['scheme'] ) ? $parts['scheme'] . '://' : '';
-            $host    = isset( $parts['host'] ) ? $parts['host'] : '';
-            $port    = isset( $parts['port'] ) ? ':' . $parts['port'] : '';
-            $path    = isset( $parts['path'] ) ? $parts['path'] : '';
-            $query   = isset( $parts['query'] ) ? '?' . $parts['query'] : '';
-            $img_url = $scheme . $host . $port . $path . $query;
-        }
-    }
-
-    $og_data = array(
-        'url'    => $img_url,
-        'width'  => $width,
-        'height' => $height,
-    );
-
-    // 缓存至 post_meta，保证后续前台读取微秒级返回
-    if ( ! empty( $img_url ) ) {
-        update_post_meta( $post_id, '_chinacongress_og_image_data', $og_data );
-    }
-
-    return $og_data;
+	return $og_data;
 }
 
 /**
@@ -963,23 +656,7 @@ function chinacongress_theme_mods_fallback( $mods ) {
 }
 add_filter( 'option_theme_mods_avril-child', 'chinacongress_theme_mods_fallback', 99 );
 
-add_filter( 'theme_mod_slider', function( $val ) {
-    if ( empty( $val ) ) {
-        $pm = get_option( 'theme_mods_avril' );
-        return ! empty( $pm['slider'] ) ? $pm['slider'] : $val;
-    }
-    return $val;
-}, 99 );
-
-add_filter( 'theme_mod_features_contents', function( $val ) {
-    if ( empty( $val ) ) {
-        $pm = get_option( 'theme_mods_avril' );
-        return ! empty( $pm['features_contents'] ) ? $pm['features_contents'] : $val;
-    }
-    return $val;
-}, 99 );
-
-// 3. 重写顶栏 (Above Header) 逻辑：在子主题中强行将“法律顾问 / Counsel”绑定跳转至创世律师事务所 (https://chuangshilaw.com/)
+// 3. 重写顶栏 (Above Header) 逻辑：在子主题中强行将“法律顾问 / Counsel”绑定跳转至创世律师事务所
 function chinacongress_above_header_override() {
     remove_action( 'avril_above_header', 'avril_above_header' );
     add_action( 'avril_above_header', 'chinacongress_above_header_custom' );
@@ -989,6 +666,36 @@ add_action( 'wp_head', 'chinacongress_above_header_override', 1 );
 function chinacongress_above_header_custom() {
     $avril_hide_show_social_icon = get_theme_mod( 'hide_show_social_icon', '1' ); 
     $avril_social_icons          = get_theme_mod( 'social_icons', function_exists( 'avril_get_social_icon_default' ) ? avril_get_social_icon_default() : '' );
+
+    $contacts = array(
+        array(
+            'show'    => get_theme_mod( 'hide_show_cntct_details', '1' ),
+            'class'   => 'wgt-1',
+            'icon'    => get_theme_mod( 'tlh_contct_icon', 'fa-book' ),
+            'title'   => get_theme_mod( 'tlh_contact_title', '法律顾问' ),
+            'sub'     => get_theme_mod( 'tlh_contact_sbtitle', 'Counsel' ),
+            'url'     => 'https://chuangshilaw.com/',
+            'target'  => '_blank',
+        ),
+        array(
+            'show'    => get_theme_mod( 'hide_show_email_details', '1' ),
+            'class'   => 'wgt-2',
+            'icon'    => get_theme_mod( 'tlh_email_icon', 'fa-envelope-o' ),
+            'title'   => get_theme_mod( 'tlh_email_title', __( 'Email Us', 'clever-fox' ) ),
+            'sub'     => get_theme_mod( 'tlh_email_sbtitle', 'info@chinacongress.net' ),
+            'url'     => 'mailto:' . get_theme_mod( 'tlh_email_sbtitle', 'info@chinacongress.net' ),
+            'target'  => '',
+        ),
+        array(
+            'show'    => get_theme_mod( 'hide_show_mbl_details', '1' ),
+            'class'   => 'wgt-3',
+            'icon'    => get_theme_mod( 'tlh_mobile_icon', 'fa-usd' ),
+            'title'   => get_theme_mod( 'tlh_mobile_title', 'Zelle 捐助' ),
+            'sub'     => get_theme_mod( 'tlh_mobile_sbtitle', 'chinacongress' ),
+            'url'     => 'javascript:void(0)',
+            'target'  => '',
+        ),
+    );
     ?>
     <!--===// Start: Header Above ===-->
     <div id="above-header" class="header-above-info d-av-block d-none wow fadeInDown">
@@ -1001,13 +708,13 @@ function chinacongress_above_header_custom() {
                                 <aside class="widget widget_social_widget">
                                     <ul>
                                         <?php
-                                        $avril_social_icons = json_decode( $avril_social_icons );
-                                        if ( ! empty( $avril_social_icons ) && is_array( $avril_social_icons ) ) {
-                                            foreach ( $avril_social_icons as $avril_social_item ) {    
-                                                $avril_repeater_social_icon = ! empty( $avril_social_item->icon_value ) ? apply_filters( 'avril_translate_single_string', $avril_social_item->icon_value, 'Header section' ) : ''; 
-                                                $avril_repeater_social_link = ! empty( $avril_social_item->link ) ? apply_filters( 'avril_translate_single_string', $avril_social_item->link, 'Header section' ) : '';
+                                        $icons_data = json_decode( $avril_social_icons );
+                                        if ( ! empty( $icons_data ) && is_array( $icons_data ) ) {
+                                            foreach ( $icons_data as $item ) {    
+                                                $icon = ! empty( $item->icon_value ) ? apply_filters( 'avril_translate_single_string', $item->icon_value, 'Header section' ) : ''; 
+                                                $link = ! empty( $item->link ) ? apply_filters( 'avril_translate_single_string', $item->link, 'Header section' ) : '';
                                                 ?>
-                                                <li><a href="<?php echo esc_url( $avril_repeater_social_link ); ?>"><i class="fa <?php echo esc_attr( $avril_repeater_social_icon ); ?>"></i></a></li>
+                                                <li><a href="<?php echo esc_url( $link ); ?>"><i class="fa <?php echo esc_attr( $icon ); ?>"></i></a></li>
                                             <?php }
                                         } ?>
                                     </ul>
@@ -1017,63 +724,17 @@ function chinacongress_above_header_custom() {
                     </div>
                     <div class="av-column-7">
                         <div class="widget-right text-av-right text-center"> 
-                            <?php 
-                            $avril_hide_show_cntct_details = get_theme_mod( 'hide_show_cntct_details', '1' ); 
-                            $avril_tlh_contct_icon         = get_theme_mod( 'tlh_contct_icon', 'fa-book' );   
-                            $avril_tlh_contact_title       = get_theme_mod( 'tlh_contact_title', '法律顾问' ); 
-                            $avril_tlh_contact_sbtitle     = get_theme_mod( 'tlh_contact_sbtitle', 'Counsel' ); 
-                            ?>
-                            <?php if ( $avril_hide_show_cntct_details == '1' ) : ?>
-                                <aside class="widget widget-contact wgt-1">
+                            <?php foreach ( $contacts as $c ) : if ( $c['show'] == '1' ) : ?>
+                                <aside class="widget widget-contact <?php echo esc_attr( $c['class'] ); ?>">
                                     <div class="contact-area">
-                                        <div class="contact-icon">
-                                           <i class="fa <?php echo esc_attr( $avril_tlh_contct_icon ); ?>"></i>
-                                        </div>
-                                        <a href="https://chuangshilaw.com/" target="_blank" class="contact-info">
-                                            <span class="text"><?php echo esc_html( $avril_tlh_contact_title ); ?></span>
-                                            <span class="title"><?php echo esc_html( $avril_tlh_contact_sbtitle ); ?></span>
+                                        <div class="contact-icon"><i class="fa <?php echo esc_attr( $c['icon'] ); ?>"></i></div>
+                                        <a href="<?php echo esc_url( $c['url'] ); ?>" <?php echo $c['target'] ? 'target="' . esc_attr( $c['target'] ) . '"' : ''; ?> class="contact-info">
+                                            <span class="text"><?php echo esc_html( $c['title'] ); ?></span>
+                                            <span class="title"><?php echo esc_html( $c['sub'] ); ?></span>
                                         </a>
                                     </div>
                                 </aside>
-                            <?php endif; ?>
-                            <?php 
-                            $avril_hide_show_email_details = get_theme_mod( 'hide_show_email_details', '1' );
-                            $avril_tlh_email_icon          = get_theme_mod( 'tlh_email_icon', 'fa-envelope-o' );   
-                            $avril_tlh_email_title         = get_theme_mod( 'tlh_email_title', __( 'Email Us', 'clever-fox' ) ); 
-                            $avril_tlh_email_sbtitle       = get_theme_mod( 'tlh_email_sbtitle', 'info@chinacongress.net' ); 
-                            ?>  
-                            <?php if ( $avril_hide_show_email_details == '1' ) : ?>
-                                <aside class="widget widget-contact wgt-2">
-                                    <div class="contact-area">
-                                        <div class="contact-icon">
-                                            <i class="fa <?php echo esc_attr( $avril_tlh_email_icon ); ?>"></i>
-                                        </div>
-                                        <a href="mailto:<?php echo esc_html( $avril_tlh_email_sbtitle ); ?>" class="contact-info">
-                                            <span class="text"><?php echo esc_html( $avril_tlh_email_title ); ?></span>
-                                            <span class="title"><?php echo esc_html( $avril_tlh_email_sbtitle ); ?></span>
-                                        </a>
-                                    </div>
-                                </aside>
-                            <?php endif; ?> 
-                            <?php 
-                            $avril_hide_show_mbl_details = get_theme_mod( 'hide_show_mbl_details', '1' );   
-                            $avril_tlh_mobile_icon       = get_theme_mod( 'tlh_mobile_icon', 'fa-usd' );
-                            $avril_tlh_mobile_title      = get_theme_mod( 'tlh_mobile_title', 'Zelle 捐助' ); 
-                            $avril_tlh_mobile_sbtitle    = get_theme_mod( 'tlh_mobile_sbtitle', 'chinacongress' ); 
-                            ?>
-                            <?php if ( $avril_hide_show_mbl_details == '1' ) : ?>
-                                <aside class="widget widget-contact wgt-3">
-                                    <div class="contact-area">
-                                        <div class="contact-icon">
-                                            <i class="fa <?php echo esc_attr( $avril_tlh_mobile_icon ); ?>"></i>
-                                        </div>
-                                        <a href="javascript:void(0)" class="contact-info">
-                                            <span class="text"><?php echo esc_html( $avril_tlh_mobile_title ); ?></span>
-                                            <span class="title"><?php echo esc_html( $avril_tlh_mobile_sbtitle ); ?></span>
-                                        </a>
-                                    </div>
-                                </aside>
-                            <?php endif; ?> 
+                            <?php endif; endforeach; ?>
                         </div>  
                     </div>
                 </div>

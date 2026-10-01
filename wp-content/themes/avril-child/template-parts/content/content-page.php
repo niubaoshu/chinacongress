@@ -50,76 +50,29 @@
 			</div>
 
 			<script>
-			function chinacongressShowToast(msg) {
-				if (typeof window.isCopy === 'function') {
-					window.isCopy(msg);
-					return;
-				}
-				const el = document.createElement('div');
-				el.textContent = msg;
-				Object.assign(el.style, {
-					position: 'fixed',
-					top: '30%',
-					left: '50%',
-					transform: 'translateX(-50%)',
-					padding: '10px 22px',
-					background: 'rgba(0,0,0,0.85)',
-					color: '#fff',
-					borderRadius: '6px',
-					fontSize: '15px',
-					zIndex: '99999',
-					boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-					transition: 'opacity 0.25s ease'
-				});
-				document.body.appendChild(el);
-				setTimeout(function() {
-					el.style.opacity = '0';
-					setTimeout(function() { el.remove(); }, 250);
-				}, 2500);
-			}
-
 			function chinacongressCopyArticleText() {
-				// 直接从浏览器 DOM 动态提取全文，零服务端二次重复输出，零网络传输冗余
 				const title = document.querySelector('.post-title')?.innerText?.trim() || document.title;
 				const contentEl = document.querySelector('.post-content');
 				let articleText = '';
 				if (contentEl) {
 					const clone = contentEl.cloneNode(true);
-					const shareBar = clone.querySelector('.post-share-bar');
-					if (shareBar) shareBar.remove();
-					const titleEl = clone.querySelector('.post-title');
-					if (titleEl) titleEl.remove();
-					const metaEl = clone.querySelector('.post-meta');
-					if (metaEl) metaEl.remove();
+					clone.querySelectorAll('.post-share-bar, .post-title, .post-meta').forEach(el => el.remove());
 					articleText = clone.innerText.trim();
 				}
-				const fullText = title + (articleText ? '\n\n' + articleText : '') + '\n\n文章链接：' + window.location.href;
-
-				if (navigator.clipboard && navigator.clipboard.writeText) {
-					navigator.clipboard.writeText(fullText).then(function() {
-						chinacongressShowToast('文章全文与链接已成功复制到剪贴板！');
-					}).catch(function() {
-						fallbackCopy(fullText);
-					});
+				const text = title + (articleText ? '\n\n' + articleText : '') + '\n\n文章链接：' + window.location.href;
+				const showToast = msg => {
+					const el = Object.assign(document.createElement('div'), { textContent: msg });
+					Object.assign(el.style, { position: 'fixed', top: '30%', left: '50%', transform: 'translateX(-50%)', padding: '10px 22px', background: 'rgba(0,0,0,0.85)', color: '#fff', borderRadius: '6px', fontSize: '15px', zIndex: '99999', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', transition: 'opacity 0.25s ease' });
+					document.body.appendChild(el);
+					setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 250); }, 2500);
+				};
+				if (navigator.clipboard?.writeText) {
+					navigator.clipboard.writeText(text).then(() => showToast('文章全文与链接已成功复制到剪贴板！')).catch(() => showToast('复制失败，请手动选择复制。'));
 				} else {
-					fallbackCopy(fullText);
+					const ta = Object.assign(document.createElement('textarea'), { value: text, style: 'position:fixed;opacity:0' });
+					document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+					showToast('文章全文与链接已成功复制到剪贴板！');
 				}
-			}
-
-			function fallbackCopy(text) {
-				const ta = document.createElement('textarea');
-				ta.value = text;
-				ta.style.position = 'fixed';
-				ta.style.opacity = '0';
-				document.body.appendChild(ta);
-				ta.select();
-				try {
-					document.execCommand('copy');
-					chinacongressShowToast('文章全文与链接已成功复制到剪贴板！');
-				} catch (err) {
-					chinacongressShowToast('复制失败，请手动选择复制。');
-				}
-				document.body.removeChild(ta);
 			}
 			</script>
 			<?php
