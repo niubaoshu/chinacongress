@@ -548,7 +548,7 @@ function chinacongress_add_social_og_tags() {
 add_action( 'wp_head', 'chinacongress_add_social_og_tags', 5 );
 
 // 过滤清理分类与归档标题，移除系统多余的前缀（如“分类：”、“Category Archives:”）
-add_filter( 'get_the_archive_title', function ( $title ) {
+function chinacongress_clean_archive_title( $title ) {
     if ( is_category() ) {
         $title = single_cat_title( '', false );
     } elseif ( is_tag() ) {
@@ -561,7 +561,8 @@ add_filter( 'get_the_archive_title', function ( $title ) {
         $title = single_term_title( '', false );
     }
     return $title;
-} );
+}
+add_filter( 'get_the_archive_title', 'chinacongress_clean_archive_title' );
 
 /**
  * 首页轮播图原生热拦截：在 Clever Fox 初始化前自动注入 dots: true 与 4.5 秒播放速度

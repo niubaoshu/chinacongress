@@ -12,28 +12,29 @@ public_html/ (Git 仓库根目录)
 ├── .gitignore                          # Git 忽略配置（仅追踪 README.md、API_ENDPOINTS.md 与 avril-child）
 ├── README.md                           # 本项目开发者与运维指南文档
 ├── API_ENDPOINTS.md                    # 外部第三方平台 API 接口集成文档
-└── wp-content/
-    └── themes/
-        └── avril-child/                # 二次开发子主题（Git 核心追踪项目）
-            ├── VIDEO_GUIDE.md          # 🎬 文章内嵌活动短视频使用与排版指南
-            ├── DEVELOPER_GUIDE.md      # 📖 WordPress 子主题开发架构与规范指南
-            ├── functions.php           # 子主题核心逻辑、动态过滤器（相对路径清洗、顶栏重写等）
-            ├── style.css               # 二次开发 CSS 响应式样式表
-            ├── category.php            # 分类列表页专属模版（左图右字大图卡片布局）
-            ├── single.php              # 文章详情页切片模版
-            ├── archive.php             # 归档列表页模版
-            ├── assets/                 # 自定义字体及静态资源
-            ├── template-parts/         # 首页及页面组件模版切片
-            │   └── sections/
-            │       ├── section-features.php # 首页“推荐内容”模块切片（自动抓图与无缝跳转）
-            │       └── section-blog.php     # 首页“最新发布”双列大图卡片模块切片
-            └── scripts/                # 本地/开发环境 DevOps 自动化脚本集
-                ├── restore_full_mirror_localhost.sh  # 一键本地镜像全量复原脚本
-                ├── sync_user_data_from_remote.sh     # 一键从线上同步纯用户数据至本地
-                ├── backup_user_data.sh               # 一键打包备份线上或本地数据 SQL+Uploads
-                ├── sync_custom_code.sh               # 一键同步/部署子主题代码至本地或生产服务器
-                ├── clean_localhost.sh                # 一键清空本地开发环境
-                ├── convert_features_to_relative.php  # 数据库 Serialized 配置相对化工具
+├── wp-content/
+│   └── themes/
+│       └── avril-child/                # 二次开发子主题（Git 核心追踪项目）
+│           ├── VIDEO_GUIDE.md          # 🎬 文章内嵌活动短视频使用与排版指南
+│           ├── DEVELOPER_GUIDE.md      # 📖 WordPress 子主题开发架构与规范指南
+│           ├── functions.php           # 子主题核心逻辑、动态过滤器（相对路径清洗、顶栏重写等）
+│           ├── style.css               # 二次开发 CSS 响应式样式表
+│           ├── single.php              # 文章详情页切片模版
+│           ├── archive.php             # 归档列表页模版
+│           ├── assets/                 # 自定义字体及静态资源
+│           ├── template-parts/         # 首页及页面组件模版切片
+│           │   ├── content/
+│           │   │   ├── card-post.php   # 通用自适应文章大图卡片组件（支持 home/side/archive 模式）
+│           │   │   └── ...
+│           │   └── sections/
+│           │       ├── section-features.php # 首页“推荐内容”模块切片（自动抓图与无缝跳转）
+│           │       └── section-blog.php     # 首页“最新发布”双列大图卡片模块切片
+│           └── scripts/                # 本地/开发环境 DevOps 自动化脚本集
+│               ├── restore_full_mirror_localhost.sh  # 一键本地镜像全量复原脚本
+│               ├── sync_user_data_from_remote.sh     # 一键从线上同步纯用户数据至本地
+│               ├── backup_user_data.sh               # 一键打包备份线上或本地数据 SQL+Uploads
+│               ├── sync_custom_code.sh               # 一键同步/部署子主题代码至本地或生产服务器
+│               └── clean_localhost.sh                # 一键清空本地开发环境
 ```
 
 ---
@@ -44,20 +45,29 @@ public_html/ (Git 仓库根目录)
 
 ### 1. `restore_full_mirror_localhost.sh`（一键全量复原本地镜像）
 - **功能**：从零开始构建一个与线上环境 100% 一致的本地测试站点（`http://localhost/`）。
-- **流程**：
-  1. 自动从 WordPress.org 官方下载最新版 WordPress 核心、Avril 父主题及 Clever Fox 插件。
-  2. 自动定位最新的本地数据备份包，解压 `uploads/` 媒体库与 `sql` 数据库。
-  3. 自动创建本地数据库与用户，一键导入并修正 `siteurl` / `home` 域名。
-  4. 自动部署子主题 `avril-child` 代码并绑定 WordPress 主题激活状态。
 - **用法**：
   ```bash
   bash wp-content/themes/avril-child/scripts/restore_full_mirror_localhost.sh
   ```
 
+### 2. `sync_user_data_from_remote.sh`（一键同步纯用户数据）
+- **功能**：从线上生产服务器拉取最新数据库备份并导入本地，同时增量同步 `wp-content/uploads/` 媒体资源文件，自动转换域名为本地环境。
+- **用法**：
+  ```bash
+  bash wp-content/themes/avril-child/scripts/sync_user_data_from_remote.sh
+  ```
+
+### 3. `backup_user_data.sh`（一键备份数据库与媒体库）
+- **功能**：打包导出当前数据库并增量归档媒体上传文件至指定备份目录。
+- **用法**：
+  ```bash
+  bash wp-content/themes/avril-child/scripts/backup_user_data.sh
+  ```
+
 ### 4. `sync_custom_code.sh`（一键同步/部署子主题代码）
 - **功能**：将本地 Git 仓库中的 `avril-child` 子主题代码更新部署到本地 Web 目录或线上生产服务器。
 - **安全机制**：
-  - 线上部署限制：强制校验当前 Git 分支，必须在 `main` 主线分支上才允许向生产环境部署。
+  - 线上部署限制：强制校验当前 Git 分支，必须在 `main` 主线分支且工作区干净时才允许向生产环境部署。
   - 运维隔离：向线上生产服务器部署时，自动添加 `--exclude='scripts'`，绝不上推本地运维脚本。
 - **用法**：
   ```bash
