@@ -40,19 +40,17 @@ const cc = { local: local, host: host,
         title: 'YouTube： 中国议会'
       }
     ],
-    css_modules: {},
     js_modules: {
         cc_base: "cc_base.js",
-        cc_video: "cc_video.js",
         appreciationCertificate: "appreciation_letter.js",
         annotation: "cc_annotation.js",
         congress_library: "congress_library.js",
         contact_details: "convenor_details.js",
         preparatory_committee: "preparatory_committee.js"
     },
-    player: [],
     isMobile: /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
 };
+window.cc_video = window.cc_video || function() {};
 function getID(id) { return document.getElementById(id); }
 function getTagName(name) { return document.getElementsByTagName(name); }
 function getAttr(e, name) { return parseFloat(e.getAttribute(name)) || 1; }
@@ -83,16 +81,6 @@ function cc_content(opt, isload, url, cc_args) {
     }
 }
 const loaded_resources = new Set();
-function lnCSS(url) {
-    const fullUrl = session(url);
-    if (loaded_resources.has(fullUrl)) return;
-    loaded_resources.add(fullUrl);
-    const css = createTag("link");
-    Object.assign(css, { rel: 'stylesheet', href: fullUrl });
-    css.onload = () => { cc_content("css", true, url, null); };
-    css.onerror = () => { cc_content("css", false, url, null); };
-    document.head.appendChild(css);
-}
 function lnJS(url, cc_args) {
     const fullUrl = session(url);
     if (loaded_resources.has(fullUrl)) return;
@@ -105,9 +93,6 @@ function lnJS(url, cc_args) {
 }
 const cc_args = [cc.links, (typeof resp !== "undefined")? resp : null];
 (function (cc_args) {
-    for (const [name, url] of Object.entries(cc.css_modules)) {
-        lnCSS(`${cc.cssdir}/${url}`);
-    }
     for (const [name, url] of Object.entries(cc.js_modules)) {
         if (name === 'cc_base' || !getID(name)) continue;
         lnJS(`${cc.jsdir}/${url}`, cc_args);
