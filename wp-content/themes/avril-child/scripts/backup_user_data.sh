@@ -25,14 +25,13 @@ REMOTE_DB_USER="${REMOTE_DB_USER:-chinacongress}"
 REMOTE_DB_PASS="${REMOTE_DB_PASS:-}"
 REMOTE_DB_NAME="${REMOTE_DB_NAME:-chinacongress}"
 
-DB_PASS_ARG=""
-if [ -n "${REMOTE_DB_PASS}" ]; then
-    DB_PASS_ARG="-p${REMOTE_DB_PASS}"
-fi
-
 DB_FILE="${TARGET_DIR}/db_production_${TIMESTAMP}.sql"
 echo "1. 正在通过 SSH 导出线上数据库 ..."
-ssh Chinacongress "mysqldump -u${REMOTE_DB_USER} ${DB_PASS_ARG} ${REMOTE_DB_NAME}" > "${DB_FILE}"
+if [ -n "${REMOTE_DB_PASS}" ]; then
+    ssh Chinacongress "MYSQL_PWD='${REMOTE_DB_PASS}' mysqldump -u'${REMOTE_DB_USER}' '${REMOTE_DB_NAME}'" > "${DB_FILE}"
+else
+    ssh Chinacongress "mysqldump -u'${REMOTE_DB_USER}' '${REMOTE_DB_NAME}'" > "${DB_FILE}"
+fi
 
 if [ -s "${DB_FILE}" ]; then
     gzip -f "${DB_FILE}"

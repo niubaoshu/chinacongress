@@ -62,7 +62,7 @@ function preparatory_committee () {
     Object.assign(header.style, { display: "flex", background: `url("${cc.sgvdir}/cc.svg")  10px 10px / 45px 45px no-repeat rgba(166, 210, 255, 0.1)`, margin: '0px 0px 0px 0px', flexWrap: "wrap", width: '100%' });
     const title = createTag("div");
     title.innerHTML = doc_title;
-    Object.assign(title.style, { display: "inline", fontSize: "18px", color: 'rgb(35, 74, 107)', fontWeight: "800", display: "inline-flex", alignItems: "flex-end", paddingLeft: "42px", transform: "translateY(20px)", overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'});
+    Object.assign(title.style, { fontSize: "18px", color: 'rgb(35, 74, 107)', fontWeight: "800", display: "inline-flex", alignItems: "flex-end", paddingLeft: "42px", transform: "translateY(20px)", overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'});
     header.appendChild(title);
     const update = createTag("div");
     update.innerHTML = '最近更新：' + lastModifier;
@@ -87,7 +87,7 @@ function preparatory_committee () {
         const container = this.parentElement.parentElement;
         for(let index of container.children) {
             ++i;
-            items = index.children[0];
+            const items = index.children[0];
             if (i==0) {
                 sb.push(items.innerText.trim(), "\n", index.children[1].innerText.trim(), "\n\n");
                 continue;

@@ -53,6 +53,11 @@ elif [ "${TARGET}" = "production" ] || [ "${TARGET}" = "remote" ]; then
         exit 1
     fi
 
+    if [ -n "$(git -C "${CHILD_THEME_SRC}" status --porcelain)" ]; then
+        echo "⚠️ 【发布拦截】：本地 Git 工作区有未提交的代码改动！请先 git commit 或 stash 后再部署线上！"
+        exit 1
+    fi
+
     echo "2. 正在将主线 main 分支代码部署到线上生产服务器 (Chinacongress) [排除 scripts 与 *.md] ..."
     rsync -avz --delete --exclude='.git' --exclude='scripts' --exclude='*.md' \
       "${CHILD_THEME_SRC}/" \

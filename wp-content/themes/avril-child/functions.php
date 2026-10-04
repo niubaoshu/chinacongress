@@ -14,6 +14,11 @@
  * ==============================================================================
  */
 
+// 全站通用默认兜底封面图片路径
+if ( ! defined( 'CHINACONGRESS_FALLBACK_IMAGE' ) ) {
+	define( 'CHINACONGRESS_FALLBACK_IMAGE', '/wp-content/uploads/2026/01/logo-1024x480.jpg' );
+}
+
 // ==============================================================================
 // 1. 样式与脚本加载
 // ==============================================================================
@@ -439,7 +444,7 @@ function chinacongress_get_first_image_url( $post_id = null ) {
 
 	// 3. 兜底官方横版 Banner Logo
 	if ( empty( $url ) ) {
-		$url = '/wp-content/uploads/2026/01/logo-1024x480.jpg';
+		$url = CHINACONGRESS_FALLBACK_IMAGE;
 	}
 
 	$normalized = chinacongress_normalize_media_url( $url );
@@ -981,6 +986,24 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 // ==============================================================================
 
 /**
+ * 提取首页首张轮播大图 (Hero Banner Image) URL
+ */
+function chinacongress_get_hero_image_url() {
+	if ( ! is_front_page() && ! is_home() ) {
+		return '';
+	}
+	$slider_mod = get_theme_mod( 'slider' );
+	if ( empty( $slider_mod ) ) {
+		return '';
+	}
+	$slider_items = json_decode( $slider_mod );
+	if ( ! empty( $slider_items ) && is_array( $slider_items ) && ! empty( $slider_items[0]->image_url ) ) {
+		return $slider_items[0]->image_url;
+	}
+	return '';
+}
+
+/**
  * 1. 智能注入 Cloudflare CDN 边缘缓存响应头 (Edge Cache-Control) 与 Early Hints Link 头
  * 仅对未登录的普通访客在公开前台 GET 页面输出 s-maxage，解放源站 PHP & MySQL 算力
  */
@@ -1024,14 +1047,9 @@ function chinacongress_cloudflare_edge_cache_headers() {
 	header( 'Link: <' . esc_url_raw( $fa_url ) . '>; rel=preload; as=style', false );
 
 	// 首页首屏首张轮播大图 (Hero Banner Image) 注入 Early Link 响应头
-	if ( is_front_page() || is_home() ) {
-		$slider_mod = get_theme_mod( 'slider' );
-		if ( ! empty( $slider_mod ) ) {
-			$slider_items = json_decode( $slider_mod );
-			if ( ! empty( $slider_items ) && is_array( $slider_items ) && ! empty( $slider_items[0]->image_url ) ) {
-				header( 'Link: <' . esc_url_raw( $slider_items[0]->image_url ) . '>; rel=preload; as=image', false );
-			}
-		}
+	$hero_img = chinacongress_get_hero_image_url();
+	if ( ! empty( $hero_img ) ) {
+		header( 'Link: <' . esc_url_raw( $hero_img ) . '>; rel=preload; as=image', false );
 	}
 }
 add_action( 'template_redirect', 'chinacongress_cloudflare_edge_cache_headers', 999 );
@@ -1048,14 +1066,9 @@ function chinacongress_cloudflare_preconnect_tags() {
 	echo '<link rel="preconnect" href="https://www.youtube.com" crossorigin>' . "\n";
 
 	// 首页首屏首张轮播大图 HTML 高优先级预加载
-	if ( is_front_page() || is_home() ) {
-		$slider_mod = get_theme_mod( 'slider' );
-		if ( ! empty( $slider_mod ) ) {
-			$slider_items = json_decode( $slider_mod );
-			if ( ! empty( $slider_items ) && is_array( $slider_items ) && ! empty( $slider_items[0]->image_url ) ) {
-				echo '<link rel="preload" as="image" href="' . esc_url( $slider_items[0]->image_url ) . '" fetchpriority="high">' . "\n";
-			}
-		}
+	$hero_img = chinacongress_get_hero_image_url();
+	if ( ! empty( $hero_img ) ) {
+		echo '<link rel="preload" as="image" href="' . esc_url( $hero_img ) . '" fetchpriority="high">' . "\n";
 	}
 	echo "<!-- End Cloudflare Preconnect -->\n";
 }

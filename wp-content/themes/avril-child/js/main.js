@@ -1,12 +1,11 @@
-if (self !== top) { top.location.href = self.location.href; }
 const local = window.location.origin;
 const host = window.cc_host || local;
 const theme = "avril-child";
-const sessid=new URLSearchParams(window.location.search).get("sessid");
+const sessid = new URLSearchParams(window.location.search).get("sessid");
 const cc = { local: local, host: host,
     session: sessid,
     uploads: `${host}/wp-content/uploads`,
-    sgvdir: `${host}/wp-content/uploads/2026/08/`,
+    sgvdir: `${host}/wp-content/uploads/2026/08`,
     cssdir: `${local}/wp-content/themes/${theme}/css`,
     jsdir: `${local}/wp-content/themes/${theme}/js`,
     committee_members: `${local}/archives/214`,
@@ -56,7 +55,7 @@ const cc = { local: local, host: host,
 };
 function getID(id) { return document.getElementById(id); }
 function getTagName(name) { return document.getElementsByTagName(name); }
-function getAttr(e, name) { return parseFloat(e.getAttribute(name), 10) || 1; }
+function getAttr(e, name) { return parseFloat(e.getAttribute(name)) || 1; }
 function createTag(tag) { return document.createElement(tag); }
 function orientation(style, matches, portrait, landscape) { Object.assign(style, matches? portrait:landscape); }
 function isCopy(text) {
@@ -97,14 +96,13 @@ function lnJS(url, cc_args) {
     if (loaded_resources.has(fullUrl)) return;
     loaded_resources.add(fullUrl);
     const js = createTag("script");
-    Object.assign(js, { type: 'text/javascript', src: fullUrl, referrerpolicy: 'no-referrer', fetchpriority:'high', charset: 'UTF-8', async: false });
+    Object.assign(js, { type: 'text/javascript', src: fullUrl, referrerPolicy: 'no-referrer', fetchPriority: 'high', charset: 'UTF-8', async: false });
     js.onload = () => { cc_content("js", true, url, cc_args); };
     js.onerror = () => { cc_content("js", false, url, null); };
     document.head.appendChild(js);
 }
 const cc_args = [cc.links, (typeof resp !== "undefined")? resp : null];
 (function (cc_args) {
-    if (self !== top) return;
     for (const [name, url] of Object.entries(cc.css_modules)) {
         lnCSS(`${cc.cssdir}/${url}`);
     }
