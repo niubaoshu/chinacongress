@@ -114,11 +114,9 @@ body {
  * 4. 卡片图文通用基础与复用样式 (Card Shared Layout & Typography)
  * ============================================================================== */
 
-/* 统一卡片基础外观与悬停升起投影 (4处合并) */
-.category-post-card,
-.home-blog-card,
-.home-features .feature-card-item,
-.sidebar-blog-card {
+/* 统一卡片基础外观与悬停升起投影 */
+.cc-post-card,
+.home-features .feature-card-item {
     background: #ffffff !important;
     border-radius: 12px !important;
     border: 1px solid #eef2f6 !important;
@@ -126,83 +124,68 @@ body {
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
 }
 
-.category-post-card:hover,
-.home-blog-card:hover,
-.home-features .feature-card-item:hover,
-.sidebar-blog-card:hover {
+.cc-post-card:hover,
+.home-features .feature-card-item:hover {
     transform: translateY(-4px) !important;
     box-shadow: 0 12px 28px rgba(58, 117, 161, 0.14) !important;
     border-color: rgba(58, 117, 161, 0.3) !important;
 }
 
-/* 统一缩略图包裹层通用样式 (4处合并) */
-.category-post-card .category-post-thumb-wrap,
-.home-blog-card .home-blog-thumb-wrap,
-.home-features .feature-card-thumb,
-.sidebar-blog-card .sidebar-blog-thumb-wrap {
+/* 统一缩略图包裹层通用样式 */
+.cc-card-thumb-wrap,
+.home-features .feature-card-thumb {
     position: relative !important;
     overflow: hidden !important;
     background: #f4f8fb !important;
 }
 
-/* 统一缩略图超链接铺满 (4处合并) */
-.category-post-card .category-post-thumb-link,
-.home-blog-card .home-blog-thumb-link,
-.home-features .feature-card-thumb a,
-.sidebar-blog-card .sidebar-blog-thumb-link {
+/* 统一缩略图超链接铺满 */
+.cc-card-thumb-link,
+.home-features .feature-card-thumb a {
     display: block !important;
     width: 100% !important;
     height: 100% !important;
 }
 
-/* 统一缩略图自适应与平滑过渡 (4处合并) */
-.category-post-card .category-post-thumb-img,
-.home-blog-card .home-blog-thumb-img,
-.home-features .feature-card-img,
-.sidebar-blog-card .sidebar-blog-thumb-img {
+/* 统一缩略图自适应与平滑过渡 */
+.cc-card-thumb-img,
+.home-features .feature-card-img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
     transition: transform 0.4s ease !important;
 }
 
-/* 统一卡片图片悬停微放大动效 (4处合并) */
-.category-post-card:hover .category-post-thumb-img,
-.home-blog-card:hover .home-blog-thumb-img,
-.home-features .feature-card-item:hover .feature-card-img,
-.sidebar-blog-card:hover .sidebar-blog-thumb-img {
+/* 统一卡片图片悬停微放大动效 */
+.cc-post-card:hover .cc-card-thumb-img,
+.home-features .feature-card-item:hover .feature-card-img {
     transform: scale(1.06) !important;
 }
 
-/* 统一卡片标题链接颜色与悬停效果 (4处合并) */
-.category-post-card .category-post-title a,
-.home-blog-card .home-blog-title a,
-.home-features .feature-card-title a,
-.sidebar-blog-card .sidebar-blog-title a {
+/* 统一卡片标题链接颜色与悬停效果 */
+.cc-card-title a,
+.home-features .feature-card-title a {
     color: #1d2327 !important;
     text-decoration: none !important;
     transition: color 0.2s ease !important;
 }
 
-.category-post-card .category-post-title a:hover,
-.home-blog-card .home-blog-title a:hover,
-.home-features .feature-card-title a:hover,
-.sidebar-blog-card .sidebar-blog-title a:hover {
+.cc-card-title a:hover,
+.home-features .feature-card-title a:hover {
     color: #3a75a1 !important;
 }
 
-/* 统一发布日期小日历图标 (3处合并) */
-.category-post-card .category-post-meta i,
-.home-blog-card .home-blog-meta i,
-.sidebar-blog-card .sidebar-blog-meta i {
+/* 统一发布日期小日历图标 */
+.cc-card-meta i {
     color: #3a75a1 !important;
     margin-right: 4px !important;
 }
 
-/* 统一多行文本截断通用规则 (3处合并) */
+/* 统一多行文本截断通用规则 */
 .home-features .feature-card-title,
 .home-features .feature-card-text,
-.sidebar-blog-card .sidebar-blog-excerpt {
+.sidebar-blog-card .sidebar-blog-excerpt,
+.cc-post-card--side .cc-card-excerpt {
     display: -webkit-box !important;
     -webkit-box-orient: vertical !important;
     overflow: hidden !important;

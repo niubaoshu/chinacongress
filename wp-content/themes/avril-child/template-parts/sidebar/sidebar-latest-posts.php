@@ -34,40 +34,9 @@ if ( $latest_query->have_posts() ) :
 		<?php
 		while ( $latest_query->have_posts() ) :
 			$latest_query->the_post();
-			$categories = get_the_category();
-			$post_url   = esc_url( get_permalink() );
-			$post_title = esc_html( get_the_title() );
-			$thumb_url  = esc_url( chinacongress_get_first_image_url( get_the_ID() ) );
-			$post_date  = esc_html( get_the_date() );
-			$excerpt    = esc_html( chinacongress_get_clean_excerpt( 60 ) );
+			get_template_part( 'template-parts/content/card', 'post', array( 'mode' => 'side' ) );
+		endwhile;
 		?>
-		<article class="sidebar-blog-card">
-			<div class="sidebar-blog-thumb-wrap">
-				<?php if ( ! empty( $categories[0] ) ) : ?>
-					<span class="category-badge"><?php echo esc_html( $categories[0]->name ); ?></span>
-				<?php endif; ?>
-				<a href="<?php echo $post_url; ?>" class="sidebar-blog-thumb-link" aria-label="<?php echo $post_title; ?>">
-					<img src="<?php echo $thumb_url; ?>" alt="<?php echo $post_title; ?>" class="sidebar-blog-thumb-img" loading="lazy" />
-				</a>
-			</div>
-			<div class="sidebar-blog-content">
-				<div class="sidebar-blog-meta">
-					<span><i class="fa fa-calendar"></i> <?php echo $post_date; ?></span>
-				</div>
-				<h6 class="sidebar-blog-title">
-					<a href="<?php echo $post_url; ?>" rel="bookmark"><?php echo $post_title; ?></a>
-				</h6>
-				<?php if ( ! empty( $excerpt ) ) : ?>
-					<p class="sidebar-blog-excerpt"><?php echo $excerpt; ?></p>
-				<?php endif; ?>
-				<div class="sidebar-blog-action">
-					<a href="<?php echo $post_url; ?>" class="sidebar-blog-read-more">
-						<?php _e( '阅读全文', 'avril-child' ); ?> <i class="fa fa-angle-right"></i>
-					</a>
-				</div>
-			</div>
-		</article>
-		<?php endwhile; ?>
 	</div>
 </aside>
 <?php
