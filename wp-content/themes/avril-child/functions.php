@@ -1118,12 +1118,6 @@ function chinacongress_video_player_footer_script() {
 			if (!videos || videos.length === 0) return;
 
 			videos.forEach(function(video) {
-				// 相对路径站内视频补全
-				var src = video.getAttribute('src');
-				if (src && !(/^https?:\/\//i.test(src)) && src.startsWith('/')) {
-					video.src = window.location.origin + src;
-				}
-
 				// 确保有基础控制条
 				video.controls = true;
 				video.playsInline = true;

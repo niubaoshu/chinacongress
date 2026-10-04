@@ -834,3 +834,45 @@ article video {
 .post-share-fb { background-color: #1877f2 !important; }
 .post-share-wa { background-color: #25d366 !important; }
 .post-share-cp { background-color: #6c757d !important; }
+
+/* 全局轻量 Toast 提示框 */
+.cc-toast {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 22px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #ffffff;
+    border-radius: 6px;
+    font-size: 15px;
+    z-index: 99999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+/* 证书与文库卡片通用背景水印 */
+.cc-watermark-congress {
+    position: absolute;
+    top: 15px;
+    background: url("/wp-content/uploads/2026/07/congress-250.png") center / cover no-repeat;
+    background-size: 100px auto;
+    transform: translateY(-23%);
+    width: 100px;
+    height: 35px;
+    z-index: 10;
+    opacity: 0.15;
+    pointer-events: none;
+}
+.cc-watermark-logo {
+    position: absolute;
+    top: 15px;
+    background: url("/wp-content/uploads/2026/07/logo_128.png") center / cover no-repeat;
+    transform: translateY(-25%);
+    width: 35px;
+    height: 35px;
+    z-index: 10;
+    opacity: 0.6;
+    pointer-events: none;
+}

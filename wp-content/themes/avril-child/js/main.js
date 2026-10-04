@@ -58,16 +58,18 @@ function getTagName(name) { return document.getElementsByTagName(name); }
 function getAttr(e, name) { return parseFloat(e.getAttribute(name)) || 1; }
 function createTag(tag) { return document.createElement(tag); }
 function orientation(style, matches, portrait, landscape) { Object.assign(style, matches? portrait:landscape); }
-function isCopy(text) {
+function chinacongressToast(text) {
     const msg = createTag("div");
+    msg.className = "cc-toast";
     msg.textContent = text || "复制成功";
-    Object.assign(msg.style, { position: "fixed", top: "30%", left: "50%", transform: "translateX(-50%)", padding: "10px 22px", background: "rgba(0,0,0,.85)", color: "white", borderRadius: "6px", fontSize: "15px", zIndex: "99999", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", transition: "opacity .3s ease" });
     document.body.appendChild(msg);
     setTimeout(() => {
         msg.style.opacity = "0";
         setTimeout(() => msg.remove(), 300);
     }, 2500);
 }
+window.chinacongressToast = chinacongressToast;
+function isCopy(text) { chinacongressToast(text); }
 function session(url) {
     const v = window.cc_assets_ver || "1.0.2";
     return url + (cc.session ? "?sessid=" + encodeURIComponent(cc.session) + "&v=" + v : "?v=" + v);

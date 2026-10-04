@@ -142,12 +142,17 @@ if [ "${SKIP_LOCAL_RESTORE:-false}" = "false" ]; then
         LOCAL_PASS_ARG="-p${LOCAL_DB_PASS}"
     fi
 
-    # 定义 MariaDB 连接函数
-    run_db() {
-        mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}" 2>/dev/null \
-            || mariadb -u root "${LOCAL_DB_NAME}" 2>/dev/null \
-            || sudo mariadb "${LOCAL_DB_NAME}"
-    }
+    # 预先探测可用的本地数据库连接方式，避免在管道输入流中用 || 重试导致部分 SQL 丢失或错误被吞掉
+    if mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} -e "SELECT 1;" "${LOCAL_DB_NAME}" >/dev/null 2>&1; then
+        run_db() { mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}"; }
+    elif mariadb -u root -e "SELECT 1;" "${LOCAL_DB_NAME}" >/dev/null 2>&1; then
+        run_db() { mariadb -u root "${LOCAL_DB_NAME}"; }
+    elif sudo mariadb -e "SELECT 1;" "${LOCAL_DB_NAME}" >/dev/null 2>&1; then
+        run_db() { sudo mariadb "${LOCAL_DB_NAME}"; }
+    else
+        echo "❌ 无法连接到本地 MariaDB 数据库 (${LOCAL_DB_NAME})！"
+        exit 1
+    fi
 
     echo "5.3 正在将数据库 SQL 文件导入本地 MariaDB (chinacongress) ..."
     # 判断格式并流式导入 SQL

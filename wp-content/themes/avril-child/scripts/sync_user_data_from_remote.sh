@@ -60,11 +60,17 @@ if [ -s "${TEMP_DUMP}" ]; then
         LOCAL_PASS_ARG="-p${LOCAL_DB_PASS}"
     fi
 
-    run_db() {
-        mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}" 2>/dev/null \
-            || mariadb -u root ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}" 2>/dev/null \
-            || sudo mariadb "${LOCAL_DB_NAME}"
-    }
+    # 预先探测可用的本地数据库连接方式，避免在管道输入流中用 || 重试导致部分 SQL 丢失或错误被吞掉
+    if mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} -e "SELECT 1;" "${LOCAL_DB_NAME}" >/dev/null 2>&1; then
+        run_db() { mariadb -u "${LOCAL_DB_USER}" ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}"; }
+    elif mariadb -u root ${LOCAL_PASS_ARG} -e "SELECT 1;" "${LOCAL_DB_NAME}" >/dev/null 2>&1; then
+        run_db() { mariadb -u root ${LOCAL_PASS_ARG} "${LOCAL_DB_NAME}"; }
+    elif sudo mariadb -e "SELECT 1;" "${LOCAL_DB_NAME}" >/dev/null 2>&1; then
+        run_db() { sudo mariadb "${LOCAL_DB_NAME}"; }
+    else
+        echo "❌ 无法连接到本地 MariaDB 数据库 (${LOCAL_DB_NAME})！"
+        exit 1
+    fi
 
     echo "正在导入本地 MariaDB 数据库..."
     run_db < "${TEMP_DUMP}"

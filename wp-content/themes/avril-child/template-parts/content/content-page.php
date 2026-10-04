@@ -54,10 +54,15 @@
 				}
 				const text = title + (articleText ? '\n\n' + articleText : '') + '\n\n文章链接：' + window.location.href;
 				const showToast = msg => {
-					const el = Object.assign(document.createElement('div'), { textContent: msg });
-					Object.assign(el.style, { position: 'fixed', top: '30%', left: '50%', transform: 'translateX(-50%)', padding: '10px 22px', background: 'rgba(0,0,0,0.85)', color: '#fff', borderRadius: '6px', fontSize: '15px', zIndex: '99999', boxShadow: '0 4px 12px rgba(0,0,0,0.2)', transition: 'opacity 0.25s ease' });
-					document.body.appendChild(el);
-					setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 250); }, 2500);
+					if (typeof window.chinacongressToast === 'function') {
+						window.chinacongressToast(msg);
+					} else {
+						const el = document.createElement('div');
+						el.className = 'cc-toast';
+						el.textContent = msg;
+						document.body.appendChild(el);
+						setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2500);
+					}
 				};
 				if (navigator.clipboard?.writeText) {
 					navigator.clipboard.writeText(text).then(() => showToast('文章全文与链接已成功复制到剪贴板！')).catch(() => showToast('复制失败，请手动选择复制。'));

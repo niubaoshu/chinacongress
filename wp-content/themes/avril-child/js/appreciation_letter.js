@@ -1,10 +1,10 @@
 function appreciation_letter () {
     function certificate_head (num, salutation, element) {
         const right_content = createTag("span");
-        Object.assign(right_content.style, { position: 'absolute', top: '15px', right: '10px', background: 'url("'+cc.uploads+'/2026/07/congress-250.png") center center / cover no-repeat', backgroundSize: '100px auto', transform: 'translate(0%, -23%)', width: '100px', height: '35px', zIndex: '10', opacity: '0.15' });
+        right_content.className = "cc-watermark-congress";
         element.appendChild(right_content);
         const left_content = createTag("span");
-        Object.assign(left_content.style, { position: 'absolute', top: '15px', left: '10px', background: 'url("'+cc.uploads+'/2026/07/logo_128.png") center center / cover no-repeat', transform: 'translate(0%, -25%)', width: '35px', height: '35px', zIndex: '10', opacity: '0.6' });
+        left_content.className = "cc-watermark-logo";
         element.appendChild(left_content);
         const line = createTag("div");
         Object.assign(line.style, { position: 'absolute', top: '12px', left: '40px', transform: 'translate(0%, -3%)', fontSize: '18px', textAlign: 'left', width: '80%', height: '35px', zIndex: '10', color: 'rgba(0, 0, 40, 0.8)' });

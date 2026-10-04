@@ -81,12 +81,9 @@ function cc_base() {
         e.appendChild(createTag("br"));
     }
     for (const e of getTagName("img")) {
-        let link = e.getAttribute("src");
-        if (link && !(/^https?:\/\//.test(link))) {
-            if (link.startsWith("/")) { link = cc.host + link; }
-        }
-        let type = e.getAttribute("type");
+        const type = e.getAttribute("type");
         if (!type) continue;
+        const link = e.src;
         if (type === "large") {
             e.className = 'cc_image';
             e.src = link;

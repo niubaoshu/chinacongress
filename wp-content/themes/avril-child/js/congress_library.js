@@ -1,11 +1,13 @@
 function congress_library() {
     function prop(num,q){
         let s=createTag("span");
-        Object.assign(s.style,{position:'absolute',right:'50px',background:`url("${cc.uploads}/2026/07/congress-250.png") center/cover no-repeat`,backgroundSize:'100px auto',transform:'translateY(-23%)',width:'100px',height:'35px',zIndex:10,opacity:.15});
+        s.className = "cc-watermark-congress";
+        s.style.right = "50px";
         q.insertBefore(s,q.firstChild);
 
         s=createTag("span");
-        Object.assign(s.style,{position:'absolute',left:'32px',background:`url("${cc.uploads}/2026/07/logo_128.png") center/cover no-repeat`,transform:'translateY(-25%)',width:'35px',height:'35px',zIndex:10,opacity:.6});
+        s.className = "cc-watermark-logo";
+        s.style.left = "32px";
         q.insertBefore(s,q.firstChild);
 
         s=createTag("span");
