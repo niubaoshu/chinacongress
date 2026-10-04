@@ -72,16 +72,12 @@ curl -sL "https://downloads.wordpress.org/theme/avril.zip" -o "${TEMP_DIR}/avril
 unzip -q -o "${TEMP_DIR}/avril.zip" -d "${LOCAL_WEB_ROOT}/wp-content/themes/"
 echo "✅ 官方 Avril 父主题全新安装完成。"
 
-# 3. 全新从官方插件库下载安装 Clever Fox 官方组件插件并补充子主题支持
+# 3. 全新从官方插件库下载安装 Clever Fox 官方组件插件（子主题兼容已由 functions.php 原生托管）
 echo "3. 正在从 WordPress 官方插件库全新下载并安装 Clever Fox 插件..."
 mkdir -p "${LOCAL_WEB_ROOT}/wp-content/plugins"
 curl -sL "https://downloads.wordpress.org/plugin/clever-fox.zip" -o "${TEMP_DIR}/clever-fox.zip"
 unzip -q -o "${TEMP_DIR}/clever-fox.zip" -d "${LOCAL_WEB_ROOT}/wp-content/plugins/"
-
-if [ -f "${LOCAL_WEB_ROOT}/wp-content/plugins/clever-fox/clever-fox.php" ]; then
-    sed -i "s/'Avril' == \$cleverfox_theme->name/'Avril' == \$cleverfox_theme->name || 'Avril' == \$cleverfox_theme->template || 'avril' == \$cleverfox_theme->template/g" "${LOCAL_WEB_ROOT}/wp-content/plugins/clever-fox/clever-fox.php"
-fi
-echo "✅ 官方 Clever Fox 插件全新安装及子主题兼容配置完成。"
+echo "✅ 官方 Clever Fox 插件全新安装完成（子主题兼容已由子主题原生托管）。"
 
 # 4. 生成本地 wp-config.php 配置文件
 LOCAL_DB_NAME="${LOCAL_DB_NAME:-chinacongress}"

@@ -1,16 +1,28 @@
 function convenor_details() {
+    function createEllipsisSpan(content, width, paddingLeft) {
+        const span = createTag("span");
+        if (typeof content === "string") {
+            span.innerHTML = content;
+        } else if (content) {
+            span.appendChild(content);
+        }
+        Object.assign(span.style, {
+            paddingLeft: paddingLeft || '0px',
+            fontSize: '16px',
+            width: width,
+            display: 'inline-block',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis'
+        });
+        return span;
+    }
     function info(elm, href, opt, words) {
         elm.innerHTML = "";
-        const option = createTag("span");
-        option.innerHTML = opt;
-        Object.assign(option.style, { paddingLeft: '5px', fontSize: '16px', width: '20%', display: 'inline-block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' });
-        elm.appendChild(option);
+        elm.appendChild(createEllipsisSpan(opt, '20%', '5px'));
         const a = createTag("a");
-        const text = createTag("span");
-        Object.assign(text.style, { width: '70%', display: 'inline-block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' });
         Object.assign(a, { href: href, target: '_blank', title: opt + words, innerHTML: words, className: 'contact' });
-        text.appendChild(a);
-        elm.appendChild(text);
+        elm.appendChild(createEllipsisSpan(a, '70%', '0px'));
         const bframe = createTag("span");
         const button = createTag("button");
         button.setAttribute("link", words.trim());
@@ -23,21 +35,14 @@ function convenor_details() {
     function file(elm, opt, words) {
         elm.innerHTML = "";
         const a = createTag("a");
-        const text = createTag("span");
-        Object.assign(text.style, { paddingLeft: '15px', width: '70%', fontSize: '16px', display: 'inline-block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' });
         Object.assign(a, { href: words, target: '_blank', title: opt + words, innerHTML: "文件： " + opt.substring(0, opt.length - 2), className: 'contact' });
-        text.appendChild(a);
-        elm.appendChild(text);
+        elm.appendChild(createEllipsisSpan(a, '70%', '15px'));
     }
-    function note(elm, href, opt, words) {
+    function note(elm, opt, words) {
         elm.innerHTML = "";
-        const option = createTag("span");
-        Object.assign(option.style, { paddingLeft: '5px', fontSize: '16px', width: '20%', display: 'inline-block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' });
-        option.innerHTML = opt;
-        elm.appendChild(option);
-        const item = createTag("span");
-        Object.assign(item, { title: opt + words, innerHTML: words });
-        Object.assign(item.style, { fontSize: '16px', width: '70%', display: 'inline-block', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' });
+        elm.appendChild(createEllipsisSpan(opt, '20%', '5px'));
+        const item = createEllipsisSpan(words, '70%', '0px');
+        item.title = opt + words;
         elm.appendChild(item);
     }
     function has(words, domain) {
@@ -64,7 +69,7 @@ function convenor_details() {
     }
     const details = {
         convenor: {
-            func(elm, opt, words) { note(elm, null, opt, words); }
+            func(elm, opt, words) { note(elm, opt, words); }
         },
         tg_group: {
             func(elm, opt, words) { info(elm, "https://t.me/" + words.replace(/^@/, ""), opt, words); }
