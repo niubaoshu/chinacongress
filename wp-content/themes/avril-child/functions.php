@@ -14,26 +14,9 @@
  * ==============================================================================
  */
 
-/**
- * 0. 开启子主题 Gettext 国际化 (i18n) 语言包支持与 Polylang 自定义字符串注册
- */
-add_action( 'after_setup_theme', function() {
-    load_child_theme_textdomain( 'avril-child', get_stylesheet_directory() . '/languages' );
-} );
-
-// 注册子主题常驻界面字符串至 Polylang 翻译列表 (若激活 Polylang)
-add_action( 'init', function() {
-    if ( function_exists( 'pll_register_string' ) ) {
-        pll_register_string( 'Header Legal Counsel', '法律顾问 Counsel', 'avril-child' );
-        pll_register_string( 'Header Email Us', 'Email Us', 'avril-child' );
-        pll_register_string( 'Header Zelle Support', 'Zelle 捐助', 'avril-child' );
-        pll_register_string( 'Read More Button', '阅读全文', 'avril-child' );
-        pll_register_string( 'Search Field Placeholder', '搜索...', 'avril-child' );
-        pll_register_string( 'Search Button Text', '搜索', 'avril-child' );
-        pll_register_string( 'Search Sidebar Title', '站内搜索', 'avril-child' );
-        pll_register_string( 'YouTube Channel Subscribe', 'YouTube 频道官方订阅', 'avril-child' );
-    }
-} );
+// ==============================================================================
+// 1. 样式与脚本加载
+// ==============================================================================
 
 /**
  * 1. 加载父主题样式、子主题样式及 FontAwesome 4.6.3 本地矢量图标兜底库
@@ -144,7 +127,7 @@ add_filter( 'cron_schedules', 'chinacongress_add_five_minute_cron_interval' );
  * 远程 JSON 请求通用辅助函数
  */
 function chinacongress_fetch_json( $url ) {
-	$response = wp_remote_get( $url, array( 'timeout' => 5, 'sslverify' => false ) );
+	$response = wp_remote_get( $url, array( 'timeout' => 5, 'sslverify' => true ) );
 	if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
 		return json_decode( wp_remote_retrieve_body( $response ), true );
 	}
@@ -170,16 +153,12 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 		$data    = chinacongress_fetch_json( 'https://reg.congresscenter.org/api/public/latest_members.json' );
 		$members = ( is_array( $data ) && ! empty( $data['members'] ) && is_array( $data['members'] ) )
 			? array_slice( $data['members'], 0, 5 )
-			: array(
-				array( 'province' => '江蘇', 'display_name' => '***7E6' ),
-				array( 'province' => '廣東', 'display_name' => '***X9K' ),
-				array( 'province' => '北京', 'display_name' => '***JT4' ),
-				array( 'province' => '北京', 'display_name' => '***JWP' ),
-				array( 'province' => '湖南', 'display_name' => '***FRQ' ),
-			);
-		set_transient( 'chinacongress_latest_mainland_members', $members, DAY_IN_SECONDS );
+			: array();
+		if ( ! empty( $members ) ) {
+			set_transient( 'chinacongress_latest_mainland_members', $members, DAY_IN_SECONDS );
+		}
 	}
-	return $members;
+	return is_array( $members ) ? $members : array();
 }
 
 /**
@@ -210,11 +189,7 @@ function chinacongress_sync_overseas_voter_data() {
  */
 function chinacongress_get_latest_overseas_members() {
 	$members = get_transient( 'chinacongress_latest_overseas_members' );
-	return ( ! empty( $members ) && is_array( $members ) ) ? $members : array(
-		array( 'residence' => '德国', 'name' => 'Z**' ),
-		array( 'residence' => '德国', 'name' => 'L**' ),
-		array( 'residence' => '其他', 'name' => '蒋**' ),
-	);
+	return ( ! empty( $members ) && is_array( $members ) ) ? $members : array();
 }
 
 /**
@@ -369,7 +344,20 @@ function avril_lite_cta() {
 // 动态智能提取文章第一张图 / 嵌入视频封面 / 规则兜底 & 全网社交分享 OG 卡片自动输出
 // ==============================================================================
 
-// 封装统一的纯文本摘要提取工具函数 (带运行期内存缓存，剥离 HTML 标签、多余换行缩紧、中文截断)
+/**
+ * 智能提取文本或链接中的 11 位 YouTube 视频 ID
+ */
+function chinacongress_extract_youtube_id( $text ) {
+	if ( empty( $text ) ) {
+		return '';
+	}
+	if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i', $text, $matches ) ) {
+		return $matches[1];
+	}
+	return '';
+}
+
+// 封装统一的纯文本摘要提取工具函数 (带运行期内存缓存，剥离短代码与 HTML 标签、多余换行缩紧、中文截断)
 function chinacongress_get_clean_excerpt( $length = 140, $post_id = null ) {
 	static $excerpt_cache = array();
 	$post_id = $post_id ?: get_the_ID();
@@ -384,7 +372,7 @@ function chinacongress_get_clean_excerpt( $length = 140, $post_id = null ) {
 	if ( ! $post || empty( $post->post_content ) ) {
 		return '';
 	}
-	$raw_content = wp_strip_all_tags( $post->post_content );
+	$raw_content = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
 	$clean_text  = preg_replace( '/\s+/', ' ', $raw_content );
 	$excerpt     = mb_strimwidth( trim( $clean_text ), 0, $length, '...' );
 	$excerpt_cache[ $cache_key ] = $excerpt;
@@ -441,8 +429,8 @@ function chinacongress_get_first_image_url( $post_id = null ) {
 		if ( $post && ! empty( $post->post_content ) ) {
 			if ( preg_match( '/<img.+?src=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $m ) ) {
 				$url = $m[1];
-			} elseif ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $post->post_content, $yt_m ) ) {
-				$url = 'https://img.youtube.com/vi/' . $yt_m[1] . '/hqdefault.jpg';
+			} elseif ( $yt_id = chinacongress_extract_youtube_id( $post->post_content ) ) {
+				$url = 'https://img.youtube.com/vi/' . $yt_id . '/hqdefault.jpg';
 			} elseif ( preg_match( '/<video.+?poster=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $v_m ) ) {
 				$url = $v_m[1];
 			}
@@ -509,7 +497,6 @@ function chinacongress_get_og_image_data( $post_id = null ) {
 	if ( empty( $img_url ) ) {
 		$img_url = chinacongress_get_first_image_url( $post_id );
 	}
-	$img_url = chinacongress_normalize_media_url( $img_url );
 
 	// 仅当未从媒体库获取到宽高时，才尝试读取本地文件尺寸兜底
 	if ( ( $width === 0 || $height === 0 ) && ! empty( $img_url ) ) {
@@ -567,8 +554,7 @@ function chinacongress_add_social_og_tags() {
         $url         = esc_url( get_permalink() );
         $og_data     = chinacongress_get_og_image_data( $post->ID );
         $image_url   = esc_url( $og_data['url'] );
-        $raw_desc    = wp_strip_all_tags( $post->post_content );
-        $description = esc_attr( mb_strimwidth( preg_replace( '/\s+/', ' ', $raw_desc ), 0, 120, '...' ) );
+        $description = esc_attr( chinacongress_get_clean_excerpt( 120, $post->ID ) );
 
         echo "\n<!-- ChinaCongress Social Open Graph & Twitter Cards -->\n";
         echo '<meta property="og:type" content="article" />' . "\n";
@@ -676,14 +662,10 @@ function chinacongress_theme_mods_fallback( $mods ) {
             $mods = array();
         }
         foreach ( $parent_mods as $key => $val ) {
-            if ( ! isset( $mods[ $key ] ) || empty( $mods[ $key ] ) ) {
+            if ( ! isset( $mods[ $key ] ) ) {
                 $mods[ $key ] = $val;
             }
         }
-        $mods['hs_slider']  = '1';
-        $mods['hs_feature'] = '1';
-        $mods['hs_service'] = '1';
-        $mods['hs_blog']    = '1';
     }
     return $mods;
 }
@@ -725,7 +707,7 @@ function chinacongress_above_header_custom() {
             'icon'    => get_theme_mod( 'tlh_mobile_icon', 'fa-usd' ),
             'title'   => get_theme_mod( 'tlh_mobile_title', 'Zelle 捐助' ),
             'sub'     => get_theme_mod( 'tlh_mobile_sbtitle', 'chinacongress' ),
-            'url'     => 'javascript:void(0)',
+            'url'     => '#',
             'target'  => '',
         ),
     );
@@ -743,7 +725,7 @@ function chinacongress_above_header_custom() {
                                         <?php
                                         $icons_data = json_decode( $avril_social_icons );
                                         if ( ! empty( $icons_data ) && is_array( $icons_data ) ) {
-                                            foreach ( $icons_data as $item ) {    
+                                             foreach ( $icons_data as $item ) {    
                                                 $icon = ! empty( $item->icon_value ) ? apply_filters( 'avril_translate_single_string', $item->icon_value, 'Header section' ) : ''; 
                                                 $link = ! empty( $item->link ) ? apply_filters( 'avril_translate_single_string', $item->link, 'Header section' ) : '';
                                                 ?>
@@ -761,7 +743,7 @@ function chinacongress_above_header_custom() {
                                 <aside class="widget widget-contact <?php echo esc_attr( $c['class'] ); ?>">
                                     <div class="contact-area">
                                         <div class="contact-icon"><i class="fa <?php echo esc_attr( $c['icon'] ); ?>"></i></div>
-                                        <a href="<?php echo esc_url( $c['url'] ); ?>" <?php echo $c['target'] ? 'target="' . esc_attr( $c['target'] ) . '"' : ''; ?> class="contact-info">
+                                        <a href="<?php echo esc_url( $c['url'] ); ?>" <?php echo ( '#' === $c['url'] ) ? 'onclick="return false;"' : ''; ?> <?php echo $c['target'] ? 'target="' . esc_attr( $c['target'] ) . '"' : ''; ?> class="contact-info">
                                             <span class="text"><?php echo esc_html( $c['title'] ); ?></span>
                                             <span class="title"><?php echo esc_html( $c['sub'] ); ?></span>
                                         </a>
@@ -826,9 +808,9 @@ function chinacongress_fix_features_repeater_controls( $wp_customize ) {
 }
 add_action( 'customize_register', 'chinacongress_fix_features_repeater_controls', 100 );
 
-// 允許 SVG 上傳（僅限brook）
+// 允许管理员上传 SVG 矢量图资源
 add_filter( 'upload_mimes', function ( $mimes ) {
-    if ( get_current_user_id() === 12 ) {   // 換成實際 ID
+    if ( current_user_can( 'manage_options' ) ) {
         $mimes['svg'] = 'image/svg+xml';
     }
     return $mimes;
@@ -950,9 +932,8 @@ function chinacongress_auto_embed_youtube_players( $content ) {
 	foreach ( $matches as $item ) {
 		$full_a_tag = $item[0];
 		if ( preg_match( '/href=[\'"]([^\'"]+)[\'"]/i', $full_a_tag, $href_match ) ) {
-			$url = $href_match[1];
-			if ( preg_match( '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i', $url, $yt_matches ) ) {
-				$video_id = $yt_matches[1];
+			$video_id = chinacongress_extract_youtube_id( $href_match[1] );
+			if ( $video_id ) {
 				$video_boxes[] = '<div class="cc-video-embed-wrap" style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:10px; margin:20px 0; box-shadow:0 4px 15px rgba(0,0,0,0.1);">'
 							   . '<iframe src="https://www.youtube.com/embed/' . esc_attr( $video_id ) . '" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>'
 							   . '</div>';
@@ -1034,9 +1015,11 @@ function chinacongress_cloudflare_edge_cache_headers() {
 	// stale-while-revalidate=600: 缓存过期时，Cloudflare 秒出旧副本并在后台静默异步刷新
 	header( 'Cache-Control: public, max-age=60, s-maxage=3600, stale-while-revalidate=600' );
 
-	// 2. HTTP 103 Early Hints 支持：提前向 Cloudflare 推送关键静态资产 Link 响应头
-	$style_url = get_stylesheet_directory_uri() . '/style.css';
-	$fa_url    = get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css';
+	// 2. HTTP 103 Early Hints 支持：提前向 Cloudflare 推送关键静态资产 Link 响应头 (与 wp_enqueue 版本参数对齐)
+	$child_css_file = get_stylesheet_directory() . '/style.css';
+	$child_css_ver  = file_exists( $child_css_file ) ? filemtime( $child_css_file ) : wp_get_theme()->get( 'Version' );
+	$style_url      = add_query_arg( 'ver', $child_css_ver, get_stylesheet_directory_uri() . '/style.css' );
+	$fa_url         = add_query_arg( 'ver', '4.6.3', get_stylesheet_directory_uri() . '/assets/css/fonts/font-awesome/css/font-awesome.min.css' );
 	header( 'Link: <' . esc_url_raw( $style_url ) . '>; rel=preload; as=style', false );
 	header( 'Link: <' . esc_url_raw( $fa_url ) . '>; rel=preload; as=style', false );
 

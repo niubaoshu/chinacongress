@@ -1,6 +1,6 @@
 <?php
 /**
- * The template for displaying archive pages.
+ * The template for displaying single posts.
  *
  * @link https://codex.wordpress.org/Template_Hierarchy
  *
@@ -18,8 +18,6 @@ get_header();
 						<?php get_template_part('template-parts/content/content','page'); ?> 
 					<?php endwhile; ?>
 				<?php endif; ?>
-				
-				<?php // // comments_template( '', true ); // show comments  ?>
 			</div>
 			<?php  get_sidebar();  ?>
 		</div>

@@ -26,13 +26,13 @@ if ( $avril_hs_breadcrumb == '1' ) {
                             elseif ( is_year() ) :
                                 printf( __( 'Yearly Archives: %s', 'avril' ), get_the_date( 'Y' ) );
                             elseif ( is_category() ) :
-                                printf( __( 'Category Archives: %s', 'avril' ), single_cat_title( '', false ) );
+                                single_cat_title();
                             elseif ( is_tag() ) :
-                                printf( __( 'Tag Archives: %s', 'avril' ), single_tag_title( '', false ) );
+                                single_tag_title();
                             elseif ( is_404() ) :
-                                printf( __( 'Error 404', 'avril' ) );
+                                esc_html_e( '404 - 页面未找到', 'avril-child' );
                             elseif ( is_author() ) :
-                                printf( __( 'Author: %s', 'avril' ), get_the_author() );        
+                                echo esc_html( get_the_author() );        
                             else :
                                 the_title();
                             endif;

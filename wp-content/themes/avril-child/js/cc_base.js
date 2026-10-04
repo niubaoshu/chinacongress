@@ -57,6 +57,7 @@ function cc_base() {
         if (!type) continue;
         const text = e.textContent;
         const href = e.getAttribute("href");
+        if (!href) continue;
         const isDark = e.hasAttribute("dark");
         const short = href.startsWith("/");
         Object.assign(e, {

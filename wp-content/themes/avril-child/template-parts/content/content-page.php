@@ -10,7 +10,7 @@
 		</a>
 		<div class="post-meta imu">
 			<span class="post-list">
-			   <ul class="post-categories"><li><a href="<?php echo esc_url(get_permalink()); ?>"><?php the_category(' '); ?></a></li></ul>
+			   <ul class="post-categories"><?php the_category(' '); ?></ul>
 			</span>
 		</div>
 	</figure>
@@ -25,18 +25,11 @@
 			
 			the_title('<h5 class="post-title">', '</h5>' );
 			
-			the_content( 
-					sprintf( 
-						__( 'Read More', 'avril' ), 
-						'<span class="screen-reader-text">  '.esc_html(get_the_title()).'</span>' 
-					) 
-				);
+			the_content( __( 'Read More', 'avril-child' ) );
 
 			// 社交分享摘要提取 (标题 + 140字以内导读，防止分享 URL 超长导致社交平台报错)
 			$clean_title = html_entity_decode( get_the_title(), ENT_QUOTES, 'UTF-8' );
-			$raw_excerpt = has_excerpt() ? get_the_excerpt() : wp_strip_all_tags( get_the_content() );
-			$clean_desc  = html_entity_decode( wp_strip_all_tags( $raw_excerpt ), ENT_QUOTES, 'UTF-8' );
-			$short_desc  = mb_strimwidth( preg_replace( '/\s+/', ' ', $clean_desc ), 0, 140, '...' );
+			$short_desc  = html_entity_decode( chinacongress_get_clean_excerpt( 140 ), ENT_QUOTES, 'UTF-8' );
 			$share_text  = $clean_title . ( ! empty( $short_desc ) ? "\n\n" . $short_desc : '' );
 			?>
 			<!-- 统一文章底部社交分享组件 (包含 Telegram, X, Facebook, WhatsApp & 📄 复制文本) -->

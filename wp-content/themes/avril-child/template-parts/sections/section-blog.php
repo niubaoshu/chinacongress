@@ -79,8 +79,4 @@ if($hs_blog == '1') {
             </div>
         </div>
     </section>
-<?php } } endif; 
-	if ( function_exists( 'avril_home_blog' ) ) {
-		$avril_section_priority = apply_filters( 'avril_section_priority', 15, 'avril_home_blog' );
-		add_action( 'avril_sections', 'avril_home_blog', absint( $avril_section_priority ) );
-	}
+<?php } } endif;

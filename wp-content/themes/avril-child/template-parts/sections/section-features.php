@@ -97,8 +97,4 @@ if ( $avril_hs_feature == '1' ) {
     </section>
 	
 <?php	
-	}} endif; 
-	if ( function_exists( 'avril_lite_features' ) ) {
-		$cleverfox_section_priority = apply_filters( 'avril_section_priority', 14, 'avril_lite_features' );
-		add_action( 'avril_sections', 'avril_lite_features', absint( $cleverfox_section_priority ) );
-	}
+	}} endif;

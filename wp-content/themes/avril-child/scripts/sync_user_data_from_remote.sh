@@ -11,8 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_HOST="Chinacongress"
 REMOTE_PATH="/var/www/chinacongress"
 LOCAL_WEB_PATH="${LOCAL_WEB_PATH:-/srv/http/my_site_name}"
-if [ ! -d "${LOCAL_WEB_PATH}" ] && [ -d "$(cd "${SCRIPT_DIR}/../.." && pwd)" ]; then
-    LOCAL_WEB_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+if [ ! -d "${LOCAL_WEB_PATH}" ] && [ -d "$(cd "${SCRIPT_DIR}/../../../.." && pwd)" ]; then
+    LOCAL_WEB_PATH="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 fi
 
 echo "=========================================="
