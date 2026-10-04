@@ -291,58 +291,24 @@ function avril_lite_cta() {
 			</div>
 		</div>
 	</section>
-	<?php endforeach; ?>
+	<?php endforeach;
 
-	<script>
-	(function() {
-		function animate(el, end) {
-			let start = 100, t0 = null, dur = 1000;
-			function step(t) {
-				if (!t0) t0 = t;
-				let p = Math.min((t - t0) / dur, 1);
-				el.innerText = Math.floor(start + (end - start) * p);
-				if (p < 1) requestAnimationFrame(step);
-			}
-			requestAnimationFrame(step);
-		}
-		function observe(id, val) {
-			let el = document.getElementById(id);
-			if (!el) return;
-			let io = new IntersectionObserver((entries, obs) => {
-				if (entries[0].isIntersecting) {
-					obs.disconnect();
-					animate(el, val);
-				}
-			}, { threshold: 0.5 });
-			io.observe(el);
-		}
-		function initTicker(tickerId, listClass) {
-			let ticker = document.getElementById(tickerId);
-			if (!ticker) return;
-			let list = ticker.querySelector('.' + listClass);
-			if (!list || list.children.length <= 1) return;
-			let idx = 0, hover = false;
-			ticker.onmouseenter = () => hover = true;
-			ticker.onmouseleave = () => hover = false;
-			setInterval(() => {
-				if (hover) return;
-				list.style.opacity = '0';
-				list.style.transform = 'translateY(-3px)';
-				setTimeout(() => {
-					idx = (idx + 1) % list.children.length;
-					list.style.top = -(idx * (list.children[0].offsetHeight || 36)) + 'px';
-					list.style.transform = 'translateY(3px)';
-					setTimeout(() => { list.style.opacity = '1'; list.style.transform = 'translateY(0)'; }, 50);
-				}, 250);
-			}, 3500);
-		}
-		observe("number_overseas", <?php echo $overseas_count; ?>);
-		observe("number_mainland", <?php echo $mainland_count; ?>);
-		initTicker('mainland_members_ticker', 'mainland-members-list');
-		initTicker('overseas_members_ticker', 'overseas-members-list');
-	})();
-	</script>
-	<?php
+	// 注册并载入走马灯与数字统计守护脚本（静态化可缓存）
+	wp_enqueue_script(
+		'cc-cta-ticker',
+		get_stylesheet_directory_uri() . '/js/cc_cta_ticker.js',
+		array(),
+		file_exists( get_stylesheet_directory() . '/js/cc_cta_ticker.js' ) ? filemtime( get_stylesheet_directory() . '/js/cc_cta_ticker.js' ) : wp_get_theme()->get( 'Version' ),
+		true
+	);
+	wp_localize_script(
+		'cc-cta-ticker',
+		'ccCtaData',
+		array(
+			'overseas' => (int) $overseas_count,
+			'mainland' => (int) $mainland_count,
+		)
+	);
 }
 
 // ==============================================================================
@@ -1110,57 +1076,16 @@ function chinacongress_video_player_footer_script() {
 	if ( is_admin() ) {
 		return;
 	}
-	?>
-	<script id="cc-video-player-init">
-	(function() {
-		function initVideos() {
-			var videos = document.querySelectorAll('video');
-			if (!videos || videos.length === 0) return;
-
-			videos.forEach(function(video) {
-				// 确保有基础控制条
-				video.controls = true;
-				video.playsInline = true;
-
-				// 互斥播放：当一个视频播放时，暂停其他正在播放的视频
-				if (!video.dataset.ccMutualInit) {
-					video.dataset.ccMutualInit = "1";
-					video.addEventListener('play', function() {
-						document.querySelectorAll('video').forEach(function(other) {
-							if (other !== video && !other.paused) {
-								other.pause();
-							}
-						});
-					});
-				}
-
-				// 自动包装与 caption 处理（若未包装）
-				if (!video.parentElement.classList.contains('cc_video_container') && !video.parentElement.classList.contains('wp-block-video')) {
-					var container = document.createElement('div');
-					container.className = 'cc_video_container';
-					video.parentNode.insertBefore(container, video);
-					container.appendChild(video);
-
-					var caption = video.getAttribute('caption');
-					if (caption && !container.querySelector('.cc_video_caption')) {
-						var capDiv = document.createElement('div');
-						capDiv.className = 'cc_video_caption';
-						capDiv.textContent = caption;
-						container.appendChild(capDiv);
-					}
-				}
-			});
-		}
-
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', initVideos);
-		} else {
-			initVideos();
-		}
-	})();
-	</script>
-	<?php
+	$video_js_file = get_stylesheet_directory() . '/js/cc_video_player.js';
+	$video_js_ver  = file_exists( $video_js_file ) ? filemtime( $video_js_file ) : wp_get_theme()->get( 'Version' );
+	wp_enqueue_script(
+		'cc-video-player',
+		get_stylesheet_directory_uri() . '/js/cc_video_player.js',
+		array(),
+		$video_js_ver,
+		true
+	);
 }
-add_action( 'wp_footer', 'chinacongress_video_player_footer_script', 99 );
+add_action( 'wp_enqueue_scripts', 'chinacongress_video_player_footer_script', 30 );
 
 
