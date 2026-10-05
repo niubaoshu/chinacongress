@@ -10,14 +10,11 @@ $current_post_id = is_single() ? get_the_ID() : 0;
 $sticky_posts    = get_option( 'sticky_posts' );
 $exclude_ids     = array_filter( array_merge( (array) $current_post_id, (array) $sticky_posts ) );
 
-// 读取后台 Customizer 设置的文章篇数（带大于0防呆兜底）
-$blog_display_num = get_theme_mod( 'blog_display_num', '3' );
-$posts_per_page   = absint( $blog_display_num ) > 0 ? absint( $blog_display_num ) : 3;
-
+// 固定展示 4 篇最新发布文章（不再读取数据库配置）
 $latest_args = array(
 	'post_type'      => 'post',
 	'post_status'    => 'publish',
-	'posts_per_page' => $posts_per_page,
+	'posts_per_page' => 4,
 	'post__not_in'   => $exclude_ids,
 	'no_found_rows'  => true,
 );
