@@ -71,7 +71,7 @@ WordPress 采用事件驱动的插件化架构，主要通过两类**钩子 (Hoo
 
 ```php
 // 示例：在前端加载脚本样式
-add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 20 );
+add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
 
 // 示例：在 <head> 自动插入 Open Graph 社交元数据
 add_action( 'wp_head', 'chinacongress_add_social_og_tags', 5 );
@@ -107,7 +107,7 @@ add_filter( string $hook_name, callable $callback_to_run, int $priority = 10, in
 | :---: | :--- | :---: | :---: | :---: | :--- |
 | **`$1`** | **`$hook_name`** | `string` | **必需** | 无 | **钩子名称**。指定要监听的目标事件或过滤器名称（如 `'wp_head'`, `'the_content'`, `'pre_get_posts'`）。 |
 | **`$2`** | **`$callback_to_run`** | `callable` | **必需** | 无 | **回调函数**。当钩子被触发时要调用的函数。支持字符串函数名 `'my_function'`、匿名闭包 `function(){}`，或类方法 `array($this, 'my_method')`。 |
-| **`$3`** | **`$priority`** | `int` | *可选* | `10` | **执行优先级**。控制绑定到同一个钩子上的多个回调函数的执行顺序。<br>• 数字**越小**，越早执行（如 `1` 先于 `10`）<br>• 数字**越大**，越晚/靠后执行（如 `20` 或 `99` 在后面执行，常用于覆盖父主题逻辑）。 |
+| **`$3`** | **`$priority`** | `int` | *可选* | `10` | **执行优先级**。控制绑定到同一个钩子上的多个回调函数的执行顺序。<br>• 数字**越小**，越早执行（如 `1` 先于 `10`）<br>• 数字**越大**，越晚/靠后执行（如 `99` 在最后执行，常用于覆盖父主题逻辑）。 |
 | **`$4`** | **`$accepted_args`** | `int` | *可选* | `1` | **传递参数个数**。指定传递给回调函数的形参个数。必须与回调函数实际定义的形参数量相匹配。 |
 
 ---
@@ -124,8 +124,8 @@ add_filter( string $hook_name, callable $callback_to_run, int $priority = 10, in
 #### 💡 典型代码示例
 
 ```php
-// 示例 1：add_action - 使用第 3 参数 priority = 20 确保在父主题之后加载
-add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 20 );
+// 示例 1：add_action - 使用第 3 参数 priority = 99 确保最晚加载
+add_action( 'wp_enqueue_scripts', 'avril_child_enqueue_styles', 99 );
 
 // 示例 2：add_filter - 使用第 4 参数 accepted_args = 5 接收 5 个传递参数
 add_filter( 'post_thumbnail_html', 'chinacongress_auto_first_image_html', 10, 5 );
@@ -155,17 +155,15 @@ $members = get_transient( 'chinacongress_latest_mainland_members' );
 ```
 
 ### 2. WP-Cron 后台异步同步机制
-为了达到**首屏 0 毫秒延时**，数据同步工作不在访客请求页面时触发，而是由 WP-Cron 在后台静默执行：
-- **海外院数据**：通过 `every_five_minutes` 定时事件每 5 分钟执行一次后台静默刷新；
-- **大陆院数据**：通过 `daily` 定时事件每天执行一次后台全量同步与 Transient 缓存更新。
+为了达到**首屏 0 毫秒延时**，数据同步工作不在访客请求页面时触发，而是由 WP-Cron 在后台每 5 分钟静默执行：
 
 ```text
-[服务器后台 WP-Cron] ──定时事件触发──► 请求第三方平台公开 API
-                                           │
-                                           ▼
-                                   写入数据库 / Transient 缓存
-                                           │
-[前台访客访问] ◄────── 0 毫秒直接读取 ────┘
+[服务器后台 WP-Cron] ──每 5 分钟触发──► 请求 https://reg.congresscenter.org/api/...
+                                             │
+                                             ▼
+                                     写入数据库 / Transient 缓存
+                                             │
+[前台访客访问] ◄────── 0 毫秒直接读取 ──────┘
 ```
 
 ---
@@ -179,7 +177,7 @@ $members = get_transient( 'chinacongress_latest_mainland_members' );
    - 居中展示“最新登记选民：”，带 3.5 秒平滑渐变（Fade & Slide）向上无缝走马灯。
 
 2. **智能媒体抓取引擎 (`chinacongress_get_first_image_url()`)**
-   - 提取顺序：文章特色图片 (Featured Image) ➔ 正文第一张 `<img src>` ➔ YouTube 高清封面 (`hqdefault`) ➔ `<video poster>` ➔ 规则 Logo 兜底。
+   - 提取顺序：文章特色图片 (Featured Image) ➔ 正文第一张 `<img src>` ➔ YouTube 1280x720 封面 ➔ `<video poster>` ➔ 规则 Logo 兜底。
 
 3. **社交分享与全文章节一键复制 (`content-page.php`)**
    - 整合 Telegram, X (Twitter), Facebook, WhatsApp 分享。

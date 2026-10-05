@@ -9,10 +9,20 @@
 
 ```text
 public_html/ (Git 仓库根目录)
-├── .gitignore                          # Git 忽略配置（仅追踪 README.md、API_ENDPOINTS.md 与 avril-child）
+├── .gitignore                          # Git 忽略配置（仅追踪子主题与自主研发插件）
 ├── README.md                           # 本项目开发者与运维指南文档
 ├── API_ENDPOINTS.md                    # 外部第三方平台 API 接口集成文档
 ├── wp-content/
+│   ├── plugins/                        # 自主研发插件集（Git 核心追踪项目）
+│   │   ├── cc-assets/                  # CC Assets 前端资产按需加载插件 (<!-- cc:assets --> 自动载入 main.js)
+│   │   │   └── cc-assets.php
+│   │   └── cc-footer-credits/          # 中國議會 — 文章署名（含圖標）古腾堡动态区块插件
+│   │       ├── cc-footer-credits.php   # 插件核心注册与设置页
+│   │       ├── render.php              # 前台 HTML 动态渲染与样式生成
+│   │       ├── parse.php               # 名单库数据结构解析与字段清洗
+│   │       ├── editor.js               # 原生 JS 古腾堡可视化编辑区块逻辑
+│   │       ├── editor.css              # 编辑器专属控件样式
+│   │       └── style.css               # 前台署名与图标响应式样式表
 │   └── themes/
 │       └── avril-child/                # 二次开发子主题（Git 核心追踪项目）
 │           ├── VIDEO_GUIDE.md          # 🎬 文章内嵌活动短视频使用与排版指南
@@ -33,7 +43,8 @@ public_html/ (Git 仓库根目录)
 │               ├── restore_full_mirror_localhost.sh  # 一键本地镜像全量复原脚本
 │               ├── sync_user_data_from_remote.sh     # 一键从线上同步纯用户数据至本地
 │               ├── backup_user_data.sh               # 一键打包备份线上或本地数据 SQL+Uploads
-│               ├── sync_custom_code.sh               # 一键同步/部署子主题代码至本地或生产服务器
+│               ├── sync_custom_code.sh               # 一键同步/部署子主题与自主插件代码至本地或生产服务器
+│               ├── sync_code_from_remote.sh          # 一键从线上拉取最新代码（子主题+自主插件）回本地
 │               └── clean_localhost.sh                # 一键清空本地开发环境
 ```
 
@@ -64,9 +75,10 @@ public_html/ (Git 仓库根目录)
   bash wp-content/themes/avril-child/scripts/backup_user_data.sh
   ```
 
-### 4. `sync_custom_code.sh`（一键同步/部署子主题代码）
-- **功能**：将本地 Git 仓库中的 `avril-child` 子主题代码更新部署到本地 Web 目录或线上生产服务器。
+### 4. `sync_custom_code.sh`（一键同步/部署子主题与自主插件代码）
+- **功能**：将本地 Git 仓库中的 `avril-child` 子主题与自主研发插件（`cc-assets`, `cc-footer-credits`）代码同步部署到本地 Web 目录或线上生产服务器。
 - **安全机制**：
+  - 代码安全性拦截：部署前自动执行全站 PHP 语法 Lint 检测（`php -l`），一旦发现语法错误即刻中断部署。
   - 线上部署限制：强制校验当前 Git 分支，必须在 `main` 主线分支且工作区干净时才允许向生产环境部署。
   - 运维隔离：向线上生产服务器部署时，自动添加 `--exclude='scripts'`，绝不上推本地运维脚本。
 - **用法**：
@@ -78,12 +90,41 @@ public_html/ (Git 仓库根目录)
   bash wp-content/themes/avril-child/scripts/sync_custom_code.sh production
   ```
 
-### 5. `clean_localhost.sh`（一键清空本地环境）
+### 5. `sync_code_from_remote.sh`（一键从线上拉取最新代码到本地）
+- **功能**：遵循「Remote-First」原则，从生产服务器反向同步最新的子主题与自主研发插件源码到本地 Git 工作区。
+- **用法**：
+  ```bash
+  bash wp-content/themes/avril-child/scripts/sync_code_from_remote.sh
+  ```
+
+### 6. `clean_localhost.sh`（一键清空本地环境）
 - **功能**：一键清理本地开发测试目录（`/srv/http/my_site_name`）并删除本地 MariaDB 中的数据库与用户，还原干净系统。
 - **用法**：
   ```bash
   bash wp-content/themes/avril-child/scripts/clean_localhost.sh
   ```
+
+---
+
+## 🧩 自主研发 WordPress 插件说明
+
+本项目除前端子主题外，还通过 Git 集中版本控制托管了本站自研的核心 WordPress 插件：
+
+### 1. `cc-assets`（前端资产按需加载器）
+- **路径**：`wp-content/plugins/cc-assets/cc-assets.php`
+- **功能特性**：
+  - 采用 HTML 注释标记按需加载：当文章内容包含 `<!-- cc:assets -->` 时，自动排队载入子主题的 `js/main.js`；
+  - 避免传统 Shortcode 泄露：因 SEO / OpenGraph 等元数据生成会剥离或直读原文，HTML 注释在任何情况下均不会污染页面摘要或社交分享卡片；
+  - 自动缓存版本控制：自动探测子主题 `js/*.js` 与 `css/*.css` 的最大 `mtime` 作为快取版本参数，文件修改即刻全站生效，无需手动 bump 版本号。
+
+### 2. `cc-footer-credits`（中國議會 — 文章署名含圖標）
+- **路径**：`wp-content/plugins/cc-footer-credits/`
+- **功能特性**：
+  - **古腾堡原生动态区块 (`cc/footer-credits`)**：每篇文章独立署名，无需 Node/Webpack 构建，原生 JS 零依赖直接运行；
+  - **后台名单集中管控**：提供「设定 ➔ 文章署名名单」管理页面，名单库分为「人员」、「角色」、「图标」三大类，每行一笔、以 `|` 管道符分隔；
+  - **单点维护、全站联动**：文章仅存储人员 ID 与角色 Key，姓名、个人主页网址、职务与社交图标等数据均来自名单库。只需修改后台名单库一处，全站所有历史文章署名实时同步更新；
+  - **安全与健壮性**：严格的输入清洗与转义（针对中文编码 URL 采用 `esc_url_raw` 避免截断）、CSS 背景安全过滤、人员缺失提示（显示删除线而不静默丢失）。
+
 ---
 
 ## 🔑 环境变量与凭据配置规范

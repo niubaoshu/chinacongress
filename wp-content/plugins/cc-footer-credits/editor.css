@@ -1,0 +1,38 @@
+/**
+ * cc-footer-credits — 只在編輯器出現的樣式。前台不載入這支。
+ */
+
+.cc-credits-editor__form {
+	width: 100%;
+	max-width: 360px;
+}
+
+.cc-credits-editor__form > * + * {
+	margin-top: 12px;
+}
+
+.cc-credits-editor__hint {
+	margin: 4px 0 0;
+	font-size: 12px;
+	font-style: normal;
+	color: #757575;
+}
+
+.cc-credits-editor__empty {
+	font-style: normal;
+	color: #757575;
+}
+
+/* 已選的人從名單庫消失：看得出來，不靜默消失。 */
+.cc-credits__name--missing {
+	color: #cc1818;
+	text-decoration: line-through;
+}
+
+.cc-credits__missing-note {
+	margin-left: 4px;
+	font-size: 12px;
+	font-style: normal;
+	text-decoration: none;
+	color: #cc1818;
+}

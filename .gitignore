@@ -1,6 +1,6 @@
 # ==============================================================================
 # China Congress public_html Git 忽略规则
-# 根目录位于 /public_html ，仅追踪二次开发子主题 (wp-content/themes/avril-child)
+# 仅追踪二次开发子主题 (avril-child) 与自主研发插件 (cc-assets, cc-footer-credits)
 # ==============================================================================
 
 /*
@@ -12,9 +12,15 @@
 !test/
 !test/index.html
 
-# 追踪二次开发子主题及其包含的所有源码与运维脚本
+# 追踪二次开发子主题与自主研发插件
 !wp-content/
 wp-content/*
+
 !wp-content/themes/
 wp-content/themes/*
 !wp-content/themes/avril-child/
+
+!wp-content/plugins/
+wp-content/plugins/*
+!wp-content/plugins/cc-assets/
+!wp-content/plugins/cc-footer-credits/

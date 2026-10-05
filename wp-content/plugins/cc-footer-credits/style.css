@@ -1,0 +1,48 @@
+/**
+ * cc-footer-credits — 前台與編輯器共用樣式。
+ *
+ * 全部逐條還原自同步樣板 2350 的 inline style，視覺 1:1、不做改版。
+ * 唯一沒被還原的是 id="annotation"（id 須全頁唯一，同頁兩個區塊會重複），改用 class。
+ */
+
+.cc-credits {
+	padding-top: 20px;
+	margin-top: 80px;
+	margin-bottom: 50px;
+	border-top: 1px solid rgb(153, 153, 153);
+	font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+	font-style: italic;
+	font-size: 15px;
+}
+
+.cc-credits__icons {
+	padding: 0 0 20px;
+	text-align: center; /* 圖標列居中（線上 cc_annotation.js 09-10 版） */
+}
+
+/* 圖標是 span 的 CSS 背景圖，背景網址是資料、由 PHP inline 輸出。 */
+.cc-credits__icon {
+	display: inline-block;
+	width: 60px;
+	height: 60px;
+	margin-left: 20px; /* 每一個都有、含第一個 —— 現況如此，照留 */
+	background-position: center center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-color: rgb(0, 0, 0);
+	border-radius: 50%;
+	border: 1px solid rgb(245, 245, 245); /* 線上 09-10 版是 245；07-30 比對時 230 */
+}
+
+.cc-credits__label {
+	display: inline-block;
+	/* 標籤佔左 40% 右對齊、人名緊接其後 → 整行以 40% 線為軸視覺居中。
+	   跟線上 cc_annotation.js（09-10 版）一致；07-30 比對時是 100px，基準後來移了。 */
+	width: 40%;
+	text-align: right;
+	margin-right: 8px;
+}
+
+.cc-credits__name {
+	display: inline-block;
+}
