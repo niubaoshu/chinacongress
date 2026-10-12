@@ -7,6 +7,9 @@
 !.gitignore
 !README.md
 !API_ENDPOINTS.md
+!SECURITY_INCIDENT_REPORT_20261012.md
+!docs/
+!docs/**
 !.agents/
 .agents/skills/
 !test/
