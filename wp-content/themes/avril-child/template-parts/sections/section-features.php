@@ -9,12 +9,12 @@ if ( ! function_exists( 'avril_lite_features' ) ) :
 
 if ( $avril_hs_feature == '1' ) {	
 ?>
- <section id="features-section" class="features-section bg-primary av-py-default home-features">
+ <section id="features-section" class="features-section post-shadow av-py-default home-features">
         <div class="av-container">
 			<?php if ( ! empty( $avril_features_title ) || ! empty( $avril_features_subtitle ) || ! empty( $avril_features_description ) ) { ?> 
 				<div class="av-columns-area">
 					<div class="av-column-12">
-						<div class="heading-default heading-white wow fadeInUp">
+						<div class="heading-default wow fadeInUp">
 						   <?php if ( ! empty( $avril_features_title ) ) : ?>
 								<span class='ttl'><?php echo wp_kses_post($avril_features_title); ?></span>
 							<?php endif; ?>

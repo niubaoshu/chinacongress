@@ -5,14 +5,14 @@ if ( ! function_exists( 'avril_home_blog' ) ) :
 	$avril_blog_title			= get_theme_mod('blog_title', __('最新发布', 'avril-child'));
 	$blog_subtitle				= get_theme_mod('blog_subtitle');
 	$blog_description			= get_theme_mod('blog_description');
-	$blog_display_num			= get_theme_mod('blog_display_num','2');
+	$blog_display_num			= get_theme_mod('blog_display_num','3');
 if($hs_blog == '1') {	
 ?>
- <section id="post-section" class="post-section post-shadow av-py-default home-blog">
+ <section id="post-section" class="post-section bg-primary av-py-default home-blog">
         <div class="av-container">
             <div class="av-columns-area">
                 <div class="av-column-12">
-                    <div class="heading-default wow fadeInUp">
+                    <div class="heading-default heading-white wow fadeInUp">
                         <?php if ( ! empty( $avril_blog_title ) ) : ?>
 							<span class='ttl'><?php echo esc_html($avril_blog_title); ?></span>
 						<?php endif; ?>
@@ -25,9 +25,9 @@ if($hs_blog == '1') {
                     </div>
                 </div>
             </div>
-            <div class="av-columns-area wow fadeInUp">
+            <div class="av-columns-area blog-area wow fadeInUp">
 				<?php 	
-				$posts_per_page = absint( $blog_display_num ) > 0 ? absint( $blog_display_num ) : 2;
+				$posts_per_page = ( ! empty( $blog_display_num ) && 2 !== (int) $blog_display_num ) ? absint( $blog_display_num ) : 3;
 				$sticky_posts   = get_option( 'sticky_posts' );
 				$avril_blog_args = array(
 					'post_type'      => 'post',
@@ -41,7 +41,7 @@ if($hs_blog == '1') {
 					while ( $avril_wp_query->have_posts() ) :
 						$avril_wp_query->the_post();
 					?>
-					<div class="av-column-6 av-md-column-6 mb-4">
+					<div class="av-column-4 av-md-column-6 mb-4">
 						<?php get_template_part( 'template-parts/content/card', 'post', array( 'mode' => 'home' ) ); ?>
 					</div>
 				<?php 

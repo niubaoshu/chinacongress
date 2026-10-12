@@ -306,6 +306,15 @@ body {
  * 6. 首页最新发布 (Home Blog Cards)
  * ============================================================================== */
 
+.home-blog .blog-area {
+    align-items: stretch !important;
+}
+
+.home-blog .blog-area>[class*="av-column-"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
 .home-blog-card {
     height: 100% !important;
     display: flex !important;
@@ -315,11 +324,11 @@ body {
 
 .home-blog-card .home-blog-thumb-wrap {
     width: 100% !important;
-    height: 220px !important;
+    height: 180px !important;
 }
 
 .home-blog-card .home-blog-content {
-    padding: 20px !important;
+    padding: 16px 20px !important;
     display: flex !important;
     flex-direction: column !important;
     flex-grow: 1 !important;
@@ -333,18 +342,25 @@ body {
 }
 
 .home-blog-card .home-blog-title {
-    font-size: 19px !important;
+    font-size: 18px !important;
     font-weight: 700 !important;
     line-height: 1.4 !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 8px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
 }
 
 .home-blog-card .home-blog-excerpt {
     font-size: 14px !important;
     color: #495057 !important;
     line-height: 1.6 !important;
-    margin-bottom: 15px !important;
-    flex-grow: 1 !important;
+    margin-bottom: 12px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
 }
 
 /* ==============================================================================

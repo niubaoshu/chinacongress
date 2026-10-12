@@ -52,10 +52,28 @@ add_action( 'init', function() {
 
 
 /**
- * 2. 引入子主题安全覆盖模板片段 (Section Blog & Section Features)
+ * 2. 引入子主题安全覆盖模板片段 (Section Blog & Section Features) 并调换首页板块顺序
  */
 require_once get_stylesheet_directory() . '/template-parts/sections/section-blog.php';
 require_once get_stylesheet_directory() . '/template-parts/sections/section-features.php';
+
+/**
+ * 调换首页“最新发布”与“推荐内容”板块渲染优先级
+ *
+ * 默认优先级：Features(14) -> Blog(15)
+ * 调换后优先级：Blog(14) -> Features(15)
+ */
+add_filter( 'avril_section_priority', 'chinacongress_swap_home_sections_priority', 10, 2 );
+function chinacongress_swap_home_sections_priority( $priority, $section ) {
+	if ( 'avril_home_blog' === $section ) {
+		return 14;
+	}
+	// Clever Fox 插件在 section-features.php 中误将标识设为 'avril_lite_service'，此处通过默认优先级 14 精确匹配
+	if ( 'avril_lite_service' === $section && 14 === (int) $priority ) {
+		return 15;
+	}
+	return $priority;
+}
 
 /**
  * 3. 强制全站主搜索结果按照发布时间倒序 (Date DESC) 排列
