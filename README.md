@@ -106,7 +106,7 @@ public_html/ (Git 仓库根目录)
 
 ---
 
-## 🧩 自主研发 WordPress 插件说明
+## 🧩  WordPress 插件说明
 
 本项目除前端子主题外，还通过 Git 集中版本控制托管了本站自研的核心 WordPress 插件：
 
