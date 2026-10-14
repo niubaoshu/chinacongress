@@ -69,7 +69,7 @@ function chinacongressToast(text) {
 window.chinacongressToast = chinacongressToast;
 function isCopy(text) { chinacongressToast(text); }
 function session(url) {
-    const v = window.cc_assets_ver || "1.0.2";
+    const v = window.cc_assets_ver || "1.0.3";
     return url + (cc.session ? "?sessid=" + encodeURIComponent(cc.session) + "&v=" + v : "?v=" + v);
 }
 function cc_content(opt, isload, url, cc_args) {

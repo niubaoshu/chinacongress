@@ -28,7 +28,7 @@ rsync -avz --no-o --no-g \
 echo "✅ 媒体文件增量同步完成。"
 
 # 2. 导出线上 MySQL 数据库并一键导入本地 DB
-REMOTE_DB_USER="${REMOTE_DB_USER:-chinacongress}"
+REMOTE_DB_USER="${REMOTE_DB_USER:-}"
 REMOTE_DB_PASS="${REMOTE_DB_PASS:-}"
 REMOTE_DB_NAME="${REMOTE_DB_NAME:-chinacongress}"
 
@@ -36,10 +36,13 @@ echo "2. 正在通过 SSH 导出线上数据库并一键导入本地 localhost �
 TEMP_DUMP="/tmp/remote_dump_$$.sql"
 trap 'rm -f "${TEMP_DUMP}"' EXIT
 
-if [ -n "${REMOTE_DB_PASS}" ]; then
+if [ -n "${REMOTE_DB_PASS}" ] && [ -n "${REMOTE_DB_USER}" ]; then
     ssh "${REMOTE_HOST}" "MYSQL_PWD='${REMOTE_DB_PASS}' mysqldump -u'${REMOTE_DB_USER}' '${REMOTE_DB_NAME}'" > "${TEMP_DUMP}"
-else
+elif [ -n "${REMOTE_DB_USER}" ]; then
     ssh "${REMOTE_HOST}" "mysqldump -u'${REMOTE_DB_USER}' '${REMOTE_DB_NAME}'" > "${TEMP_DUMP}"
+else
+    # 默认通过 root 权限以 Unix Socket 免密导出
+    ssh "${REMOTE_HOST}" "mysqldump '${REMOTE_DB_NAME}'" > "${TEMP_DUMP}"
 fi
 
 if [ -s "${TEMP_DUMP}" ]; then

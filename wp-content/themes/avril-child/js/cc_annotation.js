@@ -7,7 +7,7 @@ function cc_annotation (socialLinks, credits) {
         } else {
             wrapper = createTag("div");
             const lb = createTag("span");
-            Object.assign(lb.style, { display: "inline-block", width: "40%", textAlign: "right", marginRight: "8px" });
+            Object.assign(lb.style, { display: "inline-block", width: "80px", textAlign: "right", marginRight: "8px" });
             lb.textContent = item.label + "：";
             wrapper.appendChild(lb);
         }
@@ -19,7 +19,7 @@ function cc_annotation (socialLinks, credits) {
     }
     function socials(root, socialLinks) {
         const cc_links = createTag("div");
-        Object.assign(cc_links.style, { display: "block", alignItems: "center", padding: '0px 0px 20px 0px', textAlign: 'center' });
+        Object.assign(cc_links.style, { display: "block", padding: '0px 0px 20px 0px' });
         for (const item of socialLinks) {
             var link = createTag("a");
             var ccwatch = createTag("span");

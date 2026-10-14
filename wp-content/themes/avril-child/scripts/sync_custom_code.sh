@@ -10,7 +10,7 @@ set -euo pipefail
 TARGET="${1:-localhost}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHILD_THEME_SRC="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 
 LOCAL_THEME_DEST="/srv/http/my_site_name/wp-content/themes/avril-child"
 LOCAL_PLUGINS_DEST="/srv/http/my_site_name/wp-content/plugins"

@@ -8,7 +8,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHILD_THEME_SRC="$(cd "${SCRIPT_DIR}/.." && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 
 REMOTE_THEME_SRC="Chinacongress:/var/www/chinacongress/wp-content/themes/avril-child/"
 REMOTE_PLUGINS_SRC="Chinacongress:/var/www/chinacongress/wp-content/plugins/"

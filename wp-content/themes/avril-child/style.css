@@ -604,6 +604,15 @@ body {
     font-size: 15px;
 }
 
+#annotation > div:first-child {
+    text-align: left !important;
+}
+
+#annotation > div:not(:first-child) > span:first-child {
+    width: 80px !important;
+    text-align: right !important;
+}
+
 #annotation a {
     color: #3a75a1;
     font-weight: 600;
