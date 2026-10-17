@@ -1168,8 +1168,13 @@ add_action( 'template_redirect', function() {
 
 /**
  * 3. 隐藏登录错误细节，防止通过提示文案猜解有效用户名
+ * 注意：找回密码页不涉及密码，文案需改为“用户名或邮箱不对”，避免误导用户
  */
 add_filter( 'login_errors', function() {
+	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '';
+	if ( in_array( $action, array( 'lostpassword', 'retrievepassword' ), true ) ) {
+		return '用户名或邮箱不对。';
+	}
 	return '用户名或密码错误。';
 } );
 
