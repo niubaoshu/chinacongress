@@ -11,6 +11,7 @@
  * 5. 全网 Open Graph / Twitter Cards 社交分享元数据自动生成
  * 6. 全站 URL 相对化自动清洗 (防止域名硬编码导致迁站失效)
  * 7. Clever Fox 插件与父主题兼容性修复 (Theme Mods 继承保底与控制项修复)
+ * 8. 站点安全加固 (禁止匿名探测用户列表、禁止 ?author=N 探测跳转、隐藏登录错误细节)
  * ==============================================================================
  */
 
@@ -1133,5 +1134,44 @@ add_filter( 'wp_mail_from', function( $from_email ) {
 add_filter( 'wp_mail_from_name', function( $from_name ) {
 	return defined( 'SMTP_NAME' ) ? SMTP_NAME : $from_name;
 } );
+
+// ==============================================================================
+// 8. 站点安全加固：用户凭据与枚举防护
+// ==============================================================================
+
+/**
+ * 1. 禁止未登录访客访问 REST API 的用户端点 (/wp/v2/users 及单个用户查询)
+ * 已登录用户（如后台编辑、管理员）仍可正常使用 Gutenberg 编辑器读取作者信息
+ */
+add_filter( 'rest_endpoints', function( $endpoints ) {
+	if ( ! is_user_logged_in() ) {
+		if ( isset( $endpoints['/wp/v2/users'] ) ) {
+			unset( $endpoints['/wp/v2/users'] );
+		}
+		if ( isset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] ) ) {
+			unset( $endpoints['/wp/v2/users/(?P<id>[\d]+)'] );
+		}
+	}
+	return $endpoints;
+} );
+
+/**
+ * 2. 禁止通过 ?author=N 参数枚举探测作者真实用户名与重定向
+ * 外部访客请求带有 ?author= 时，直接 301 重定向到网站首页
+ */
+add_action( 'template_redirect', function() {
+	if ( ! is_admin() && isset( $_GET['author'] ) ) {
+		wp_safe_redirect( home_url(), 301 );
+		exit;
+	}
+} );
+
+/**
+ * 3. 隐藏登录错误细节，防止通过提示文案猜解有效用户名
+ */
+add_filter( 'login_errors', function() {
+	return '用户名或密码错误。';
+} );
+
 
 
