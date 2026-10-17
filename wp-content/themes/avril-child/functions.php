@@ -11,7 +11,7 @@
  * 5. 全网 Open Graph / Twitter Cards 社交分享元数据自动生成
  * 6. 全站 URL 相对化自动清洗 (防止域名硬编码导致迁站失效)
  * 7. Clever Fox 插件与父主题兼容性修复 (Theme Mods 继承保底与控制项修复)
- * 8. 站点安全加固 (禁止匿名探测用户列表、禁止 ?author=N 探测跳转、隐藏登录错误细节)
+ * 8. 站点安全加固 (禁止匿名用户列表、禁止作者归档/探测跳转、隐藏登录细节、移除用户Sitemap与oEmbed脱敏)
  * ==============================================================================
  */
 
@@ -1172,6 +1172,25 @@ add_action( 'template_redirect', function() {
 add_filter( 'login_errors', function() {
 	return '用户名或密码错误。';
 } );
+
+/**
+ * 4. 从 WordPress 原生 XML Sitemap (wp-sitemap.xml) 中移除用户提供商
+ * 彻底关闭 /wp-sitemap-users-1.xml，防止泄露全站账号列表
+ */
+add_filter( 'wp_sitemaps_add_provider', function( $provider, $name ) {
+	return ( 'users' === $name ) ? false : $provider;
+}, 10, 2 );
+
+/**
+ * 5. 净化 oEmbed API 响应数据，剔除 author_url，防止通过文章嵌入接口泄露作者账号别名
+ */
+add_filter( 'oembed_response_data', function( $data ) {
+	if ( isset( $data['author_url'] ) ) {
+		unset( $data['author_url'] );
+	}
+	return $data;
+} );
+
 
 
 
