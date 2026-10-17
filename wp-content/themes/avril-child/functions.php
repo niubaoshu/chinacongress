@@ -1206,8 +1206,9 @@ add_filter( 'oembed_response_data', function( $data ) {
  * 1) 通过 lostpassword_form 钩子在找回密码表单追加邮箱输入框；
  * 2) 通过 lostpassword_post 钩子在发送重置邮件前校验两者归属同一用户；
  * 3) 通过 gettext 过滤器把找回密码页原生文案中的“或”修正为“和”。
- * 注意：仅当本次请求携带 user_email 字段（即走原生表单）时才强制校验，
- * 避免误伤其他插件以编程方式调用 retrieve_password() 的流程。
+ * 注意：仅在表单提交（请求携带 user_login）时强制校验，避免误伤其他插件
+ * 以编程方式调用 retrieve_password() 的流程；表单提交缺失 user_email 字段
+ * 视为校验失败，防止通过省略字段绕过双重校验。
  */
 
 // 6.1 在找回密码表单追加邮箱输入框
@@ -1225,13 +1226,14 @@ function chinacongress_lostpassword_add_email_field() {
 // 6.2 找回密码时强制校验“用户名 + 邮箱”归属同一账号
 add_action( 'lostpassword_post', 'chinacongress_lostpassword_require_username_and_email', 10, 2 );
 function chinacongress_lostpassword_require_username_and_email( $errors, $user_data ) {
-	// 非原生表单提交（如其他插件编程调用）不介入
-	if ( ! isset( $_POST['user_email'] ) ) {
+	// 纯编程调用（未走表单提交）不介入；表单提交缺失 user_email 字段视为校验失败，
+	// 防止攻击者通过省略字段绕过双重校验、退回单字段旧逻辑
+	if ( ! isset( $_POST['user_login'] ) ) {
 		return;
 	}
 
-	$username = isset( $_POST['user_login'] ) ? trim( wp_unslash( (string) $_POST['user_login'] ) ) : '';
-	$email    = trim( wp_unslash( (string) $_POST['user_email'] ) );
+	$username = trim( wp_unslash( (string) $_POST['user_login'] ) );
+	$email    = isset( $_POST['user_email'] ) ? trim( wp_unslash( (string) $_POST['user_email'] ) ) : '';
 
 	// 两者均为必填
 	if ( '' === $username || '' === $email ) {
