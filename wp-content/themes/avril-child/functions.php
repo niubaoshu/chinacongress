@@ -1262,7 +1262,7 @@ function chinacongress_fix_lostpassword_text( $translated, $text, $domain ) {
 		return $translated;
 	}
 	if ( 'Username or Email Address' === $text ) {
-		return '用户名和邮箱地址';
+		return '用户名';
 	}
 	if ( 'Please enter your username or email address. You will receive an email message with instructions on how to reset your password.' === $text ) {
 		return '请输入您的用户名和邮箱地址。您会收到一封包含重设密码指引的邮件。';
