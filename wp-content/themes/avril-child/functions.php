@@ -1199,7 +1199,8 @@ add_filter( 'oembed_response_data', function( $data ) {
  *
  * 实现：
  * 1) 通过 lostpassword_form 钩子在找回密码表单追加邮箱输入框；
- * 2) 通过 lostpassword_post 钩子在发送重置邮件前校验两者归属同一用户。
+ * 2) 通过 lostpassword_post 钩子在发送重置邮件前校验两者归属同一用户；
+ * 3) 通过 gettext 过滤器把找回密码页原生文案中的“或”修正为“和”。
  * 注意：仅当本次请求携带 user_email 字段（即走原生表单）时才强制校验，
  * 避免误伤其他插件以编程方式调用 retrieve_password() 的流程。
  */
@@ -1246,6 +1247,27 @@ function chinacongress_lostpassword_require_username_and_email( $errors, $user_d
 	if ( ! $user_by_login || ! $user_by_email || (int) $user_by_login->ID !== (int) $user_by_email->ID ) {
 		$errors->add( 'mismatched_username_email', __( '<strong>错误：</strong>用户名与电子邮箱不匹配，请检查后重试。', 'avril-child' ) );
 	}
+}
+
+// 6.3 修正找回密码页面的原生提示文案（“或”→“和”）
+// WordPress 原生文案为“用户名或邮箱地址”，与上面的双重校验矛盾；
+// 仅在找回密码页面生效，不影响登录页仍允许“用户名或邮箱”的逻辑。
+add_filter( 'gettext', 'chinacongress_fix_lostpassword_text', 10, 3 );
+function chinacongress_fix_lostpassword_text( $translated, $text, $domain ) {
+	if ( 'default' !== $domain ) {
+		return $translated;
+	}
+	$action = isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '';
+	if ( ! in_array( $action, array( 'lostpassword', 'retrievepassword' ), true ) ) {
+		return $translated;
+	}
+	if ( 'Username or Email Address' === $text ) {
+		return '用户名和邮箱地址';
+	}
+	if ( 'Please enter your username or email address. You will receive an email message with instructions on how to reset your password.' === $text ) {
+		return '请输入您的用户名和邮箱地址。您会收到一封包含重设密码指引的邮件。';
+	}
+	return $translated;
 }
 
 
