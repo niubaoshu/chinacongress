@@ -1156,15 +1156,15 @@ add_filter( 'rest_endpoints', function( $endpoints ) {
 } );
 
 /**
- * 2. 禁止通过 ?author=N 参数枚举探测作者真实用户名与重定向
- * 外部访客请求带有 ?author= 时，直接 301 重定向到网站首页
+ * 2. 禁止通过 ?author=N 参数或访问作者归档页面探测真实用户名
+ * 优先级设为 1，确保先于 WordPress 原生 redirect_canonical 触发，直接 301 重定向到网站首页
  */
 add_action( 'template_redirect', function() {
-	if ( ! is_admin() && isset( $_GET['author'] ) ) {
+	if ( ! is_admin() && ( isset( $_GET['author'] ) || is_author() ) ) {
 		wp_safe_redirect( home_url(), 301 );
 		exit;
 	}
-} );
+}, 1 );
 
 /**
  * 3. 隐藏登录错误细节，防止通过提示文案猜解有效用户名
