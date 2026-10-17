@@ -1191,6 +1191,63 @@ add_filter( 'oembed_response_data', function( $data ) {
 	return $data;
 } );
 
+/**
+ * 6. 忘记密码找回强制“用户名 + 邮箱”双重校验
+ *
+ * WordPress 原生找回密码仅需“用户名或邮箱”二选一，本加固改为两者同时必填，
+ * 且必须归属同一账号，提高暴力猜解与撞库的门槛。
+ *
+ * 实现：
+ * 1) 通过 lostpassword_form 钩子在找回密码表单追加邮箱输入框；
+ * 2) 通过 lostpassword_post 钩子在发送重置邮件前校验两者归属同一用户。
+ * 注意：仅当本次请求携带 user_email 字段（即走原生表单）时才强制校验，
+ * 避免误伤其他插件以编程方式调用 retrieve_password() 的流程。
+ */
+
+// 6.1 在找回密码表单追加邮箱输入框
+add_action( 'lostpassword_form', 'chinacongress_lostpassword_add_email_field' );
+function chinacongress_lostpassword_add_email_field() {
+	?>
+	<p>
+		<label for="user_email"><?php esc_html_e( '电子邮箱', 'avril-child' ); ?><br />
+		<input type="email" name="user_email" id="user_email" class="input" value="" size="20" autocapitalize="off" autocomplete="email" required="required" /></label>
+	</p>
+	<p class="description"><?php esc_html_e( '找回密码需同时验证用户名与电子邮箱，两者须归属同一账号。', 'avril-child' ); ?></p>
+	<?php
+}
+
+// 6.2 找回密码时强制校验“用户名 + 邮箱”归属同一账号
+add_action( 'lostpassword_post', 'chinacongress_lostpassword_require_username_and_email', 10, 2 );
+function chinacongress_lostpassword_require_username_and_email( $errors, $user_data ) {
+	// 非原生表单提交（如其他插件编程调用）不介入
+	if ( ! isset( $_POST['user_email'] ) ) {
+		return;
+	}
+
+	$username = isset( $_POST['user_login'] ) ? trim( wp_unslash( (string) $_POST['user_login'] ) ) : '';
+	$email    = trim( wp_unslash( (string) $_POST['user_email'] ) );
+
+	// 两者均为必填
+	if ( '' === $username || '' === $email ) {
+		$errors->add( 'empty_username_email', __( '<strong>错误：</strong>请同时填写用户名和电子邮箱。', 'avril-child' ) );
+		return;
+	}
+
+	// 用户名栏必须填写真实用户名（不接受邮箱），邮箱栏必须为合法邮箱格式
+	if ( false !== strpos( $username, '@' ) || ! is_email( $email ) ) {
+		$errors->add( 'invalid_username_email', __( '<strong>错误：</strong>请在用户名栏填写用户名，在邮箱栏填写有效的电子邮箱。', 'avril-child' ) );
+		return;
+	}
+
+	$user_by_login = get_user_by( 'login', $username );
+	$user_by_email = get_user_by( 'email', $email );
+
+	// 两者必须存在且归属同一账号；提示文案保持笼统，避免泄露账号是否存在
+	if ( ! $user_by_login || ! $user_by_email || (int) $user_by_login->ID !== (int) $user_by_email->ID ) {
+		$errors->add( 'mismatched_username_email', __( '<strong>错误：</strong>用户名与电子邮箱不匹配，请检查后重试。', 'avril-child' ) );
+	}
+}
+
 
 
 
