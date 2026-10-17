@@ -187,9 +187,16 @@ function chinacongress_get_latest_mainland_members( $force = false ) {
 
 /**
  * 从远程 API 自动同步海外院选民登记总人数与最新选民列表 (供 WP-Cron 执行)
+ *
+ * API token 不再硬编码：改由 wp-config.php 的 CHINACONGRESS_FDC_API_TOKEN 常量提供，
+ * 避免密钥出现在公开仓库；未配置时跳过本次同步。
  */
 function chinacongress_sync_overseas_voter_data() {
-	$data = chinacongress_fetch_json( 'https://api.fdcusa.org/index.php?token=8d9f3b7c2e6a' );
+	$api_token = defined( 'CHINACONGRESS_FDC_API_TOKEN' ) ? CHINACONGRESS_FDC_API_TOKEN : '';
+	if ( '' === $api_token ) {
+		return;
+	}
+	$data = chinacongress_fetch_json( 'https://api.fdcusa.org/index.php?token=' . $api_token );
 	if ( is_array( $data ) && ! empty( $data['success'] ) ) {
 		if ( ! empty( $data['total'] ) && is_numeric( $data['total'] ) ) {
 			set_theme_mod( 'cta_description', (string) (int) $data['total'] );
@@ -1177,6 +1184,11 @@ add_filter( 'login_errors', function() {
 	}
 	return '用户名或密码错误。';
 } );
+
+/**
+ * 3b. 移除前台 generator meta 标签，不向访客暴露精确的 WordPress 版本号
+ */
+remove_action( 'wp_head', 'wp_generator' );
 
 /**
  * 4. 从 WordPress 原生 XML Sitemap (wp-sitemap.xml) 中移除用户提供商
