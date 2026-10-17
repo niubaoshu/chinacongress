@@ -1107,4 +1107,31 @@ function chinacongress_video_player_footer_script() {
 }
 add_action( 'wp_enqueue_scripts', 'chinacongress_video_player_footer_script', 30 );
 
+/**
+ * 配置 WordPress SMTP 邮件外发服务
+ * 依赖 wp-config.php 中定义的 SMTP 核心常量，避免在代码仓库中明文硬编码敏感凭据
+ */
+function chinacongress_configure_smtp( $phpmailer ) {
+	if ( defined( 'SMTP_HOST' ) && defined( 'SMTP_USER' ) && defined( 'SMTP_PASS' ) ) {
+		$phpmailer->isSMTP();
+		$phpmailer->Host       = SMTP_HOST;
+		$phpmailer->Port       = defined( 'SMTP_PORT' ) ? (int) SMTP_PORT : 465;
+		$phpmailer->SMTPSecure = defined( 'SMTP_SECURE' ) ? SMTP_SECURE : 'ssl';
+		$phpmailer->SMTPAuth   = defined( 'SMTP_AUTH' ) ? (bool) SMTP_AUTH : true;
+		$phpmailer->Username   = SMTP_USER;
+		$phpmailer->Password   = SMTP_PASS;
+		$phpmailer->From       = defined( 'SMTP_FROM' ) ? SMTP_FROM : SMTP_USER;
+		$phpmailer->FromName   = defined( 'SMTP_NAME' ) ? SMTP_NAME : get_bloginfo( 'name' );
+	}
+}
+add_action( 'phpmailer_init', 'chinacongress_configure_smtp' );
+
+// 统一发件人地址与显示名称，确保与 Gmail 认证账号一致
+add_filter( 'wp_mail_from', function( $from_email ) {
+	return defined( 'SMTP_FROM' ) ? SMTP_FROM : $from_email;
+} );
+add_filter( 'wp_mail_from_name', function( $from_name ) {
+	return defined( 'SMTP_NAME' ) ? SMTP_NAME : $from_name;
+} );
+
 
