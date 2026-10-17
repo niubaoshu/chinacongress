@@ -56,7 +56,7 @@ LINT_FAILED=1
 fi
 done < <(find "${CHECK_PATHS[@]}" -type f -name "*.php" -print0)
 
-if [ "${LINT_FAILED}" -eq 1]; then
+if [ "${LINT_FAILED}" -eq 1 ]; then
 echo "🚨 部署中断：请修复上述 PHP 语法错误后再重试同步！"
 exit 1
 fi
