@@ -797,9 +797,17 @@ oc {
     box-shadow: none !important;
 }
 
+/* 消除 WordPress wpautop 误插入的空段落标签导致的微小垂直间隙 */
+.video_frame p {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
 .video_frame .caption {
     box-sizing: border-box;
     width: 100%;
+    margin-top: -1px; /* 缝合亚像素渲染缝隙，确保极致贴合 */
 }
 
 .cc_video_caption {

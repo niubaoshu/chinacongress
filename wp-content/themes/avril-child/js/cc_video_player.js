@@ -23,9 +23,19 @@
 			}
 
 			// 自动包装与 caption 处理（仅对未包装且非自定义卡片容器的裸视频生效）
+			var frame = video.closest('.video_frame');
+			if (frame) {
+				// 自动清除 WordPress wpautop 误插入的空段落标签，消除卡片内部微小缝隙
+				frame.querySelectorAll('p').forEach(function(p) {
+					if (!p.textContent.trim()) {
+						p.remove();
+					}
+				});
+			}
+
 			var hasCustomWrapper = video.closest('.cc_video_container') || 
 			                       video.closest('.wp-block-video') || 
-			                       video.closest('.video_frame');
+			                       frame;
 			if (!hasCustomWrapper) {
 				var container = document.createElement('div');
 				container.className = 'cc_video_container';
