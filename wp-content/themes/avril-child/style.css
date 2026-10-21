@@ -776,8 +776,7 @@ oc {
     text-align: center;
 }
 
-.cc_video_container video,
-article video {
+.cc_video_container video {
     display: block;
     margin: 0 auto;
     max-width: 650px;
@@ -786,6 +785,21 @@ article video {
     border-radius: 6px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     background: #000;
+}
+
+/* 知识问答等自定义视频卡片组件：保持等宽一体与上圆角衔接 */
+.video_frame video {
+    display: block;
+    margin: 0 auto;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 8px 8px 0 0 !important;
+    box-shadow: none !important;
+}
+
+.video_frame .caption {
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .cc_video_caption {

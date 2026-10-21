@@ -22,8 +22,11 @@
 				});
 			}
 
-			// 自动包装与 caption 处理（若未包装）
-			if (!video.parentElement.classList.contains('cc_video_container') && !video.parentElement.classList.contains('wp-block-video')) {
+			// 自动包装与 caption 处理（仅对未包装且非自定义卡片容器的裸视频生效）
+			var hasCustomWrapper = video.closest('.cc_video_container') || 
+			                       video.closest('.wp-block-video') || 
+			                       video.closest('.video_frame');
+			if (!hasCustomWrapper) {
 				var container = document.createElement('div');
 				container.className = 'cc_video_container';
 				video.parentNode.insertBefore(container, video);
