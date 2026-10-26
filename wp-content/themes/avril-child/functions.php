@@ -634,6 +634,16 @@ function chinacongress_make_content_relative( $content ) {
 add_filter( 'content_save_pre', 'chinacongress_make_content_relative', 99 );
 add_filter( 'the_content', 'chinacongress_make_content_relative', 99 );
 
+// 2. 自动清洗文末脚本加载标签后误加的孤立 </div>，防止闭合主题双栏容器导致右侧边栏下移
+function chinacongress_sanitize_scriptloader_closing_div( $content ) {
+    if ( empty( $content ) || false === strpos( $content, 'main.js' ) ) {
+        return $content;
+    }
+    return preg_replace( '/(<script[^>]*\/wp-content\/themes\/avril-child\/js\/main\.js[^>]*><\/script>)\s*<\/div>/i', '$1', $content );
+}
+add_filter( 'content_save_pre', 'chinacongress_sanitize_scriptloader_closing_div', 98 );
+add_filter( 'the_content', 'chinacongress_sanitize_scriptloader_closing_div', 98 );
+
 
 // ==============================================================================
 // 兼容性修补、Customizer 配置继承与 Hook 替代逻辑
