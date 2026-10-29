@@ -401,6 +401,59 @@ function chinacongress_normalize_media_url( $url ) {
 	return $url;
 }
 
+/**
+ * 根据站内视频 URL 自动获取或使用 ffmpeg 截取首帧生成同名 -poster.jpg 封面图
+ */
+function chinacongress_get_or_generate_video_poster( $video_src ) {
+	if ( empty( $video_src ) ) {
+		return '';
+	}
+
+	$clean_src = strtok( strtok( $video_src, '#' ), '?' );
+	if ( preg_match( '#/wp-content/uploads/(.+\.(?:mp4|mov|webm|m4v))$#i', $clean_src, $m ) ) {
+		$rel_path = rawurldecode( $m[1] );
+	} else {
+		return '';
+	}
+
+	if ( strpos( $rel_path, '..' ) !== false ) {
+		return '';
+	}
+
+	$upload_dir = wp_upload_dir();
+	$video_file = $upload_dir['basedir'] . '/' . $rel_path;
+	if ( ! is_file( $video_file ) ) {
+		return '';
+	}
+
+	$poster_rel  = preg_replace( '/\.(mp4|mov|webm|m4v)$/i', '-poster.jpg', $rel_path );
+	$poster_file = $upload_dir['basedir'] . '/' . $poster_rel;
+	$poster_url  = $upload_dir['baseurl'] . '/' . $poster_rel;
+
+	if ( is_file( $poster_file ) && filesize( $poster_file ) > 0 ) {
+		return chinacongress_normalize_media_url( $poster_url );
+	}
+
+	if ( function_exists( 'exec' ) ) {
+		$ffmpeg_bin = '/usr/bin/ffmpeg';
+		if ( ! is_executable( $ffmpeg_bin ) ) {
+			$ffmpeg_bin = 'ffmpeg';
+		}
+		$cmd = sprintf(
+			'%s -y -ss 0.1 -i %s -frames:v 1 -q:v 2 %s 2>/dev/null',
+			escapeshellcmd( $ffmpeg_bin ),
+			escapeshellarg( $video_file ),
+			escapeshellarg( $poster_file )
+		);
+		@exec( $cmd );
+		if ( is_file( $poster_file ) && filesize( $poster_file ) > 0 ) {
+			return chinacongress_normalize_media_url( $poster_url );
+		}
+	}
+
+	return '';
+}
+
 function chinacongress_get_first_image_url( $post_id = null ) {
 	static $image_cache = array();
 	$post_id = $post_id ?: get_the_ID();
@@ -420,7 +473,7 @@ function chinacongress_get_first_image_url( $post_id = null ) {
 		}
 	}
 
-	// 2. 正文第一张图 / YouTube 封面 / video poster
+	// 2. 正文第一张图 / YouTube 封面 / video poster / 自动截取站内视频首帧封面
 	if ( empty( $url ) ) {
 		$post = get_post( $post_id );
 		if ( $post && ! empty( $post->post_content ) ) {
@@ -430,6 +483,8 @@ function chinacongress_get_first_image_url( $post_id = null ) {
 				$url = 'https://img.youtube.com/vi/' . $yt_id . '/hqdefault.jpg';
 			} elseif ( preg_match( '/<video.+?poster=[\'"]([^\'"]+)[\'"].*?>/i', $post->post_content, $v_m ) ) {
 				$url = $v_m[1];
+			} elseif ( preg_match( '/(?:<video[^>]+src=|<source[^>]+src=|\[cc_video[^\]]+src=)[\'"]([^\'"]+\.(?:mp4|mov|webm|m4v)[^\'"]*)[\'"]/i', $post->post_content, $vs_m ) ) {
+				$url = chinacongress_get_or_generate_video_poster( $vs_m[1] );
 			}
 		}
 	}
@@ -472,9 +527,9 @@ function chinacongress_get_og_image_data( $post_id = null ) {
 		return array( 'url' => '', 'width' => 0, 'height' => 0 );
 	}
 
-	// 1. 优先读取 post_meta 缓存
+	// 1. 优先读取 post_meta 缓存（若缓存的是默认兜底 Logo，则允许重新检测是否已生成视频封面）
 	$cached = get_post_meta( $post_id, '_chinacongress_og_image_data', true );
-	if ( is_array( $cached ) && ! empty( $cached['url'] ) ) {
+	if ( is_array( $cached ) && ! empty( $cached['url'] ) && false === strpos( $cached['url'], 'logo-1024x480.jpg' ) ) {
 		return $cached;
 	}
 
@@ -1092,6 +1147,9 @@ function chinacongress_shortcode_cc_video( $atts ) {
 		return '';
 	}
 
+	$poster_url  = chinacongress_get_or_generate_video_poster( $a['src'] );
+	$poster_attr = ! empty( $poster_url ) ? ' poster="' . esc_url( $poster_url ) . '"' : '';
+
 	$src = esc_url( $a['src'] );
 	if ( strpos( $src, '#' ) === false ) {
 		$src .= '#t=0.001';
@@ -1101,12 +1159,12 @@ function chinacongress_shortcode_cc_video( $atts ) {
 		$caption_html = '<div class="cc_video_caption">' . esc_html( $a['caption'] ) . '</div>';
 	}
 
-	return '<div class="cc_video_container"><video src="' . $src . '" controls playsinline webkit-playsinline preload="metadata"></video>' . $caption_html . '</div>';
+	return '<div class="cc_video_container"><video src="' . $src . '"' . $poster_attr . ' controls playsinline webkit-playsinline preload="metadata"></video>' . $caption_html . '</div>';
 }
 add_shortcode( 'cc_video', 'chinacongress_shortcode_cc_video' );
 
 /**
- * 自动为正文中所有 <video> 标签补齐移动端首帧预览参数 (preload="metadata"、playsinline 及 #t=0.001)
+ * 自动为正文中所有 <video> 标签补齐移动端首帧预览参数 (poster、preload="metadata"、playsinline 及 #t=0.001)
  * 解决 iOS Safari / WebKit 内核浏览器不显示无 poster 视频第一帧画面的问题。
  */
 function chinacongress_optimize_content_videos( $content ) {
@@ -1128,16 +1186,26 @@ function chinacongress_optimize_content_videos( $content ) {
 			$attrs = preg_replace( '/\bpreload\s*=\s*([\'"])none\1/i', 'preload="metadata"', $attrs );
 		}
 
-		// 若未显式设置 poster 封面图，则在视频 URL 末尾追加 #t=0.001 强制移动端解码第一帧
+		// 若未显式设置 poster 封面图，优先自动生成/挂载首帧 -poster.jpg，并追加 #t=0.001 锚点
 		if ( ! preg_match( '/\bposter\s*=/i', $attrs ) ) {
-			if ( preg_match( '/\bsrc\s*=\s*([\'"])([^\'"]+)\1/i', $attrs ) ) {
+			$video_src = '';
+			if ( preg_match( '/\bsrc\s*=\s*([\'"])([^\'"]+)\1/i', $attrs, $sm ) ) {
+				$video_src = $sm[2];
 				$attrs = preg_replace_callback( '/(\bsrc\s*=\s*([\'"]))([^\'"#]+)(\2)/i', function( $m ) {
 					return $m[1] . $m[3] . '#t=0.001' . $m[4];
 				}, $attrs, 1 );
-			} elseif ( stripos( $inner, '<source' ) !== false ) {
+			} elseif ( preg_match( '/<source\b[^>]*?\bsrc\s*=\s*([\'"])([^\'"]+)\1/i', $inner, $sm ) ) {
+				$video_src = $sm[2];
 				$inner = preg_replace_callback( '/(<source\b[^>]*?\bsrc\s*=\s*([\'"]))([^\'"#]+)(\2)/i', function( $m ) {
 					return $m[1] . $m[3] . '#t=0.001' . $m[4];
 				}, $inner, 1 );
+			}
+
+			if ( ! empty( $video_src ) ) {
+				$auto_poster = chinacongress_get_or_generate_video_poster( $video_src );
+				if ( ! empty( $auto_poster ) ) {
+					$attrs .= ' poster="' . esc_url( $auto_poster ) . '"';
+				}
 			}
 		}
 
