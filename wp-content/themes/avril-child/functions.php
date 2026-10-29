@@ -1093,14 +1093,58 @@ function chinacongress_shortcode_cc_video( $atts ) {
 	}
 
 	$src = esc_url( $a['src'] );
+	if ( strpos( $src, '#' ) === false ) {
+		$src .= '#t=0.001';
+	}
 	$caption_html = '';
 	if ( ! empty( $a['caption'] ) ) {
 		$caption_html = '<div class="cc_video_caption">' . esc_html( $a['caption'] ) . '</div>';
 	}
 
-	return '<div class="cc_video_container"><video src="' . $src . '" controls playsinline preload="metadata"></video>' . $caption_html . '</div>';
+	return '<div class="cc_video_container"><video src="' . $src . '" controls playsinline webkit-playsinline preload="metadata"></video>' . $caption_html . '</div>';
 }
 add_shortcode( 'cc_video', 'chinacongress_shortcode_cc_video' );
+
+/**
+ * 自动为正文中所有 <video> 标签补齐移动端首帧预览参数 (preload="metadata"、playsinline 及 #t=0.001)
+ * 解决 iOS Safari / WebKit 内核浏览器不显示无 poster 视频第一帧画面的问题。
+ */
+function chinacongress_optimize_content_videos( $content ) {
+	if ( empty( $content ) || stripos( $content, '<video' ) === false ) {
+		return $content;
+	}
+
+	return preg_replace_callback( '/<video\b([^>]*)>(.*?)<\/video>/is', function( $matches ) {
+		$attrs = $matches[1];
+		$inner = $matches[2];
+
+		if ( ! preg_match( '/\bplaysinline\b/i', $attrs ) ) {
+			$attrs .= ' playsinline webkit-playsinline';
+		}
+
+		if ( ! preg_match( '/\bpreload\s*=/i', $attrs ) ) {
+			$attrs .= ' preload="metadata"';
+		} else {
+			$attrs = preg_replace( '/\bpreload\s*=\s*([\'"])none\1/i', 'preload="metadata"', $attrs );
+		}
+
+		// 若未显式设置 poster 封面图，则在视频 URL 末尾追加 #t=0.001 强制移动端解码第一帧
+		if ( ! preg_match( '/\bposter\s*=/i', $attrs ) ) {
+			if ( preg_match( '/\bsrc\s*=\s*([\'"])([^\'"]+)\1/i', $attrs ) ) {
+				$attrs = preg_replace_callback( '/(\bsrc\s*=\s*([\'"]))([^\'"#]+)(\2)/i', function( $m ) {
+					return $m[1] . $m[3] . '#t=0.001' . $m[4];
+				}, $attrs, 1 );
+			} elseif ( stripos( $inner, '<source' ) !== false ) {
+				$inner = preg_replace_callback( '/(<source\b[^>]*?\bsrc\s*=\s*([\'"]))([^\'"#]+)(\2)/i', function( $m ) {
+					return $m[1] . $m[3] . '#t=0.001' . $m[4];
+				}, $inner, 1 );
+			}
+		}
+
+		return '<video' . $attrs . '>' . $inner . '</video>';
+	}, $content );
+}
+add_filter( 'the_content', 'chinacongress_optimize_content_videos', 100 );
 
 /**
  * 全站短视频自动包装与互斥播放守护脚本

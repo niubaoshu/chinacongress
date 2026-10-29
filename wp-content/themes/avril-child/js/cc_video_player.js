@@ -9,6 +9,30 @@
 		videos.forEach(function(video) {
 			video.controls = true;
 			video.playsInline = true;
+			video.setAttribute('playsinline', '');
+			video.setAttribute('webkit-playsinline', '');
+
+			if (!video.getAttribute('preload') || video.getAttribute('preload') === 'none') {
+				video.preload = 'metadata';
+				video.setAttribute('preload', 'metadata');
+			}
+
+			// 兼容 iOS Safari / WebKit 手机端自动解码渲染无 poster 视频的第一帧画面
+			if (!video.getAttribute('poster')) {
+				var rawSrc = video.getAttribute('src');
+				if (rawSrc && rawSrc.indexOf('#') === -1) {
+					video.setAttribute('src', rawSrc + '#t=0.001');
+				} else if (!rawSrc) {
+					var sourceEl = video.querySelector('source[src]');
+					if (sourceEl) {
+						var sSrc = sourceEl.getAttribute('src');
+						if (sSrc && sSrc.indexOf('#') === -1) {
+							sourceEl.setAttribute('src', sSrc + '#t=0.001');
+							video.load();
+						}
+					}
+				}
+			}
 
 			// 互斥播放：当一个视频播放时，暂停其他正在播放的视频
 			if (!video.dataset.ccMutualInit) {
