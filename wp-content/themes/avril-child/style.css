@@ -813,7 +813,8 @@ oc {
 .cc_video_caption {
     margin: 10px auto 25px;
     max-width: 650px;
-    text-indent: 2em;
+    text-align: center;
+    text-indent: 0;
     font-size: 15px;
     line-height: 1.6;
     color: rgba(0, 0, 40, 0.85);
