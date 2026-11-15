@@ -25,7 +25,12 @@ echo "✅ 数据库 (${DB_NAME}) 及专用用户 (${DB_NAME}) 已彻底删除。
 # 2. 清空本地 Web 目录
 echo "2. 正在清空本地 Web 目录: ${LOCAL_WEB_ROOT} ..."
 if [ -d "${LOCAL_WEB_ROOT}" ]; then
-    find "${LOCAL_WEB_ROOT}" -mindepth 1 -delete 2>/dev/null || rm -rf "${LOCAL_WEB_ROOT}"/* "${LOCAL_WEB_ROOT}"/.* 2>/dev/null || true
+    # 若存在 Web 服务用户 (http/root) 创建的残留文件，普通用户删除失败时回退使用 sudo 彻底清理，避免重建时 Permission denied
+    find "${LOCAL_WEB_ROOT}" -mindepth 1 -delete 2>/dev/null \
+        || rm -rf "${LOCAL_WEB_ROOT}"/* "${LOCAL_WEB_ROOT}"/.[!.]* "${LOCAL_WEB_ROOT}"/..?* 2>/dev/null \
+        || sudo find "${LOCAL_WEB_ROOT}" -mindepth 1 -delete 2>/dev/null \
+        || sudo rm -rf "${LOCAL_WEB_ROOT}"/* "${LOCAL_WEB_ROOT}"/.[!.]* "${LOCAL_WEB_ROOT}"/..?* 2>/dev/null \
+        || true
     echo "✅ 本地 Web 目录文件已全部彻底清除！"
 else
     echo "⚠️ 本地 Web 目录 (${LOCAL_WEB_ROOT}) 不存在，跳过该步骤。"

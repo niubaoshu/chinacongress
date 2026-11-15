@@ -1,6 +1,6 @@
 # ==============================================================================
 # China Congress public_html Git 忽略规则
-# 仅追踪二次开发子主题 (avril-child) 与自主研发插件 (cc-assets, cc-footer-credits)
+# 仅追踪二次开发子主题 (avril-child) 与自主研发插件 (cc-assets, cc-contact-link, cc-footer-credits)
 # ==============================================================================
 
 /*
@@ -26,4 +26,5 @@ wp-content/themes/*
 !wp-content/plugins/
 wp-content/plugins/*
 !wp-content/plugins/cc-assets/
+!wp-content/plugins/cc-contact-link/
 !wp-content/plugins/cc-footer-credits/
