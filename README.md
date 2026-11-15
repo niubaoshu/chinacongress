@@ -145,6 +145,14 @@ public_html/ (Git 仓库根目录)
 | `LOCAL_DB_USER` | 本地数据库用户名 | `db_user` |
 | `LOCAL_DB_PASS` | **本地数据库密码** | 空（适合 Linux Socket/免密环境） |
 | `LOCAL_DB_NAME` | 本地数据库名称 | `db_name` |
+| `SMTP_HOST` | SMTP 服务器地址（如 `smtp.gmail.com`） | 空（未配置时跳过写入） |
+| `SMTP_PORT` | SMTP 端口 | `465` |
+| `SMTP_SECURE` | 加密方式（`ssl` / `tls`） | `ssl` |
+| `SMTP_AUTH` | 是否启用 SMTP 认证（`true` / `false`） | `true` |
+| `SMTP_USER` | **SMTP 认证用户名/邮箱** | 空 |
+| `SMTP_PASS` | **SMTP 认证密码/应用专用密码** | 空 |
+| `SMTP_FROM` | 发件人邮箱 | 默认同 `SMTP_USER` |
+| `SMTP_NAME` | 发件人显示名称 | 空（默认站点名称） |
 
 ### 配置示例
 在您本地电脑的 `~/.bashrc` 或 `~/.zshrc` 中增加以下配置即可：

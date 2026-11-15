@@ -72,12 +72,14 @@ curl -sL "https://downloads.wordpress.org/theme/avril.zip" -o "${TEMP_DIR}/avril
 unzip -q -o "${TEMP_DIR}/avril.zip" -d "${LOCAL_WEB_ROOT}/wp-content/themes/"
 echo "✅ 官方 Avril 父主题全新安装完成。"
 
-# 3. 全新从官方插件库下载安装 Clever Fox 官方组件插件（子主题兼容已由 functions.php 原生托管）
-echo "3. 正在从 WordPress 官方插件库全新下载并安装 Clever Fox 插件..."
+# 3. 全新从官方插件库下载安装官方组件插件（Clever Fox 与 Limit Login Attempts Reloaded）
+echo "3. 正在从 WordPress 官方插件库全新下载并安装官方插件 (Clever Fox, Limit Login Attempts Reloaded)..."
 mkdir -p "${LOCAL_WEB_ROOT}/wp-content/plugins"
 curl -sL "https://downloads.wordpress.org/plugin/clever-fox.zip" -o "${TEMP_DIR}/clever-fox.zip"
 unzip -q -o "${TEMP_DIR}/clever-fox.zip" -d "${LOCAL_WEB_ROOT}/wp-content/plugins/"
-echo "✅ 官方 Clever Fox 插件全新安装完成（子主题兼容已由子主题原生托管）。"
+curl -sL "https://downloads.wordpress.org/plugin/limit-login-attempts-reloaded.zip" -o "${TEMP_DIR}/limit-login-attempts-reloaded.zip"
+unzip -q -o "${TEMP_DIR}/limit-login-attempts-reloaded.zip" -d "${LOCAL_WEB_ROOT}/wp-content/plugins/"
+echo "✅ 官方插件全新安装完成（Clever Fox 子主题兼容已由子主题原生托管）。"
 
 # 4. 生成本地 wp-config.php 配置文件
 LOCAL_DB_NAME="${LOCAL_DB_NAME:-chinacongress}"
@@ -106,6 +108,40 @@ define( 'NONCE_SALT',       ' FT>s+ICiA0%mr|1.[+Q:!O%<ZCG2sQ/Wx,,G045L003R~&}Hk~
 $table_prefix = 'wp_';
 define( 'WP_DEBUG', false );
 define( 'FS_METHOD', 'direct' );
+EOF
+
+# 从环境变量注入 SMTP 配置（避免硬编码敏感凭据）
+if [ -n "${SMTP_HOST:-}" ] && [ -n "${SMTP_USER:-}" ] && [ -n "${SMTP_PASS:-}" ]; then
+    escape_php_sq() {
+        local s="$1"
+        s="${s//\\/\\\\}"
+        s="${s//\'/\\\'}"
+        printf '%s' "$s"
+    }
+    SMTP_PORT_VAL="${SMTP_PORT:-465}"
+    SMTP_SECURE_VAL="${SMTP_SECURE:-ssl}"
+    SMTP_AUTH_VAL="${SMTP_AUTH:-true}"
+    SMTP_FROM_VAL="${SMTP_FROM:-${SMTP_USER}}"
+
+    {
+        echo ""
+        echo "define( 'SMTP_HOST',   '$(escape_php_sq "${SMTP_HOST}")' );"
+        echo "define( 'SMTP_PORT',   ${SMTP_PORT_VAL} );"
+        echo "define( 'SMTP_SECURE', '$(escape_php_sq "${SMTP_SECURE_VAL}")' );"
+        echo "define( 'SMTP_AUTH',   ${SMTP_AUTH_VAL} );"
+        echo "define( 'SMTP_USER',   '$(escape_php_sq "${SMTP_USER}")' );"
+        echo "define( 'SMTP_PASS',   '$(escape_php_sq "${SMTP_PASS}")' );"
+        echo "define( 'SMTP_FROM',   '$(escape_php_sq "${SMTP_FROM_VAL}")' );"
+        if [ -n "${SMTP_NAME:-}" ]; then
+            echo "define( 'SMTP_NAME',   '$(escape_php_sq "${SMTP_NAME}")' );"
+        fi
+    } >> "${LOCAL_WEB_ROOT}/wp-config.php"
+    echo "✅ 已从环境变量注入 SMTP 发信配置 (${SMTP_HOST}:${SMTP_PORT_VAL})。"
+else
+    echo "ℹ️ 未检测到 SMTP_HOST / SMTP_USER / SMTP_PASS 环境变量，跳过 SMTP 配置。"
+fi
+
+cat << 'EOF' >> "${LOCAL_WEB_ROOT}/wp-config.php"
 
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
@@ -172,6 +208,11 @@ UPDATE wp_options SET option_value='avril-child' WHERE option_name='stylesheet';
 -- 3. 确保子主题 (avril-child) 在配置不存在时继承父主题 Customizer 配置
 INSERT IGNORE INTO wp_options (option_name, option_value, autoload)
 SELECT 'theme_mods_avril-child', option_value, autoload FROM wp_options WHERE option_name='theme_mods_avril';
+
+-- 4. 本地 localhost 环境不开启 Limit Login Attempts Reloaded 的云端 MFA（2FA）
+--    原因：LLAR MFA 需要云端 api.limitloginattempts.com 反向请求站点的 /wp-json/ 接口，
+--    公网无法访问本地 http://localhost，会导致发送验证码时报 TypeError: fetch failed。
+UPDATE wp_options SET option_value='0' WHERE option_name='limit_login_mfa_enabled';
 
 SET FOREIGN_KEY_CHECKS = 1;
 SQL
