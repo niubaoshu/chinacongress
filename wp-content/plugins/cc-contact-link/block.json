@@ -1,0 +1,38 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "cc/contact-link",
+	"version": "1.1.0",
+	"title": "联系链接卡片",
+	"category": "widgets",
+	"icon": "email",
+	"description": "从后台预设名单中选用邮箱或 Telegram 联系卡片，自带一键复制与移动端自适应排版。",
+	"keywords": [ "email", "telegram", "contact", "link", "邮箱", "投稿", "链接", "预设" ],
+	"supports": {
+		"html": false,
+		"anchor": true
+	},
+	"attributes": {
+		"preset": {
+			"type": "string",
+			"default": ""
+		},
+		"type": {
+			"type": "string",
+			"default": "email"
+		},
+		"value": {
+			"type": "string",
+			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"textdomain": "cc-contact-link",
+	"editorScript": "file:./editor.js",
+	"style": "file:./style.css",
+	"viewScript": "file:./view.js",
+	"render": "file:./render.php"
+}
