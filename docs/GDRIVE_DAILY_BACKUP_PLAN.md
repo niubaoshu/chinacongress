@@ -14,18 +14,20 @@
 
 ---
 
-## 二、 完整备份清单（保证 100% 原样恢复）
+## 二、 完整备份清单（仅备份 3 类不可再生资产）
 
-假设线上服务器完全损毁，需在全新 Linux 服务器上原样重建 `https://chinacongress.net`，以下 4 类资产缺一不可：
+假设线上服务器完全损毁，需在全新 Linux 服务器上原样重建 `https://chinacongress.net`，网盘只需备份以下 **3 类不可再生资产**：
 
 | 网盘目录 | 备份内容 | 同步方式 | 保留策略 |
 | :--- | :--- | :--- | :--- |
 | **`db/`** | MySQL `chinacongress` 全库（`mysqldump --single-transaction --quick --routines --triggers` 压缩为 `.sql.gz`） | 每日全量快照（无锁导出，不影响访客读写） | 保留最近 **30 天**，到期自动清理 |
 | **`uploads/`** | `/var/www/chinacongress/wp-content/uploads/` 全部图片、视频、附件 | 每日 `rclone sync` 增量同步 + `--backup-dir` | 最新镜像在 `current/`；被删或覆盖的旧版本移至 `archive/YYYYMMDD/`（保留 30 天防误删） |
-| **`wp-code/`** | `/var/www/chinacongress/wp-content/themes/` 与 `plugins/`（含第三方插件精确版本 + 自研代码） | 每日 `rclone sync` 增量同步 | 体积小、变动少，增量几乎零开销，避免灾备时找不到旧版第三方插件 |
-| **`secrets-and-config/`** | 每日打包 `config_YYYYMMDD.tar.gz`，内含：<br>• `wp-config.php`（数据库凭据、8 组密钥盐、SMTP 配置）<br>• Nginx 站点配置文件（vhost）<br>• 运行环境与组件清单 `inventory.txt`（WP / PHP / MySQL / Nginx 版本及已启用插件列表） | 每日快照 | 保留最近 **30 天** |
+| **`secrets-and-config/`** | 每日打包 `config_YYYYMMDD.tar.gz`，内含：<br>• `wp-config.php`（数据库凭据、8 组密钥盐、SMTP 配置）<br>• Nginx 站点配置文件（vhost）与 Let's Encrypt 续期配置<br>• 运行环境与组件清单 `inventory.txt`（WP / PHP / MySQL / Nginx 版本及已启用插件/主题列表） | 每日快照 | 保留最近 **30 天** |
 
-> **说明**：WordPress 官方核心文件无需每日备份，恢复时按 `inventory.txt` 记录的版本从官方下载纯洁核心，再覆盖上述 4 块资产即可原样还原。
+> **为什么不备份 WordPress 核心、第三方插件和主题？**
+> * WordPress 核心与免费第三方插件/主题全部来自 WordPress.org 官方源，灾备时按 `inventory.txt` 自动安装纯洁官方版本即可，既避免数千小文件同步瓶颈，又能防止潜在后门随备份回流；
+> * 自研子主题（`avril-child`）与自研插件（`cc-assets`、`cc-contact-link`、`cc-footer-credits`）已由 GitHub 托管；
+> * 若未来引入官方库无法下载的付费商业插件，仅需单独保存其安装包 `.zip` 即可。
 
 ---
 
@@ -41,9 +43,6 @@ Google Drive/
     │   ├── current/                        # 与线上 uploads/ 一致的最新增量镜像
     │   └── archive/                        # 被删/被覆盖文件的历史归档（保留30天）
     │       └── YYYYMMDD/
-    ├── wp-code/
-    │   ├── themes/                         # 全部主题（父主题 + avril-child）
-    │   └── plugins/                        # 全部插件（第三方 + 自研）
     └── secrets-and-config/                 # 敏感数据与系统配置专门目录
         ├── config_YYYYMMDD.tar.gz          # wp-config.php + Nginx 配置 + 环境清单（保留30天）
         └── ...
