@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ZERO="0000000000000000000000000000000000000000"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -z "${local_sha:-}" ] && continue
+    [ "${local_sha}" = "${ZERO}" ] && continue
+
+    if [ "${remote_sha}" = "${ZERO}" ]; then
+        # 新分支推送：扫描自空树以来的全部提交
+        range="4b825dc642cb6eb9a060e54bf8d69288fbee4904..${local_sha}"
+    else
+        range="${remote_sha}..${local_sha}"
+    fi
+
+    "${HOOK_DIR}/scan-secrets.sh" --range "${range}"
+done

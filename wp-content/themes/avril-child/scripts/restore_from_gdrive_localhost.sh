@@ -57,7 +57,11 @@ echo "✅ WordPress 纯洁核心安装完成"
 echo "2/6 正在从 secrets-and-config 还原 wp-config.php（适配本地数据库）..."
 tar -xzf "${CFG_FILE}" -C "${TMP_DIR}"
 cp "${TMP_DIR}/wordpress/wp-config.php" "${LOCAL_WEB_ROOT}/wp-config.php"
-[ -f "${TMP_DIR}/wordpress/.htaccess" ] && cp "${TMP_DIR}/wordpress/.htaccess" "${LOCAL_WEB_ROOT}/.htaccess"
+chmod 644 "${LOCAL_WEB_ROOT}/wp-config.php"
+if [ -f "${TMP_DIR}/wordpress/.htaccess" ]; then
+    cp "${TMP_DIR}/wordpress/.htaccess" "${LOCAL_WEB_ROOT}/.htaccess"
+    chmod 644 "${LOCAL_WEB_ROOT}/.htaccess"
+fi
 
 python3 - "${LOCAL_WEB_ROOT}/wp-config.php" "${LOCAL_DB_NAME}" "${LOCAL_DB_USER}" "${LOCAL_DB_PASS}" << 'PY'
 import re, sys
@@ -107,9 +111,9 @@ for line in open(sys.argv[1], encoding="utf-8", errors="ignore"):
         continue
     if s.startswith("===") and in_plugins:
         break
-    if not in_plugins or not s.startswith("|"):
+    if not in_plugins or not s or s.startswith("+") or s.startswith("-"):
         continue
-    cols = [c.strip() for c in s.strip("|").split("|")]
+    cols = [c.strip() for c in s.strip("|").split("|")] if "|" in s else s.split()
     if len(cols) >= 2 and cols[0] and cols[0] != "name" and cols[1] == "active":
         slugs.append(cols[0])
 print(" ".join(slugs))

@@ -5,6 +5,8 @@
 
 /*
 !.gitignore
+!.githooks/
+!.githooks/**
 !README.md
 !API_ENDPOINTS.md
 !SECURITY_INCIDENT_REPORT_20261012.md
