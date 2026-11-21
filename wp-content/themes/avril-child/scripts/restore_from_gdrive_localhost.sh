@@ -180,10 +180,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 SQL
 echo "✅ 数据库导入及本地配置适配完成"
 
-# 7. 健康检查
-echo "6/6 正在执行本地站点连通性验证..."
-HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' http://localhost/ || echo '000')"
-echo "🌐 http://localhost/ -> HTTP ${HTTP_CODE}"
+# 7. 一致性验收检查
+echo "6/6 正在执行本地与线上一致性自动验收..."
+bash "${SCRIPT_DIR}/verify_localhost_parity.sh"
 echo "=========================================="
 echo "🎉 【Google Drive 极简灾备本地原样重建】完成！请打开 http://localhost/ 验收。"
 echo "=========================================="

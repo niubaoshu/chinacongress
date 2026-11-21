@@ -229,6 +229,9 @@ bash "${SCRIPT_DIR}/sync_custom_code.sh" localhost
 # 清理临时目录
 rm -rf "${TEMP_DIR}"
 
+# 自动执行本地与线上一致性验收
+bash "${SCRIPT_DIR}/verify_localhost_parity.sh"
+
 echo "------------------------------------------"
 echo "🎉 【全新官方框架 + 数据复原】100% 成功完成！"
 echo "🌐 请直接在浏览器中访问: http://localhost/"
