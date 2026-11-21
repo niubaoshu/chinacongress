@@ -22,7 +22,7 @@
 | :--- | :--- | :--- | :--- |
 | **`db/`** | MySQL `chinacongress` 全库（`mysqldump --single-transaction --quick --routines --triggers` 压缩为 `.sql.gz`） | 每日全量快照（无锁导出，不影响访客读写） | 保留最近 **30 天**，到期自动清理 |
 | **`uploads/`** | `/var/www/chinacongress/wp-content/uploads/` 全部图片、视频、附件 | 每日 `rclone sync` 增量同步 + `--backup-dir` | 最新镜像在 `current/`；被删或覆盖的旧版本移至 `archive/YYYYMMDD/`（保留 30 天防误删） |
-| **`secrets-and-config/`** | 每日打包 `config_YYYYMMDD.tar.gz`，内含：<br>• `wp-config.php`（数据库凭据、8 组密钥盐、SMTP 配置）<br>• Nginx 站点配置文件（vhost）与 Let's Encrypt 续期配置<br>• 运行环境与组件清单 `inventory.txt`（WP / PHP / MySQL / Nginx 版本及已启用插件/主题列表） | 每日快照 | 保留最近 **30 天** |
+| **`secrets-and-config/`** | 每日打包 `config_YYYYMMDD.tar.gz`，内含：<br>• `wp-config.php`（数据库凭据、8 组密钥盐、SMTP 配置）<br>• Nginx 站点配置、PHP-FPM 池配置（`www.conf`）与 Let's Encrypt 续期配置<br>• 备份基础设施配置：`rclone.conf`、`systemd` 定时单元（`.service`/`.timer`）、`cc-backup-gdrive.sh` 及 `root` crontab<br>• 运行环境与组件清单 `inventory.txt`（WP / PHP / MySQL / Nginx 版本及已启用插件/主题列表） | 每日快照 | 保留最近 **30 天** |
 
 > **为什么不备份 WordPress 核心、第三方插件和主题？**
 > * WordPress 核心与免费第三方插件/主题全部来自 WordPress.org 官方源，灾备时按 `inventory.txt` 自动安装纯洁官方版本即可，既避免数千小文件同步瓶颈，又能防止潜在后门随备份回流；

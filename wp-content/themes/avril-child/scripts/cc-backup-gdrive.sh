@@ -70,10 +70,12 @@ if [ ! -s "${DB_ARCHIVE}" ] || ! gzip -t "${DB_ARCHIVE}"; then
 fi
 log "✅ 数据库导出完成: $(du -h "${DB_ARCHIVE}" | awk '{print $1}')"
 
-# 2. 打包敏感配置、Nginx 配置与环境清单
+# 2. 打包敏感配置、Nginx/PHP-FPM/rclone/systemd 配置与环境清单
 CFG_STAGE="${TMP_DIR}/config_stage"
-mkdir -p "${CFG_STAGE}/wordpress" "${CFG_STAGE}/nginx" "${CFG_STAGE}/letsencrypt"
-log "2/5 正在收集 wp-config.php、Nginx 配置与运行环境清单..."
+mkdir -p "${CFG_STAGE}/wordpress" "${CFG_STAGE}/nginx" "${CFG_STAGE}/letsencrypt" \
+         "${CFG_STAGE}/php-fpm" "${CFG_STAGE}/rclone" "${CFG_STAGE}/systemd" \
+         "${CFG_STAGE}/scripts" "${CFG_STAGE}/cron"
+log "2/5 正在收集 wp-config.php、Nginx/PHP-FPM/rclone/systemd 配置与运行环境清单..."
 
 cp -a "${WP_ROOT}/wp-config.php" "${CFG_STAGE}/wordpress/"
 [ -f "${WP_ROOT}/.htaccess" ] && cp -a "${WP_ROOT}/.htaccess" "${CFG_STAGE}/wordpress/"
@@ -83,6 +85,12 @@ for f in /etc/nginx/conf.d/*.conf; do
     [ -f "$f" ] && cp -a "$f" "${CFG_STAGE}/nginx/"
 done
 [ -d /etc/letsencrypt/renewal ] && cp -a /etc/letsencrypt/renewal "${CFG_STAGE}/letsencrypt/"
+[ -f /etc/php-fpm.d/www.conf ] && cp -a /etc/php-fpm.d/www.conf "${CFG_STAGE}/php-fpm/"
+[ -f /root/.config/rclone/rclone.conf ] && cp -a /root/.config/rclone/rclone.conf "${CFG_STAGE}/rclone/"
+[ -f /etc/systemd/system/cc-backup-gdrive.service ] && cp -a /etc/systemd/system/cc-backup-gdrive.service "${CFG_STAGE}/systemd/"
+[ -f /etc/systemd/system/cc-backup-gdrive.timer ] && cp -a /etc/systemd/system/cc-backup-gdrive.timer "${CFG_STAGE}/systemd/"
+[ -f /usr/local/sbin/cc-backup-gdrive.sh ] && cp -a /usr/local/sbin/cc-backup-gdrive.sh "${CFG_STAGE}/scripts/"
+crontab -l > "${CFG_STAGE}/cron/root.crontab" 2>/dev/null || true
 
 {
     echo "Backup Date: $(date -Iseconds)"
