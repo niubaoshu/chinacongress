@@ -60,6 +60,13 @@ body {
     margin-top: 20px !important;
 }
 
+/* 手机端文章标题调小一号（桌面端保持 35px 不变） */
+@media (max-width: 768px) {
+    .single-post .post-content h5.post-title {
+        font-size: 24px !important;
+    }
+}
+
 /* 面包屑区域 (Breadcrumb Area) 背景图 100% 完整显示 */
 .breadcrumb-area {
     background-position: center !important;
